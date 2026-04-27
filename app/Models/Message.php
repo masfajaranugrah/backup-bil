@@ -54,34 +54,44 @@ class Message extends Model
      */
     public function getSenderAttribute()
     {
-        // Cache key untuk menghindari query berulang
         $cacheKey = "message_sender_{$this->sender_id}";
 
-        return Cache::remember($cacheKey, 300, function () {
-            // Try users table first
+        try {
+            return Cache::remember($cacheKey, 300, function () {
+                $user = User::find($this->sender_id);
+                if ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email ?? null,
+                        'role' => $user->role ?? null,
+                    ];
+                }
+
+                $pelanggan = Pelanggan::find($this->sender_id);
+                if ($pelanggan) {
+                    return [
+                        'id' => $pelanggan->id,
+                        'name' => $pelanggan->nama_lengkap ?? $pelanggan->name ?? 'Pelanggan',
+                        'email' => $pelanggan->email ?? null,
+                        'role' => 'pelanggan',
+                    ];
+                }
+
+                return null;
+            });
+        } catch (\Exception $e) {
+            // Fallback: query directly without cache if Redis/DB cache fails
             $user = User::find($this->sender_id);
             if ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email ?? null,
-                    'role' => $user->role ?? null,
-                ];
+                return ['id' => $user->id, 'name' => $user->name, 'email' => $user->email ?? null, 'role' => $user->role ?? null];
             }
-
-            // Try pelanggans table
             $pelanggan = Pelanggan::find($this->sender_id);
             if ($pelanggan) {
-                return [
-                    'id' => $pelanggan->id,
-                    'name' => $pelanggan->nama_lengkap ?? $pelanggan->name ?? 'Pelanggan',
-                    'email' => $pelanggan->email ?? null,
-                    'role' => 'pelanggan',
-                ];
+                return ['id' => $pelanggan->id, 'name' => $pelanggan->nama_lengkap ?? 'Pelanggan', 'email' => $pelanggan->email ?? null, 'role' => 'pelanggan'];
             }
-
             return null;
-        });
+        }
     }
 
     /**
@@ -89,34 +99,44 @@ class Message extends Model
      */
     public function getReceiverAttribute()
     {
-        // Cache key untuk menghindari query berulang
         $cacheKey = "message_receiver_{$this->receiver_id}";
 
-        return Cache::remember($cacheKey, 300, function () {
-            // Try users table first
+        try {
+            return Cache::remember($cacheKey, 300, function () {
+                $user = User::find($this->receiver_id);
+                if ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email ?? null,
+                        'role' => $user->role ?? null,
+                    ];
+                }
+
+                $pelanggan = Pelanggan::find($this->receiver_id);
+                if ($pelanggan) {
+                    return [
+                        'id' => $pelanggan->id,
+                        'name' => $pelanggan->nama_lengkap ?? $pelanggan->name ?? 'Pelanggan',
+                        'email' => $pelanggan->email ?? null,
+                        'role' => 'pelanggan',
+                    ];
+                }
+
+                return null;
+            });
+        } catch (\Exception $e) {
+            // Fallback: query directly without cache if Redis/DB cache fails
             $user = User::find($this->receiver_id);
             if ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email ?? null,
-                    'role' => $user->role ?? null,
-                ];
+                return ['id' => $user->id, 'name' => $user->name, 'email' => $user->email ?? null, 'role' => $user->role ?? null];
             }
-
-            // Try pelanggans table
             $pelanggan = Pelanggan::find($this->receiver_id);
             if ($pelanggan) {
-                return [
-                    'id' => $pelanggan->id,
-                    'name' => $pelanggan->nama_lengkap ?? $pelanggan->name ?? 'Pelanggan',
-                    'email' => $pelanggan->email ?? null,
-                    'role' => 'pelanggan',
-                ];
+                return ['id' => $pelanggan->id, 'name' => $pelanggan->nama_lengkap ?? 'Pelanggan', 'email' => $pelanggan->email ?? null, 'role' => 'pelanggan'];
             }
-
             return null;
-        });
+        }
     }
 
     /**

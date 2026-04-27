@@ -315,26 +315,28 @@ document.addEventListener("DOMContentLoaded", function() {
         if (type === 'full') {
             $('#loading-type-icon').removeClass('ri-database-2-line').addClass('ri-folder-zip-line');
             $('#loading-title').text('Backup Lengkap');
-            if (showProgress) {
-                $('#loading-percentage').show();
-                $('#loading-steps').show();
-                $('#loading-step-labels').show();
-                $('#loading-detail').show();
-                $('#loading-current-item').show();
-            }
+            // Always show progress elements for full backup
+            $('#loading-percentage').show();
+            $('#loading-steps').show();
+            $('#loading-step-labels').show();
+            $('#loading-detail').show();
+            $('#loading-current-item').show();
         } else {
             $('#loading-type-icon').removeClass('ri-folder-zip-line').addClass('ri-database-2-line');
             $('#loading-title').text('Backup Database');
             // Untuk backup DB, gunakan indeterminate progress
             $('#loading-progress-bar').addClass('indeterminate');
+            // Show percentage for DB too so user sees updates
+            $('#loading-percentage').show();
         }
         $('#loading-message').text(message);
         $('.loading-overlay').css('display', 'flex');
     }
     
     function updateProgress(progress, message, step, details = {}) {
-        $('#loading-percentage').text(progress + '%');
-        $('#loading-progress-bar').css('width', progress + '%');
+        // Make sure percentage is always visible once we have data
+        $('#loading-percentage').show().text(progress + '%');
+        $('#loading-progress-bar').removeClass('indeterminate').css('width', progress + '%');
         if (message) {
             $('#loading-message').text(message);
         }
@@ -409,7 +411,7 @@ document.addEventListener("DOMContentLoaded", function() {
         $('.loading-overlay').fadeOut(300);
     }
 
-    // Backup Database (Quick)
+    // Backup Database (Quick) — sekarang async via queue
     $('#btn-backup-db').on('click', function(e) {
         e.preventDefault();
         
@@ -431,7 +433,7 @@ document.addEventListener("DOMContentLoaded", function() {
             if (result.isConfirmed) {
                 const btn = $(this);
                 btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
-                showLoading();
+                showLoading('db', 'Backup database dijadwalkan...', false);
                 
                 $.ajax({
                     url: '{{ route("backup.create") }}',
@@ -441,23 +443,35 @@ document.addEventListener("DOMContentLoaded", function() {
                         type: 'db'
                     },
                     success: function(response) {
-                        hideLoading();
-                        btn.prop('disabled', false).html('<i class="ri-database-2-line"></i> Backup Database');
-                        
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil!',
-                            text: response.message || 'Backup database berhasil dibuat.',
-                            timer: 2000,
-                            showConfirmButton: false
-                        }).then(() => {
-                            location.reload();
-                        });
+                        // Respons cepat (queued) — mulai polling status
+                        if (response.queued) {
+                            startProgressPolling(response.backup_id, function(finalResponse) {
+                                hideLoading();
+                                btn.prop('disabled', false).html('<i class="ri-database-2-line"></i> Backup Database');
+                                Swal.fire({
+                                    icon: finalResponse.status === 'completed' ? 'success' : 'error',
+                                    title: finalResponse.status === 'completed' ? 'Berhasil!' : 'Gagal!',
+                                    text: finalResponse.message || 'Backup database selesai.',
+                                    timer: 2500,
+                                    showConfirmButton: false
+                                }).then(() => { location.reload(); });
+                            });
+                        } else {
+                            // Fallback: respons langsung (tidak seharusnya terjadi)
+                            hideLoading();
+                            btn.prop('disabled', false).html('<i class="ri-database-2-line"></i> Backup Database');
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: response.message || 'Backup database berhasil dibuat.',
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => { location.reload(); });
+                        }
                     },
                     error: function(xhr) {
                         hideLoading();
                         btn.prop('disabled', false).html('<i class="ri-database-2-line"></i> Backup Database');
-                        
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal!',
@@ -490,7 +504,6 @@ document.addEventListener("DOMContentLoaded", function() {
             },
             buttonsStyling: false,
             didOpen: () => {
-                // Style confirm button
                 $('.swal2-confirm').css({
                     'background': '#059669',
                     'border-color': '#059669',
@@ -501,48 +514,46 @@ document.addEventListener("DOMContentLoaded", function() {
             if (result.isConfirmed) {
                 const btn = $(this);
                 btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
-                showLoading('full', 'Mempersiapkan backup lengkap...', true);
+                showLoading('full', 'Backup lengkap dijadwalkan...', true);
                 
                 $.ajax({
                     url: '{{ route("backup.create") }}',
                     type: 'POST',
-                    timeout: 600000, // 10 menit timeout
                     data: {
                         _token: '{{ csrf_token() }}',
                         type: 'full'
                     },
                     success: function(response) {
-                        btn.prop('disabled', false).html('<i class="ri-folder-zip-line"></i> Backup Lengkap');
-                        
-                        // Backup sekarang langsung, tidak pakai queue
-                        if (response.success) {
-                            updateProgress(100, 'Backup selesai!', 'done');
-                            setTimeout(() => {
-                                hideLoading();
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil!',
-                                    text: response.message || 'Backup lengkap selesai.',
-                                    timer: 2500,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            }, 500);
-                        } else {
-                            // Backup gagal
-                            hideLoading();
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Backup Gagal!',
-                                text: response.message || 'Terjadi kesalahan saat backup.',
+                        if (response.queued) {
+                            // Mulai polling dengan backup_id dari response
+                            startProgressPolling(response.backup_id, function(finalResponse) {
+                                btn.prop('disabled', false).html('<i class="ri-folder-zip-line"></i> Backup Lengkap');
+                                if (finalResponse.status === 'completed') {
+                                    updateProgress(100, 'Backup selesai!', 'done');
+                                    setTimeout(() => {
+                                        hideLoading();
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Berhasil!',
+                                            text: finalResponse.message || 'Backup lengkap selesai.',
+                                            timer: 2500,
+                                            showConfirmButton: false
+                                        }).then(() => { location.reload(); });
+                                    }, 500);
+                                } else {
+                                    hideLoading();
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Backup Gagal!',
+                                        text: finalResponse.message || 'Terjadi kesalahan saat backup.',
+                                    });
+                                }
                             });
                         }
                     },
                     error: function(xhr) {
                         hideLoading();
                         btn.prop('disabled', false).html('<i class="ri-folder-zip-line"></i> Backup Lengkap');
-                        
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal!',
@@ -550,23 +561,24 @@ document.addEventListener("DOMContentLoaded", function() {
                         });
                     }
                 });
-                
-                // Mulai polling untuk update progress di UI
-                startProgressPolling();
             }
         });
     });
     
-    // Polling progress untuk update UI saat backup berjalan
-    function startProgressPolling() {
+    // Polling progress — backupId dikirim ke server agar status file ditemukan
+    function startProgressPolling(backupId, onComplete) {
+        if (statusCheckInterval) {
+            clearInterval(statusCheckInterval);
+        }
         statusCheckInterval = setInterval(function() {
             $.ajax({
                 url: '{{ route("backup.status") }}',
                 type: 'GET',
+                data: { id: backupId },   // <-- kunci fix: kirim backup_id
                 success: function(response) {
-                    if (response.progress !== undefined) {
+                    if (response.status && response.status !== 'idle') {
                         updateProgress(
-                            response.progress, 
+                            response.progress || 0,
                             response.message || 'Memproses...', 
                             response.step || 'database',
                             response.details || {}
@@ -577,10 +589,16 @@ document.addEventListener("DOMContentLoaded", function() {
                     if (response.status === 'completed' || response.status === 'failed') {
                         clearInterval(statusCheckInterval);
                         statusCheckInterval = null;
+                        if (typeof onComplete === 'function') {
+                            onComplete(response);
+                        }
                     }
+                },
+                error: function() {
+                    // Abaikan error jaringan sementara, tetap polling
                 }
             });
-        }, 500); // Check setiap 0.5 detik untuk update lebih realtime
+        }, 1000); // Poll setiap 1 detik
     }
 
     // Event DELETE dengan konfirmasi modern - HANYA 2 BUTTON

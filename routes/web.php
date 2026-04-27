@@ -26,12 +26,12 @@ use App\Http\Controllers\BarangKeluarController;
 use App\Http\Controllers\BarangMasukController;
 use App\Http\Controllers\apps\Chat;
 use App\Http\Controllers\ChatController;
-use App\Http\Controllers\KwitansiController ;
+use App\Http\Controllers\KwitansiController;
 use App\Http\Controllers\PushNotificationController;
 use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\IklanController;
 use App\Http\Controllers\OutstandingController;
- 
+
 use App\Http\Controllers\CustomerTagihanController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
@@ -68,8 +68,8 @@ Route::middleware('web')->group(function () {
         return \Illuminate\Support\Facades\Broadcast::auth($request);
     });
 });
- 
- 
+
+
 
 // Main Page Route
 Route::get('/', function () {
@@ -98,7 +98,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/customer/logout', [AuthController::class, 'logoutCustomer'])->name('customer.logout');
 
 // auth pelanggan
- 
+
 
 
 
@@ -122,7 +122,7 @@ Route::prefix('/pelanggan/jernihnet')->group(function () {
     // Route yang sudah login customer
     Route::middleware('auth:customer')->group(function () {
         Route::get('/dashboard/tagihan', [TagihanController::class, 'index'])
-            ->name('customer.tagihan.home');
+            ->name('customer.tagihan.legacy');
     });
 });
 // layout
@@ -137,8 +137,8 @@ Route::get('/layouts/fluid', [Fluid::class, 'index'])->name('layouts-fluid');
 Route::get('/layouts/container', [Container::class, 'index'])->name('layouts-container');
 Route::get('/layouts/blank', [Blank::class, 'index'])->name('layouts-blank');
 
-// laravel example
 
+// laravel example
 Route::middleware(['auth', 'role:administrator,admin,verifikasi'])->group(function () {
 
     Route::get('/dashboard/admin/employees', [EmployeeController::class, 'index'])->name('karyawan.index');
@@ -162,7 +162,7 @@ Route::middleware(['auth', 'role:administrator,admin,verifikasi'])->group(functi
         Route::delete('/{id}', [PaketController::class, 'destroy'])->name('paket.destroy');
     });
 
-   Route::prefix('/dashboard/admin/tagihan')->group(function () {
+    Route::prefix('/dashboard/admin/tagihan')->group(function () {
         Route::get('/', [TagihanController::class, 'index'])->name('tagihan.get');
         Route::get('/lunas', [TagihanController::class, 'lunas'])->name('tagihan.lunas');
         Route::get('/proses', [TagihanController::class, 'proses'])->name('tagihan.proses');
@@ -186,13 +186,13 @@ Route::middleware(['auth', 'role:administrator,admin,verifikasi'])->group(functi
         Route::get('/export-belum-lunas', [TagihanController::class, 'exportBelumLunas'])->name('tagihan.export.belumlunas');
 
 
-	// Status Baca Tagihan
+        // Status Baca Tagihan
         Route::get('/status-baca', [TagihanReadController::class, 'index'])->name('tagihan.read.status');
         Route::get('/status-baca/data', [TagihanReadController::class, 'getDataJson'])->name('tagihan.read.data');
 
 
     });
-      Route::prefix('/dashboard/admin/laporan')->group(function () {
+    Route::prefix('/dashboard/admin/laporan')->group(function () {
 
         // Laporan
         Route::get('/tagihan', [LaporanController::class, 'tagihan'])->name('laporan.tagihan');
@@ -238,7 +238,7 @@ Route::middleware(['auth', 'role:admin,administrator'])->group(function () {
         Route::put('/update/{user}', [TeamController::class, 'update'])->name('users.update'); // update user
         Route::delete('/delete/{user}', [TeamController::class, 'destroy'])->name('users.destroy'); // hapus user
         Route::get('/{id}/edit', [TeamController::class, 'edit'])->name('users.show.edit');
-        Route::put('/{id}', [TeamController::class, 'update'])->name('users.update');
+        Route::put('/{id}', [TeamController::class, 'update'])->name('users.update.id');
 
     });
 });
@@ -250,16 +250,16 @@ Route::middleware(['auth', 'role:customer_service'])->group(function () {
         Route::get('/tickets/json', [TicketController::class, 'ticketsJson'])->name('tickets.json');
         Route::get('/create', [TicketController::class, 'create'])->name('tickets.creates');
         Route::post('/store', [TicketController::class, 'store'])->name('tickets.stores');
- 
+
         Route::get('/edit/{ticket}', [TicketController::class, 'edit'])->name('tiket.edit');
         Route::put('/update/{ticket}', [TicketController::class, 'update'])->name('tickets.updates');
         Route::delete('/delete/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroys');
-    
-  Route::get('/finished', [TicketController::class, 'finished'])->name('finished');
-    Route::get('/approved', [TicketController::class, 'approved'])->name('approved');
+
+        Route::get('/finished', [TicketController::class, 'finished'])->name('finished');
+        Route::get('/approved', [TicketController::class, 'approved'])->name('approved');
 
 
-});
+    });
 });
 
 Route::prefix('/dashboard/admin/history')->group(function () {
@@ -269,7 +269,7 @@ Route::prefix('/dashboard/admin/history')->group(function () {
     Route::get('/{ticket}', [TicketStatusLog::class, 'show'])->name('tickets.show');
     Route::get('/login-log', [LoginLogs::class, 'LogLogin'])->name('login.log');
 
- 
+
 
 
 });
@@ -290,9 +290,9 @@ Route::middleware(['auth', 'role:team'])->group(function () {
 });
 
 Route::get('/kwitansi/{filename}', function ($filename) {
-    $path = storage_path('app/public/kwitansi/'.$filename);
+    $path = storage_path('app/public/kwitansi/' . $filename);
 
-    if (! file_exists($path)) {
+    if (!file_exists($path)) {
         abort(404);
     }
 
@@ -328,7 +328,7 @@ Route::prefix('dashboard/admin/pembukuan')->group(function () {
     Route::get('/keluar', [LedgerController::class, 'keluar'])->name('pembukuan.keluar');
     Route::get('/total', [LedgerController::class, 'total'])->name('pembukuan.total');
     Route::get('/total/export', [LedgerController::class, 'exportExcel'])->name('pembukuan.total.export');
-    
+
     // Saldo Awal Routes
     Route::get('/saldo-awal', [\App\Http\Controllers\SaldoAwalController::class, 'index'])->name('saldo-awal.index');
     Route::post('/saldo-awal/store', [\App\Http\Controllers\SaldoAwalController::class, 'store'])->name('saldo-awal.store');
@@ -343,20 +343,18 @@ Route::middleware(['auth', 'role:karyawan'])->group(function () {
     Route::post('/absensi/check-out', [AbsensiController::class, 'checkOut'])->name('absensi.checkout');
 });
 
- Route::prefix('/dashboard/admin/users')->group(function () {
-     Route::get('/', [TeamController::class, 'index'])->name('users.index'); // list users
-     Route::get('/create', [TeamController::class, 'create'])->name('users.create'); // form add user
-     Route::post('/store', [TeamController::class, 'register'])->name('users.store'); // simpan user baru
-     Route::get('/edit/{user}', [TeamController::class, 'edit'])->name('users.get.edit'); // edit user
-//     Route::put('/update/{user}', [TeamController::class, 'update'])->name('users.update'); // update user
-//     Route::delete('/delete/{user}', [TeamController::class, 'destroy'])->name('users.destroy'); // hapus user
-     Route::get('/{id}/edit', [TeamController::class, 'edit'])->name('users.edit');
-     Route::put('/{id}', [TeamController::class, 'update'])->name('users.edit.data');
+Route::prefix('/dashboard/admin/users')->group(function () {
+    Route::get('/', [TeamController::class, 'index']);
+    Route::get('/create', [TeamController::class, 'create']);
+    Route::post('/store', [TeamController::class, 'register']);
+    Route::get('/edit/{user}', [TeamController::class, 'edit'])->name('users.get.edit.v2');
+    Route::get('/{id}/edit', [TeamController::class, 'edit'])->name('users.edit.v2');
+    Route::put('/{id}', [TeamController::class, 'update'])->name('users.edit.data.v2');
 
- });
+});
 
-Route::middleware(['auth:customer','customer_status'])->group(function () {
-    Route::get('dashboard/customer/tagihan/home', [CustomerTagihanController::class, 'indexHome'])->name('customer.tagihan.home');
+Route::middleware(['auth:customer', 'customer_status'])->group(function () {
+    Route::get('dashboard/customer/tagihan/home', [CustomerTagihanController::class, 'indexHome'])->name('customer.tagihan.v1');
     Route::get('dashboard/customer/tagihan/selesai', [CustomerTagihanController::class, 'selesai'])->name('customer.tagihan.lunas');
     Route::get('dashboard/customer/tagihan', [CustomerTagihanController::class, 'index'])->name('customer.tagihan');
     Route::get('dashboard/customer/tagihan/json', [CustomerTagihanController::class, 'getTagihanJson'])->name('customer.tagihan.json');
@@ -364,15 +362,15 @@ Route::middleware(['auth:customer','customer_status'])->group(function () {
     Route::put('dashboard/customer/tagihan/{id}', [CustomerTagihanController::class, 'update'])
         ->name('customer.tagihan.update');
     Route::get('/customer/tagihan/{id}', [CustomerTagihanController::class, 'show'])->name('customer.tagihan.show');
-    
+
     // Chat pelanggan dengan admin
     Route::get('dashboard/customer/chat', [ChatController::class, 'user'])->name('customer.chat');
 
 
- // Chat pelanggan dengan Admin untuk Billing (terpisah dari CS)
+    // Chat pelanggan dengan Admin untuk Billing (terpisah dari CS)
     Route::get('dashboard/customer/chat-billing', [ChatController::class, 'customerBillingChat'])->name('customer.chat.billing');
 
- // Profile Customer
+    // Profile Customer
     Route::get('dashboard/customer/profile', [CustomerTagihanController::class, 'profile'])->name('customer.profile');
 
     // Riwayat Pembayaran
@@ -446,7 +444,7 @@ Route::get('/test-push', function () {
     curl_setopt($ch, CURLOPT_URL, 'https://onesignal.com/api/v1/notifications');
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Content-Type: application/json; charset=utf-8',
-        'Authorization: Basic '.env('ONESIGNAL_REST_API_KEY'),
+        'Authorization: Basic ' . env('ONESIGNAL_REST_API_KEY'),
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
@@ -547,16 +545,16 @@ Route::middleware(['auth', 'role:logistic'])->prefix('/dashboard/logistik/lapora
     Route::get('/export/pdf', [LaporanKabelController::class, 'exportPdf'])->name('export.pdf');
 });
 
- 
+
 // Chat Routes - Real-time messaging
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
+
     // Chat Admin - untuk admin melihat daftar user
     Route::get('/dashboard/admin/chat', [ChatController::class, 'admin'])->name('chat.admin');
-    
+
     // Chat User - untuk user chat dengan admin
     Route::get('/pelanggan/chat', [ChatController::class, 'pelanggan'])->name('chat.pelanggan');
 });
@@ -572,20 +570,20 @@ Route::middleware('auth:web,customer')->group(function () {
     Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unreadCount');
 });
 
- Route::middleware('auth:web,customer')->group(function () {
+Route::middleware('auth:web,customer')->group(function () {
 
-Route::get('/kwitansi/preview/{tagihan_id}', 'App\Http\Controllers\KwitansiController@preview')
-    ->name('kwitansi.preview');
+    Route::get('/kwitansi/preview/{tagihan_id}', 'App\Http\Controllers\KwitansiController@preview')
+        ->name('kwitansi.preview');
 
-Route::get('/kwitansi/download/{tagihan_id}', 'App\Http\Controllers\KwitansiController@download')
-    ->name('kwitansi.download');
+    Route::get('/kwitansi/download/{tagihan_id}', 'App\Http\Controllers\KwitansiController@download')
+        ->name('kwitansi.download');
 
 });
- 
+
 // Verifikasi keaslian kwitansi (anti-pemalsuan) - akses publik via link QR signed
 Route::get('/kwitansi/verify/{tagihan_id}', [KwitansiController::class, 'verify'])
     ->name('kwitansi.verify');
- 
+
 
 
 Route::middleware(['auth'])->group(function () {
@@ -640,8 +638,8 @@ Route::prefix('dashboard/admin/backup')->name('backup.')->group(function () {
         ->name('create');
 
     // Download file backup
-Route::get('/download/{filename}', [DatabaseBackupController::class, 'download'])
-    ->name('download');
+    Route::get('/download/{filename}', [DatabaseBackupController::class, 'download'])
+        ->name('download');
 
     // Hapus file backup
     Route::delete('/delete/{filename}', [DatabaseBackupController::class, 'delete'])
@@ -650,6 +648,23 @@ Route::get('/download/{filename}', [DatabaseBackupController::class, 'download']
     // Cek status backup (AJAX)
     Route::get('/status', [DatabaseBackupController::class, 'checkStatus'])
         ->name('status');
+
+    // DEBUG: cek fungsi yang tersedia (hapus setelah selesai debug)
+    Route::get('/debug-env', function () {
+        $fns = ['exec', 'shell_exec', 'proc_open', 'popen', 'system', 'passthru'];
+        $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+        $result = [];
+        foreach ($fns as $fn) {
+            $result[$fn] = function_exists($fn) && !in_array($fn, $disabled) ? 'OK' : 'DISABLED';
+        }
+        return response()->json([
+            'php_binary' => PHP_BINARY,
+            'php_version' => PHP_VERSION,
+            'disable_functions' => ini_get('disable_functions'),
+            'functions' => $result,
+            'storage_writable' => is_writable(storage_path('app')),
+        ]);
+    })->name('backup.debug');
 
 });
 Route::middleware(['auth'])->group(function () {
@@ -666,7 +681,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('dashboard/admin/iklan', [IklanController::class, 'store'])
         ->name('iklan.store');
 
-      // Update iklan
+    // Update iklan
     Route::get('dashboard/admin/iklan/{id}/edit', [IklanController::class, 'edit'])
         ->name('iklan.edit');
 
@@ -679,14 +694,14 @@ Route::middleware(['auth'])->group(function () {
         ->name('iklan.destroy');
 });
 
- 
+
 
 // Marketing Routes - Pastikan ada middleware auth jika diperlukan
 Route::middleware(['auth'])->prefix('dashboard/marketing')->name('marketing.')->group(function () {
     // Index & List
     Route::get('/pelanggan', [MarketingController::class, 'index'])->name('pelanggan');
     Route::get('/status', [MarketingController::class, 'status'])->name('status');
-    
+
     // Progres & Approve 
     Route::get('/progres', [MarketingController::class, 'progres'])->name('progres');
     Route::get('/progres/belum-progres', [MarketingController::class, 'progresBelum'])->name('progres.belum-progres');
@@ -697,13 +712,13 @@ Route::middleware(['auth'])->prefix('dashboard/marketing')->name('marketing.')->
 
     // Create
     Route::get('/pelanggan/create', [MarketingController::class, 'create'])->name('add-pelanggan');
-    
+
     // Store
     Route::post('/pelanggan', [MarketingController::class, 'store'])->name('pelanggan.store');
-    
+
     // Edit
     Route::get('/pelanggan/{id}/edit', [MarketingController::class, 'edit'])->name('pelanggan.edit');
-    
+
     // Update
     Route::put('/pelanggan/{id}', [MarketingController::class, 'update'])->name('pelanggan.update');
 
@@ -711,16 +726,16 @@ Route::middleware(['auth'])->prefix('dashboard/marketing')->name('marketing.')->
     Route::get('/pelanggan/{id}/progres', [MarketingController::class, 'redirectProgresUpdatePage'])->name('pelanggan.progres.page');
     // Quick update progres (tanpa harus buka halaman edit)
     Route::post('/pelanggan/{id}/progres', [MarketingController::class, 'updateProgres'])->name('pelanggan.progres');
-    
+
     // Delete
     Route::delete('/pelanggan/{id}', [MarketingController::class, 'destroy'])->name('pelanggan.delete');
-    
+
     // AJAX Update SID
     Route::post('/pelanggan/{nomerid}/sid', [MarketingController::class, 'updateSid'])->name('pelanggan.sid');
-    
+
     // Import Excel
     Route::post('/pelanggan/import', [MarketingController::class, 'importExcel'])->name('pelanggan.import');
-    
+
     // DataTable JSON (Approve)
     Route::get('/pelanggan/approve/data', [MarketingController::class, 'getDataAprove'])->name('pelanggan.approve.data');
 });
@@ -734,7 +749,7 @@ Route::get('/test-redis', function () {
         return "Redis Error: " . $e->getMessage();
     }
 });
- 
+
 Route::prefix('mobile/customer')->middleware(['webview.token'])
     ->group(function () {
         Route::get('/tagihan', [MobileTagihanController::class, 'index'])->name('mobile.tagihan.index');
@@ -745,15 +760,15 @@ Route::prefix('mobile/customer')->middleware(['webview.token'])
         Route::get('/kwitansi', [WebviewKwitansiController::class, 'index'])->name('webview.kwitansi.index');
         Route::get('/kwitansi/{id}/preview', [WebviewKwitansiController::class, 'preview'])->name('webview.kwitansi.preview');
         Route::get('/kwitansi/{id}/download', [WebviewKwitansiController::class, 'download'])->name('webview.kwitansi.download');
-        Route::get('/chat', [ChatController::class, 'user'])->name('customer.chat');     
-        Route::get('/pelanggan/chat', [ChatController::class, 'pelanggan'])->name('chat.pelanggan');
-    Route::get('/chat/messages/{userId?}', [ChatController::class, 'getMessages'])->name('chat.messages');
-    Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
-    Route::get('/chat/users', [ChatController::class, 'getUserList'])->name('chat.users');
-    Route::post('/chat/mark-read/{userId}', [ChatController::class, 'markRead'])->name('chat.markRead');
-    Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unreadCount');
+        Route::get('/chat', [ChatController::class, 'user']);
+        Route::get('/pelanggan/chat', [ChatController::class, 'pelanggan']);
+        Route::get('/chat/messages/{userId?}', [ChatController::class, 'getMessages']);
+        Route::post('/chat/send', [ChatController::class, 'send']);
+        Route::get('/chat/users', [ChatController::class, 'getUserList']);
+        Route::post('/chat/mark-read/{userId}', [ChatController::class, 'markRead']);
+        Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount']);
 
-});
+    });
 
 Route::get('/pelanggan/export', [PelangganController::class, 'exportExcel']);
 
@@ -762,7 +777,7 @@ Route::get('/dashboard/admin/pelanggan/search', [TagihanController::class, 'sear
 
 
 
-Route::get('tagihan/export', [TagihanController::class, 'export'])->name('tagihan.bayar.export'); 
+Route::get('tagihan/export', [TagihanController::class, 'export'])->name('tagihan.bayar.export');
 
 // Public Share Gaji
 Route::get('/gaji/share/{id}', [GajiController::class, 'print'])->name('gaji.share.public');

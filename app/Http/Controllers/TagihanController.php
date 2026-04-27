@@ -385,9 +385,12 @@ class TagihanController extends Controller
 
         $paket = Paket::all();
 
-        // ? BUILD QUERY - HANYA STATUS "BELUM BAYAR"
+        // ? BUILD QUERY - HANYA STATUS "BELUM BAYAR" DAN JMK-GK
         $query = Tagihan::with(['pelanggan', 'paket'])
-            ->where('status_pembayaran', 'belum bayar');
+            ->where('status_pembayaran', 'belum bayar')
+            ->whereHas('pelanggan', function($q) {
+                $q->where('nomer_id', 'LIKE', '%JMK-GK%');
+            });
 
         // ? SEARCH FILTER - HANYA DI STATUS "BELUM BAYAR"
         if ($request->filled('search')) {
@@ -499,9 +502,12 @@ class TagihanController extends Controller
         $pelanggan = Pelanggan::all();
         $paket = Paket::all();
 
-        // Query builder dengan search
+        // Query builder dengan search (Hanya JMK-GK)
         $query = Tagihan::with(['pelanggan', 'paket'])
-            ->where('status_pembayaran', 'proses_verifikasi');
+            ->where('status_pembayaran', 'proses_verifikasi')
+            ->whereHas('pelanggan', function($q) {
+                $q->where('nomer_id', 'LIKE', '%JMK-GK%');
+            });
 
         // Tambahkan filter search jika ada parameter
         if ($search = $request->input('search')) {
@@ -660,12 +666,15 @@ class TagihanController extends Controller
 
 public function lunas(Request $request)
     {
-        // Eager load hanya kolom yang diperlukan
+        // Eager load hanya kolom yang diperlukan (Hanya JMK-GK)
         $query = Tagihan::with([
             'pelanggan:id,nama_lengkap,nomer_id,no_whatsapp,alamat_jalan,rt,rw,desa,kecamatan,kabupaten,provinsi,kode_pos', 
             'paket:id,nama_paket,harga,kecepatan,masa_pembayaran', 
             'rekening:id,nama_bank'
-        ])->where('status_pembayaran', 'lunas');
+        ])->where('status_pembayaran', 'lunas')
+          ->whereHas('pelanggan', function($q) {
+              $q->where('nomer_id', 'LIKE', '%JMK-GK%');
+          });
 
         // Filter search
         if ($search = $request->input('search')) {
@@ -736,7 +745,8 @@ public function lunas(Request $request)
         $term = $request->q;
 
         $query = Pelanggan::with('paket')
-            ->where('status', 'approve');
+            ->where('status', 'approve')
+            ->where('nomer_id', 'LIKE', '%JMK-GK%');
 
         if ($term) {
             $query->where(function ($q) use ($term) {

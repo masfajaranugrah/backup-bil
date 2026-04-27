@@ -93,10 +93,12 @@ public function exportExcel(Request $request)
 
    public function status(Request $request) 
     {
-        // ? Base query dengan eager loading
+        // ? Base query dengan eager loading (Hanya JMK-GK)
         $baseCondition = function($q) {
-            $q->where('progres', Pelanggan::PROGRES_REGISTRASI)
-              ->orWhere('status', 'approve');
+            $q->where(function($q2) {
+                $q2->where('progres', Pelanggan::PROGRES_REGISTRASI)
+                   ->orWhere('status', 'approve');
+            })->where('nomer_id', 'LIKE', '%JMK-GK%');
         };
 
         $query = Pelanggan::with([
@@ -166,8 +168,10 @@ public function index(Request $request)
     $statusFilter = $request->get('status');
 
     $baseCondition = function($q) {
-        $q->where('progres', Pelanggan::PROGRES_REGISTRASI)
-          ->orWhere('status', 'approve');
+        $q->where(function($q2) {
+            $q2->where('progres', Pelanggan::PROGRES_REGISTRASI)
+               ->orWhere('status', 'approve');
+        })->where('nomer_id', 'LIKE', '%JMK-GK%');
     };
 
     // Status counts (unfiltered by user search, but filtered by base condition)

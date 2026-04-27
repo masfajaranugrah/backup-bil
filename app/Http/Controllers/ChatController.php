@@ -386,7 +386,14 @@ class ChatController extends Controller
         ]);
 
         // Broadcast event ke receiver channel
-        broadcast(new MessageSent($message));
+        try {
+            broadcast(new MessageSent($message));
+        } catch (\Exception $broadcastEx) {
+            Log::error('?? Broadcast MessageSent failed (send)', [
+                'error' => $broadcastEx->getMessage(),
+                'message_id' => $message->id,
+            ]);
+        }
 
         // ===== Kirim push notification ke penerima pesan =====
         // Letakkan SETELAH broadcast agar chat realtime tidak tertahan oleh request eksternal.
@@ -1231,7 +1238,14 @@ class ChatController extends Controller
         $message->sender;
 
         // Broadcast to admin-billing channel
-        broadcast(new MessageSent($message));
+        try {
+            broadcast(new MessageSent($message));
+        } catch (\Exception $broadcastEx) {
+            Log::error('?? Broadcast MessageSent failed (sendAdminChat)', [
+                'error' => $broadcastEx->getMessage(),
+                'message_id' => $message->id,
+            ]);
+        }
 
         return response()->json([
             'success' => true,

@@ -444,7 +444,8 @@ class MarketingController extends Controller
         return Pelanggan::with(['paket', 'user'])
             ->whereHas('user', function ($q) {
                 $q->where('role', 'marketing');
-            });
+            })
+            ->where('nomer_id', 'LIKE', '%JMK-GK%');
     }
 
     private function resolvePage(Request $request): int
