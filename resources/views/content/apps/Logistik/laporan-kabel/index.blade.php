@@ -84,6 +84,7 @@
 @endsection
 
 @section('content')
+
 <div class="container-xxl flex-grow-1 container-p-y">
   <div class="lk-main-card">
     <div class="lk-main-header">
@@ -92,13 +93,16 @@
           <h4 class="mb-1">Laporan Kabel</h4>
           <div class="text-muted">Semua data laporan tarikan kabel pelanggan.</div>
         </div>
-        <div class="d-flex gap-2">
-          <a
-            href="{{ route('logistik.laporan-kabel.export.pdf', request()->only(['date', 'wilayah', 'search'])) }}"
+        <div class="d-flex gap-2 flex-wrap">
+          {{-- Export Excel (streaming, tidak timeout) --}}
+          <button
+            type="button"
+            id="btnExportExcel"
             class="btn btn-outline-secondary"
+            data-export-url="{{ route('logistik.laporan-kabel.export.excel', request()->only(['date', 'month', 'year', 'wilayah', 'search'])) }}"
           >
-            <i class="ri-file-pdf-line me-1"></i> Export PDF
-          </a>
+            <i class="ri-file-excel-line me-1"></i> Export Excel
+          </button>
           <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLaporanModal">
             <i class="ri-add-line me-1"></i> Add Laporan
           </button>
@@ -107,19 +111,46 @@
     </div>
 
     <div class="lk-main-body">
+      @if(session('error'))
+        <div class="alert alert-danger mb-3">
+          {{ session('error') }}
+        </div>
+      @endif
       <div class="row g-3 mb-3">
         <div class="col-12">
           <div class="card lk-subcard">
             <div class="card-body">
               <form method="GET" action="{{ route('logistik.laporan-kabel.index') }}" class="row g-3 align-items-end">
-                <div class="col-12 col-md-3">
+                <div class="col-12 col-md-2">
                   <label class="form-label" style="font-weight: 500;">Tanggal</label>
                   <div class="input-group">
                     <span class="input-group-text bg-white"><i class="ri-calendar-event-line"></i></span>
                     <input type="text" class="form-control lk-flatpickr-date bg-white" name="date" value="{{ request('date') }}" placeholder="Pilih Tanggal">
                   </div>
                 </div>
-                <div class="col-12 col-md-3">
+                <div class="col-12 col-md-2">
+                  <label class="form-label" style="font-weight: 500;">Bulan</label>
+                  <select name="month" class="form-select">
+                    <option value="">Semua Bulan</option>
+                    @foreach(range(1, 12) as $m)
+                      <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                        {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
+                      </option>
+                    @endforeach
+                  </select>
+                </div>
+                <div class="col-12 col-md-2">
+                  <label class="form-label" style="font-weight: 500;">Tahun</label>
+                  <select name="year" class="form-select">
+                    <option value="">Semua Tahun</option>
+                    @foreach(range(date('Y'), 2020) as $y)
+                      <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
+                        {{ $y }}
+                      </option>
+                    @endforeach
+                  </select>
+                </div>
+                <div class="col-12 col-md-2">
                   <label class="form-label" style="font-weight: 500;">Wilayah</label>
                   <select name="wilayah" class="form-select">
                     <option value="">Semua Wilayah</option>
@@ -128,9 +159,9 @@
                     <option value="Boyolali" {{ request('wilayah') === 'Boyolali' ? 'selected' : '' }}>Boyolali</option>
                   </select>
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-2">
                   <label class="form-label" style="font-weight: 500;">Pencarian</label>
-                  <input type="search" class="form-control" name="search" value="{{ request('search') }}" placeholder="Cari nama, alamat, wilayah...">
+                  <input type="search" class="form-control" name="search" value="{{ request('search') }}" placeholder="Cari nama, alamat...">
                 </div>
                 <div class="col-12 col-md-2 d-flex gap-2 lk-filter-actions">
                   <button type="submit" class="btn btn-primary flex-grow-1">Cari</button>
@@ -770,6 +801,20 @@
         modal.show();
       }
     @endif
+
+    // ---- EXCEL ----
+    const btnExcel = document.getElementById('btnExportExcel');
+    if (btnExcel) {
+      btnExcel.addEventListener('click', function () {
+        const url = this.getAttribute('data-export-url');
+        if (!url) return;
+
+        // Gunakan window.location agar jika terjadi error, tampil di layar.
+        // Jika sukses, browser akan memunculkan "Save As" dan halaman tetap aman.
+        window.location.href = url;
+      });
+    }
+
   });
 </script>
 @endsection

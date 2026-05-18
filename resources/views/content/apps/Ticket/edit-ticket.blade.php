@@ -37,12 +37,25 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Inisialisasi Select2
-    $('#priority, #category, #user_id, #status').select2({ width: '100%' });
+    $('#priority, #category, #status').select2({ width: '100%' });
+    $('#user_id').select2({
+        width: '100%',
+        placeholder: 'Cari karyawan...'
+    });
+
+    // Inisialisasi Flatpickr
+    flatpickr("#assignment_date", {
+        dateFormat: "Y-m-d",
+        allowInput: true
+    });
 });
 </script>
 @endsection
 
 @section('content')
+@php
+    $selectedPelanggan = $ticket->pelanggan;
+@endphp
 <div class="app-cs-ticket">
     <form action="{{ route('tickets.updates', $ticket->id) }}" method="POST" enctype="multipart/form-data">
         @csrf
@@ -52,10 +65,6 @@ document.addEventListener('DOMContentLoaded', function () {
             <div>
                 <h4 class="mb-1">Edit Ticket</h4>
                 <p class="text-muted mb-0">Perbarui data ticket sesuai kebutuhan.</p>
-            </div>
-            <div class="d-flex gap-3">
-                <a href="{{ route('tickets.indexs') }}" class="btn btn-outline-secondary">Batal</a>
-                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
             </div>
         </div>
 
@@ -116,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             <div class="mb-3">
                 <label for="paket_pelanggan" class="form-label">Paket Internet</label>
-                <input type="text" id="paket_pelanggan" class="form-control" readonly value="{{ optional($ticket->pelanggan->paket)->nama_paket }}">
+                <input type="text" id="paket_pelanggan" class="form-control" readonly value="{{ optional(optional($selectedPelanggan)->paket)->nama_paket }}">
             </div>
 
             <div class="mb-3">
@@ -170,15 +179,21 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
 
                         <div class="mb-3">
-                            <label for="user_id" class="form-label">Assign User / Teknisi</label>
+                            <label for="user_id" class="form-label">Assign User / Karyawan</label>
                             <select name="user_id" id="user_id" class="form-select" required>
-                                <option value="">-- Pilih User --</option>
+                                <option value="">-- Pilih Karyawan --</option>
                                 @foreach($users as $user)
                                     <option value="{{ $user->id }}" {{ $ticket->user_id == $user->id ? 'selected' : '' }}>
                                         {{ $user->name }}
                                     </option>
                                 @endforeach
                             </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="assignment_date" class="form-label">Tanggal Penugasan</label>
+                            <input type="text" class="form-control bg-white" id="assignment_date" name="assignment_date"
+                                value="{{ old('assignment_date', optional($ticket->assignment_date)->format('Y-m-d')) }}" placeholder="YYYY-MM-DD">
                         </div>
 
                         <div class="mb-3">

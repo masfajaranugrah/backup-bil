@@ -29,6 +29,7 @@ class Tagihan extends Model
         'kwitansi',
         'type_pembayaran',
         'read_at',
+        'is_exported',
     ];
 
     protected $casts = [

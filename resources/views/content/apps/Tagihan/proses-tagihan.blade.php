@@ -9,9 +9,36 @@
   'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
 ])
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 /* ========================================= */
 /* MODERN CLEAN STYLES - BLACK & WHITE THEME */
 /* ========================================= */
+
+.ticket-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 360px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #18181b;
+  color: #fff;
+  box-shadow: 0 14px 34px rgba(24,24,27,0.24);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transform: translateX(120%);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.ticket-toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
 
 /* SELECT2 OVERRIDES - BLACK & WHITE */
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
@@ -653,7 +680,7 @@
 }
 
 /* Loading Overlay */
-.loading-overlay {
+/* .loading-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -664,11 +691,39 @@
   align-items: center;
   justify-content: center;
   z-index: 9999;
-}
+} */
 
 /* ========================================= */
 /* DETAIL MODAL STYLES */
 /* ========================================= */
+#detailModal .modal-dialog {
+  margin: 0;
+  max-width: 100%;
+  height: 100dvh;
+}
+
+#detailModal .modal-content {
+  height: 100dvh;
+  border-radius: 0;
+  border: 0;
+  overflow: hidden;
+}
+
+#detailModal .modal-body {
+  padding: 0;
+  max-height: none;
+  height: 100%;
+  overflow-y: auto;
+}
+
+#detailModal .btn-close {
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  opacity: 1;
+}
+
 .customer-header-info {
   text-align: center;
   padding: 1.5rem;
@@ -790,7 +845,7 @@
   align-items: center;
   padding: 1.5rem;
   border-top: 1px solid #f0f0f0;
-  background: #fafafa;
+  background: transparent;
   border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
@@ -840,6 +895,49 @@
   border-color: #e4e4e7;
   color: #a1a1aa;
   cursor: not-allowed;
+}
+
+.pagination-wrapper .mui-pagination {
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.pagination-wrapper .mui-pagination .page-link {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: #1f2937 !important;
+  box-shadow: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.pagination-wrapper .mui-pagination .page-item.active .page-link {
+  background: #1f2933 !important;
+  color: #ffffff !important;
+}
+
+.pagination-wrapper .mui-pagination .page-link:hover {
+  background: rgba(31, 41, 51, 0.06) !important;
+  color: #111827 !important;
+}
+
+.pagination-wrapper .mui-pagination .page-item.disabled .page-link {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+}
+
+.pagination-wrapper .mui-pagination .pagination-ellipsis .page-link {
+  color: #64748b !important;
+  letter-spacing: 0.08em;
 }
 
 /* Hide Bootstrap Pagination Info Text (Showing X to Y of Z results) */
@@ -901,6 +999,339 @@ p:has(span.font-medium) {
     min-width: 120px;
   }
 }
+
+/* Match daftar tagihan visual system */
+.container-fluid {
+  font-family: 'Inter', sans-serif;
+}
+
+.card {
+  border: 1px solid #e9edf3 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04) !important;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: none !important;
+}
+
+.card-header {
+  background: #fff !important;
+  border-bottom: 1px solid #eef2f7 !important;
+  padding: 1.35rem 1.5rem !important;
+}
+
+.card-header h5 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #18181b;
+}
+
+.search-wrapper {
+  padding-top: 0.65rem;
+}
+
+.search-wrapper .input-group {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.search-wrapper .input-group-text,
+.search-wrapper .form-control {
+  border: 0 !important;
+  background: #fff !important;
+}
+
+.search-wrapper .form-control {
+  min-height: 46px;
+  font-weight: 500;
+}
+
+.table thead th {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-weight: 800 !important;
+}
+
+.table tbody td {
+  border-bottom: 1px dashed #e5eaf0 !important;
+}
+
+.verification-table {
+  min-width: 0;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.verification-table thead th {
+  padding: 1rem 0.85rem !important;
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  border-bottom: 1px solid #e5eaf0 !important;
+}
+
+.verification-table tbody td {
+  padding: 1.05rem 0.85rem !important;
+  border-bottom: 1px dashed #e5eaf0 !important;
+}
+
+.verification-table thead th:nth-child(1),
+.verification-table tbody td:nth-child(1) {
+  width: 58px;
+}
+
+.verification-table thead th:nth-child(2),
+.verification-table tbody td:nth-child(2) { width: 29%; }
+
+.verification-table thead th:nth-child(3),
+.verification-table tbody td:nth-child(3) { width: 14%; }
+
+.verification-table thead th:nth-child(4),
+.verification-table tbody td:nth-child(4) { width: 16%; }
+
+.verification-table thead th:nth-child(5),
+.verification-table tbody td:nth-child(5) { width: 13%; }
+
+.verification-table thead th:nth-child(6),
+.verification-table tbody td:nth-child(6) { width: 15%; }
+
+.verification-table thead th:nth-child(7),
+.verification-table tbody td:nth-child(7) { width: 48px; }
+
+.verification-table tbody tr:hover {
+  background: #fff !important;
+  transform: none !important;
+}
+
+.verification-check {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #cbd5e1;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: transparent;
+  transition: all 0.2s ease;
+}
+
+.verification-check.is-checked {
+  border-color: #22c55e;
+  background: #22c55e;
+  color: #fff;
+}
+
+.verification-customer {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+}
+
+.verification-avatar {
+  display: none !important;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 56px;
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 800;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+}
+
+.verification-name {
+  margin: 0;
+  color: #1f2937;
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.verification-subtext,
+.verification-date span,
+.verification-stock-text {
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.verification-subtext {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.verification-date {
+  min-width: 0;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.verification-date span {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.verification-stock {
+  min-width: 0;
+}
+
+.verification-stock-bar {
+  width: min(112px, 100%);
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #f1f5f9;
+  margin-bottom: 0.5rem;
+}
+
+.verification-stock-fill {
+  display: block;
+  width: 22%;
+  height: 100%;
+  border-radius: inherit;
+  background: #f59e0b;
+}
+
+.verification-price {
+  color: #111827;
+  font-size: 1.02rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.verification-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.48rem 0.8rem;
+  border-radius: 9px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.verification-status-pill.is-process {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.verification-action-btn {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.verification-action-btn:hover,
+.verification-action-btn:focus {
+  background: #f8fafc;
+  color: #111827;
+}
+
+.verification-action-menu {
+  border: 1px solid #e5eaf0;
+  border-radius: 18px;
+  padding: 0.75rem;
+  min-width: 210px;
+  background: linear-gradient(90deg, #fff4f1 0%, #f5fcff 100%);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+  margin-top: -65px !important;
+}
+
+.verification-action-menu::after {
+  content: '';
+  position: absolute;
+  top: 109px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  background: #f5fcff;
+  border-top: 1px solid #e5eaf0;
+  border-right: 1px solid #e5eaf0;
+  transform: rotate(45deg);
+}
+
+.verification-action-menu .dropdown-item {
+  border-radius: 10px;
+  gap: 0.85rem;
+  padding: 0.72rem 0.9rem;
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.verification-action-menu .dropdown-item:hover {
+  background: rgba(255,255,255,0.65);
+}
+
+.verification-action-menu .dropdown-item i {
+  width: 24px;
+  color: #1f2937;
+  font-size: 1.35rem;
+}
+
+.verification-action-menu .dropdown-item.danger-action {
+  color: #ff3b30;
+}
+
+.verification-action-menu .dropdown-item.danger-action i {
+  color: #ff3b30;
+}
+
+@media (max-width: 767.98px) {
+  .container-fluid {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .card-header {
+    padding: 1rem !important;
+  }
+
+  .search-wrapper .row {
+    gap: 0.75rem;
+  }
+
+  .search-wrapper .col-md-10,
+  .search-wrapper .col-md-2 {
+    width: 100%;
+  }
+
+  .search-wrapper .col-md-2 .d-flex {
+    width: 100%;
+  }
+
+  .search-wrapper .btn {
+    min-height: 44px;
+  }
+
+  .verification-table {
+    min-width: 760px;
+  }
+}
 </style>
 @endsection
 
@@ -915,6 +1346,25 @@ p:has(span.font-medium) {
 @section('page-script')
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    const buktiBaseUrl = "{{ asset('storage/bukti_pembayaran') }}";
+
+    function buildBuktiUrl(raw) {
+        const value = String(raw || '').trim();
+        if (!value || value === '-') return '';
+
+        let path = value;
+        try {
+            path = new URL(value, window.location.origin).pathname;
+        } catch (e) {
+            path = value;
+        }
+
+        const fileName = path.split('/').filter(Boolean).pop();
+        if (!fileName || fileName === '-') return '';
+
+        return `${buktiBaseUrl}/${encodeURIComponent(fileName)}`;
+    }
+
     // ========================================
     // HELPER FUNCTIONS
     // ========================================
@@ -926,6 +1376,28 @@ document.addEventListener("DOMContentLoaded", function () {
         $('.loading-overlay').fadeOut(300);
     }
 
+    function syncCheckedStateToTable() {
+        $('tr[data-tagihan-id]').each(function () {
+            const $row = $(this);
+            const tagihanId = String($row.data('tagihan-id') || '');
+            if (!tagihanId) return;
+
+            const isChecked = localStorage.getItem(`tagihan_checked_${tagihanId}`) === '1';
+            const $box = $row.find('.verification-check').first();
+            if (!$box.length) return;
+
+            if (isChecked) {
+                $box.addClass('is-checked')
+                    .html('<i class="ri-check-line" style="font-size:0.85rem;"></i>')
+                    .attr('title', 'Sudah dicek');
+            } else {
+                $box.removeClass('is-checked')
+                    .html('')
+                    .attr('title', 'Belum dicek');
+            }
+        });
+    }
+
     // ========================================
     // DETAIL MODAL - MODERN UI
     // ========================================
@@ -933,39 +1405,71 @@ document.addEventListener("DOMContentLoaded", function () {
         e.preventDefault();
         e.stopPropagation();
         
-        const tr = $(this).closest('tr');
+        const tr = this.closest('tr');
         const $tr = $(tr);
+        const readDetail = (key, fallback = '-') => {
+            const value = tr?.dataset?.[key];
+            return value === undefined || value === null || value === '' ? fallback : value;
+        };
         
-        // Get visible data from table
-        const nomorId = $tr.find('td').eq(1).text().trim() || '-';
-        const namaLengkap = $tr.find('td').eq(2).text().trim() || '-';
-        const noWhatsapp = $tr.find('td').eq(3).text().trim() || '-';
-        const statusPembayaran = $tr.find('td').eq(4).text().trim() || '-';
+        // Get data from attributes so the detail modal stays stable with minimal table layouts.
+        const nomorId = readDetail('nomorId');
+        const namaLengkap = readDetail('nama');
+        const noWhatsapp = readDetail('whatsapp');
+        const statusPembayaran = readDetail('statusLabel');
         
         // Get hidden data from data attributes
-        const alamatLengkap = $tr.data('alamat') || '-';
-        const kecamatan = $tr.data('kecamatan') || '-';
-        const kabupaten = $tr.data('kabupaten') || '-';
-        const provinsi = $tr.data('provinsi') || '-';
-        const paket = $tr.data('paket') || '-';
-        const harga = $tr.data('harga') || '-';
-        const kecepatan = $tr.data('kecepatan') || '-';
-        const tanggalMulai = $tr.data('tanggal-mulai') || '-';
-        const jatuhTempo = $tr.data('jatuh-tempo') || '-';
-        const catatan = $tr.data('catatan') || '-';
-        const buktiPembayaran = $tr.data('bukti') || '';
+        const alamatLengkap = readDetail('alamat');
+        const kecamatan = readDetail('kecamatan');
+        const kabupaten = readDetail('kabupaten');
+        const provinsi = readDetail('provinsi');
+        const paket = readDetail('paket');
+        const harga = readDetail('harga');
+        const kecepatan = readDetail('kecepatan');
+        const tanggalMulai = readDetail('tanggalMulai');
+        const jatuhTempo = readDetail('jatuhTempo');
+        const typePembayaran = readDetail('typePembayaran', 'Belum dipilih');
+        const catatan = readDetail('catatan');
+        const buktiPembayaran = buildBuktiUrl(readDetail('bukti', ''));
         
         // Get tagihan ID and status for button
         const tagihanId = $tr.data('tagihan-id');
         const nama = namaLengkap;
         const status = $tr.find('.btn-konfirmasi').length > 0 ? 'belum_bayar' : 'lunas';
+        const checkedKey = `tagihan_checked_${tagihanId}`;
+        const isChecked = localStorage.getItem(checkedKey) === '1';
         
         // Build bukti section
-        let buktiSection = '<span class="text-muted">-</span>';
+        let buktiSection = '<span class="text-muted">Belum ada bukti pembayaran.</span>';
         if (buktiPembayaran) {
-            buktiSection = `<button type="button" class="btn btn-sm btn-outline-primary btn-lihat-bukti" data-bukti="${buktiPembayaran}">
-                <i class="ri-image-line me-1"></i>Lihat Bukti
-            </button>`;
+            buktiSection = `
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <span class="badge ${isChecked ? 'bg-success' : 'bg-secondary'} rounded-pill px-3 py-2 bukti-checked-badge" data-tagihan-id="${tagihanId}">
+                        <i class="ri-pushpin-${isChecked ? 'fill' : 'line'} me-1"></i>${isChecked ? 'Sudah dicek' : 'Belum dicek'}
+                    </span>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm ${isChecked ? 'btn-success' : 'btn-outline-success'} btn-toggle-checked" data-tagihan-id="${tagihanId}">
+                            <i class="ri-check-line me-1"></i>${isChecked ? 'Ditandai' : 'Tandai Dicek'}
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-inline-zoom-toggle">
+                            <i class="ri-search-eye-line me-1"></i>Zoom
+                        </button>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mb-3">
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-inline-zoom-out" title="Zoom Out">-</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-inline-zoom-in" title="Zoom In">+</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-inline-zoom-reset" title="Reset">Reset</button>
+                </div>
+                <div class="bukti-inline-container border rounded-4 overflow-hidden shadow-sm" style="height: 430px; background:#f8fafc; position:relative; cursor:grab;">
+                    <img src="${buktiPembayaran}" alt="Bukti Pembayaran" class="bukti-inline-image" style="position:absolute; top:50%; left:50%; transform: translate(calc(-50% + 0px), calc(-50% + 0px)) scale(1); transform-origin:center center; max-width:none; user-select:none; -webkit-user-drag:none;">
+                </div>
+                <div class="mt-3 text-center">
+                    <a href="${buktiPembayaran}" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-4">
+                        <i class="ri-download-line me-1"></i>Unduh Bukti
+                    </a>
+                </div>
+            `;
         }
         
         const initial = namaLengkap ? namaLengkap.charAt(0).toUpperCase() : '?';
@@ -973,87 +1477,121 @@ document.addEventListener("DOMContentLoaded", function () {
         const statusClass = statusLower.includes('lunas') ? 'bg-success' : statusLower.includes('proses') ? 'bg-warning' : 'bg-secondary';
         
         const html = `
-            <div class="customer-header-info">
-                <div class="customer-avatar mx-auto">${initial}</div>
-                <div class="customer-name">${namaLengkap}</div>
-                <div class="customer-status ${statusClass}">
-                    <i class="ri-checkbox-circle-line me-2"></i>${statusPembayaran}
-                </div>
-            </div>
-
-            <div class="detail-section">
-                <h6><i class="ri-user-3-line"></i>Informasi Pelanggan</h6>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-id-card-line"></i>No. ID</span>
-                    <span class="detail-value"><strong>${nomorId}</strong></span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-user-line"></i>Nama Lengkap</span>
-                    <span class="detail-value">${namaLengkap}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-whatsapp-line"></i>No. WhatsApp</span>
-                    <span class="detail-value">
-                        <a href="https://wa.me/${noWhatsapp}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: #18181b; color: #fafafa; padding: 6px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-decoration: none;">
-                            <i class="ri-whatsapp-line"></i>${noWhatsapp}
-                        </a>
+            <div class="row g-0 min-vh-100">
+                <div class="col-lg-4 col-xl-3 border-end bg-light p-4 p-xl-5 d-flex flex-column align-items-center">
+                    <div class="customer-avatar mb-4" style="width: 120px; height: 120px; font-size: 3.5rem;">${initial}</div>
+                    <h3 class="fw-bold text-center mb-1" style="color:#1e293b;">${namaLengkap}</h3>
+                    <p class="text-muted text-center mb-4 fs-5">${nomorId}</p>
+                    <span class="badge ${statusClass} rounded-pill px-4 py-2 mb-5 fs-6 shadow-sm">
+                        <i class="ri-checkbox-circle-line me-1"></i>${statusPembayaran}
                     </span>
-                </div>
-            </div>
 
-            <div class="detail-section">
-                <h6><i class="ri-map-pin-line"></i>Alamat Lengkap</h6>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-map-2-line"></i>Alamat</span>
-                    <span class="detail-value">${alamatLengkap}</span>
+                    <div class="w-100 mt-2">
+                        <div class="d-flex align-items-center mb-4 p-3 bg-white rounded-3 shadow-sm border">
+                            <div class="bg-light p-3 rounded shadow-sm me-3"><i class="ri-whatsapp-line text-success fs-3"></i></div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.75rem;">WhatsApp</small>
+                                <a href="https://wa.me/${String(noWhatsapp).replace(/\\D/g, '')}" target="_blank" class="text-dark fw-bold text-decoration-none fs-5">${noWhatsapp}</a>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-4 p-3 bg-white rounded-3 shadow-sm border">
+                            <div class="bg-light p-3 rounded shadow-sm me-3"><i class="ri-map-pin-line text-primary fs-3"></i></div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.75rem;">Alamat</small>
+                                <span class="text-dark fw-bold fs-6">${alamatLengkap}</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-4 p-3 bg-white rounded-3 shadow-sm border">
+                            <div class="bg-light p-3 rounded shadow-sm me-3"><i class="ri-building-line text-info fs-3"></i></div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.75rem;">Area</small>
+                                <span class="text-dark fw-bold fs-6">${kecamatan}, ${kabupaten}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-building-line"></i>Kecamatan</span>
-                    <span class="detail-value">${kecamatan}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-community-line"></i>Kabupaten</span>
-                    <span class="detail-value">${kabupaten}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-map-pin-2-line"></i>Provinsi</span>
-                    <span class="detail-value">${provinsi}</span>
-                </div>
-            </div>
 
-            <div class="detail-section">
-                <h6><i class="ri-box-3-line"></i>Informasi Paket</h6>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-box-line"></i>Nama Paket</span>
-                    <span class="detail-value"><span class="badge bg-label-info">${paket}</span></span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-money-dollar-circle-line"></i>Harga</span>
-                    <span class="detail-value"><strong>${harga}</strong></span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-speed-line"></i>Kecepatan</span>
-                    <span class="detail-value">${kecepatan}</span>
-                </div>
-            </div>
+                <div class="col-lg-8 col-xl-9 p-4 p-xl-5">
+                    <div class="max-w-4xl mx-auto py-4">
+                        <h2 class="fw-bold mb-2 text-dark">Ringkasan Tagihan</h2>
+                        <p class="text-muted mb-5 fs-5">Rincian paket layanan dan status verifikasi pelanggan.</p>
 
-            <div class="detail-section">
-                <h6><i class="ri-calendar-check-line"></i>Informasi Tagihan</h6>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-calendar-line"></i>Tanggal Mulai</span>
-                    <span class="detail-value">${tanggalMulai}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-calendar-event-line"></i>Jatuh Tempo</span>
-                    <span class="detail-value"><strong class="text-danger">${jatuhTempo}</strong></span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-file-list-line"></i>Bukti Pembayaran</span>
-                    <span class="detail-value">${buktiSection}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label"><i class="ri-file-text-line"></i>Catatan</span>
-                    <span class="detail-value">${catatan}</span>
+                        <div class="row g-4 mb-5">
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100 rounded-4" style="background:linear-gradient(135deg,#eff6ff 0%,#ffffff 100%); border-left:6px solid #3b82f6 !important;">
+                                    <div class="card-body p-4 p-xl-5">
+                                        <div class="d-flex justify-content-between align-items-start mb-4">
+                                            <div>
+                                                <p class="text-primary fw-bold mb-1 text-uppercase" style="letter-spacing:1px;">Paket Layanan</p>
+                                                <h3 class="fw-bold mb-0 text-dark">${paket}</h3>
+                                            </div>
+                                            <div class="bg-white p-3 rounded-circle shadow-sm"><i class="ri-router-line text-primary fs-2"></i></div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-4 mt-5">
+                                            <div>
+                                                <small class="text-muted d-block mb-1 text-uppercase fw-bold">Kecepatan</small>
+                                                <span class="fw-bold fs-4 text-dark">${kecepatan}</span>
+                                            </div>
+                                            <div class="border-start ps-4">
+                                                <small class="text-muted d-block mb-1 text-uppercase fw-bold">Harga per Bulan</small>
+                                                <span class="fw-bold text-success fs-4">${harga}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100 rounded-4" style="background:linear-gradient(135deg,#fef2f2 0%,#ffffff 100%); border-left:6px solid #ef4444 !important;">
+                                    <div class="card-body p-4 p-xl-5">
+                                        <div class="d-flex justify-content-between align-items-start mb-4">
+                                            <div>
+                                                <p class="text-danger fw-bold mb-1 text-uppercase" style="letter-spacing:1px;">Jatuh Tempo</p>
+                                                <h3 class="fw-bold mb-0 text-dark">${jatuhTempo}</h3>
+                                            </div>
+                                            <div class="bg-white p-3 rounded-circle shadow-sm"><i class="ri-calendar-event-line text-danger fs-2"></i></div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-4 mt-5">
+                                            <div>
+                                                <small class="text-muted d-block mb-1 text-uppercase fw-bold">Tanggal Mulai</small>
+                                                <span class="fw-bold fs-4 text-dark">${tanggalMulai}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 class="fw-bold mb-4 text-dark"><i class="ri-bank-card-line me-2"></i>Metode Pembayaran</h4>
+                        <div class="bg-white p-4 rounded-4 shadow-sm border mb-5">
+                            <div class="d-flex align-items-center justify-content-between gap-3">
+                                <span class="text-muted fw-semibold">Type Pembayaran</span>
+                                <span class="badge bg-label-primary px-3 py-2 fs-6">${typePembayaran}</span>
+                            </div>
+                        </div>
+
+                        <h4 class="fw-bold mb-4 text-dark"><i class="ri-file-text-line me-2"></i>Catatan Tambahan</h4>
+                        <div class="bg-white p-4 rounded-4 shadow-sm border mb-5">
+                            <p class="mb-0 text-secondary fs-5" style="line-height:1.6;">${catatan || 'Tidak ada catatan khusus untuk pelanggan ini.'}</p>
+                        </div>
+
+                        <h4 class="fw-bold mb-4 text-dark"><i class="ri-image-line me-2"></i>Bukti Pembayaran</h4>
+                        <div class="bg-white p-4 rounded-4 shadow-sm border mb-4">
+                            ${buktiSection}
+                        </div>
+
+                        <div class="d-flex flex-wrap justify-content-end gap-2 mt-4 pt-3 border-top">
+                            <button type="button" class="btn btn-outline-primary px-4" id="btnEditPaket">
+                                <i class="ri-edit-line me-1"></i>Edit Paket
+                            </button>
+                            <button type="button" class="btn btn-danger px-4" id="btnTolakPembayaran">
+                                <i class="ri-close-circle-line me-1"></i>Tolak Pembayaran
+                            </button>
+                            <button type="button" class="btn btn-success px-4" id="btnKonfirmasiDetail">
+                                <i class="ri-check-circle-line me-1"></i>Konfirmasi Lunas
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -1071,6 +1609,34 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         
         $('#detailModal').modal('show');
+    });
+
+    $(document).on('click', '.btn-toggle-checked', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const $btn = $(this);
+        const tagihanId = String($btn.data('tagihan-id') || '');
+        if (!tagihanId) return;
+
+        const key = `tagihan_checked_${tagihanId}`;
+        const nextChecked = localStorage.getItem(key) !== '1';
+        localStorage.setItem(key, nextChecked ? '1' : '0');
+
+        const $badge = $(`.bukti-checked-badge[data-tagihan-id="${tagihanId}"]`);
+        if (nextChecked) {
+            $btn.removeClass('btn-outline-success').addClass('btn-success')
+                .html('<i class="ri-check-line me-1"></i>Ditandai');
+            $badge.removeClass('bg-secondary').addClass('bg-success')
+                .html('<i class="ri-pushpin-fill me-1"></i>Sudah dicek');
+        } else {
+            $btn.removeClass('btn-success').addClass('btn-outline-success')
+                .html('<i class="ri-check-line me-1"></i>Tandai Dicek');
+            $badge.removeClass('bg-success').addClass('bg-secondary')
+                .html('<i class="ri-pushpin-line me-1"></i>Belum dicek');
+        }
+
+        syncCheckedStateToTable();
     });
 
     // ========================================
@@ -1105,7 +1671,7 @@ document.addEventListener("DOMContentLoaded", function () {
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                showLoading();
+                // showLoading();
                 
                 $.ajax({
                     url: `/dashboard/admin/tagihan/${tagihanId}/bayar`,
@@ -1114,28 +1680,25 @@ document.addEventListener("DOMContentLoaded", function () {
                         _token: $('meta[name="csrf-token"]').attr('content'),
                     },
                     success: function(response) {
-                        hideLoading();
+                        // hideLoading();
                         if(response.success) {
                             $('#detailModal').modal('hide');
-                            Swal.fire({
-                                title: 'Pembayaran Dikonfirmasi!',
-                                html: `
-                                    <p>Tagihan <strong>${nama}</strong> telah ditandai lunas.</p>
-                                    <a href="${response.pdfUrl}" target="_blank" class="btn btn-primary mt-3">
-                                        <i class="ri-printer-line me-1"></i> Cetak Kwitansi
-                                    </a>
-                                `,
-                                icon: 'success',
-                                showConfirmButton: false,
-                                allowOutsideClick: true,
-                                didClose: () => location.reload()
-                            });
+                            
+                            // Update the row dynamically by removing it
+                            const row = $(`tr[data-tagihan-id="${tagihanId}"]`);
+                            if (row.length) {
+                                row.fadeOut(400, function() {
+                                    $(this).remove();
+                                });
+                            }
+
+                            showToast(`Tagihan ${nama} telah ditandai lunas.`);
                         } else {
                             Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
                         }
                     },
                     error: function() {
-                        hideLoading();
+                        // hideLoading();
                         Swal.fire('Gagal!', 'Terjadi kesalahan server.', 'error');
                     }
                 });
@@ -1175,7 +1738,7 @@ document.addEventListener("DOMContentLoaded", function () {
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                showLoading();
+                // showLoading();
                 
                 $.ajax({
                     url: `/dashboard/admin/tagihan/${tagihanId}/kembalikan-belum-bayar`,
@@ -1184,9 +1747,18 @@ document.addEventListener("DOMContentLoaded", function () {
                         _token: $('meta[name="csrf-token"]').attr('content'),
                     },
                     success: function(response) {
-                        hideLoading();
+                        // hideLoading();
                         if(response.success) {
                             $('#detailModal').modal('hide');
+                            
+                            // Update the row dynamically by removing it
+                            const row = $(`tr[data-tagihan-id="${tagihanId}"]`);
+                            if (row.length) {
+                                row.fadeOut(400, function() {
+                                    $(this).remove();
+                                });
+                            }
+
                             Swal.fire({
                                 title: 'Pembayaran Ditolak!',
                                 html: `<p>Tagihan <strong>${nama}</strong> telah dikembalikan ke status "Belum Bayar".</p>`,
@@ -1195,15 +1767,14 @@ document.addEventListener("DOMContentLoaded", function () {
                                 customClass: {
                                     confirmButton: 'btn btn-primary'
                                 },
-                                buttonsStyling: false,
-                                didClose: () => location.reload()
+                                buttonsStyling: false
                             });
                         } else {
                             Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
                         }
                     },
                     error: function(xhr) {
-                        hideLoading();
+                        // hideLoading();
                         const response = xhr.responseJSON;
                         Swal.fire('Gagal!', response?.message || 'Terjadi kesalahan server.', 'error');
                     }
@@ -1355,7 +1926,7 @@ document.addEventListener("DOMContentLoaded", function () {
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                showLoading();
+                // showLoading();
                 
                 $.ajax({
                     url: `/dashboard/admin/tagihan/${tagihanId}/update-paket`,
@@ -1367,32 +1938,61 @@ document.addEventListener("DOMContentLoaded", function () {
                         tanggal_berakhir: tanggalBerakhir
                     },
                     success: function(response) {
-                        hideLoading();
+                        // hideLoading();
                         if(response.success) {
+                            const d = response.data || {};
+                            const $row = $(`tr[data-tagihan-id="${tagihanId}"]`);
+                            if ($row.length) {
+                                const paketNama = d.paket_nama || '';
+                                const hargaFormatted = d.harga_formatted || '';
+                                const kecepatanText = d.kecepatan ? `${d.kecepatan} Mbps` : '';
+
+                                if (d.paket_id) $row.attr('data-paket-id', d.paket_id);
+                                if (paketNama) $row.attr('data-paket', paketNama);
+                                if (hargaFormatted) $row.attr('data-harga', hargaFormatted);
+                                if (kecepatanText) $row.attr('data-kecepatan', kecepatanText);
+                                if (d.tanggal_mulai_formatted) $row.attr('data-tanggal-mulai', d.tanggal_mulai_formatted);
+                                if (d.tanggal_berakhir_formatted) $row.attr('data-jatuh-tempo', d.tanggal_berakhir_formatted);
+                                if (d.tanggal_mulai) $row.attr('data-tanggal-mulai-raw', d.tanggal_mulai);
+                                if (d.tanggal_berakhir) $row.attr('data-tanggal-berakhir-raw', d.tanggal_berakhir);
+
+                                const nomorId = $row.attr('data-nomor-id') || '-';
+                                if (paketNama) {
+                                    $row.find('.verification-subtext').text(`${nomorId} · ${$row.attr('data-whatsapp') || '-'}`);
+                                }
+                                if (d.tanggal_berakhir_formatted) {
+                                    $row.find('.verification-date').contents().first()[0].textContent = `${d.tanggal_berakhir_formatted} `;
+                                }
+                                if (hargaFormatted) {
+                                    $row.find('.verification-price').text(hargaFormatted);
+                                }
+                            }
+
                             $('#editPaketModal').modal('hide');
-                            Swal.fire({
-                                title: 'Berhasil!',
-                                html: `<p>Paket untuk <strong>${nama}</strong> telah diperbarui.</p>`,
-                                icon: 'success',
-                                confirmButtonText: 'OK',
-                                customClass: {
-                                    confirmButton: 'btn btn-primary'
-                                },
-                                buttonsStyling: false,
-                                didClose: () => location.reload()
-                            });
+                            showToast(`Paket untuk ${nama} telah diperbarui.`);
                         } else {
                             Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
                         }
                     },
                     error: function(xhr) {
-                        hideLoading();
+                        // hideLoading();
                         const response = xhr.responseJSON;
                         Swal.fire('Gagal!', response?.message || 'Terjadi kesalahan server.', 'error');
                     }
                 });
             }
         });
+    });
+
+    $(document).on('click', '.btn-edit-paket-row', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        $('#detailModal')
+            .data('tagihan-id', $(this).data('id'))
+            .data('tagihan-nama', $(this).data('nama'));
+
+        $('#btnEditPaket').trigger('click');
     });
 
     // ========================================
@@ -1434,7 +2034,7 @@ document.addEventListener("DOMContentLoaded", function () {
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                showLoading();
+                // showLoading();
                 
                 $.ajax({
                     url: `/dashboard/admin/tagihan/${tagihanId}/bayar`,
@@ -1443,21 +2043,17 @@ document.addEventListener("DOMContentLoaded", function () {
                         _token: $('meta[name="csrf-token"]').attr('content'),
                     },
                     success: function(response) {
-                        hideLoading();
+                        // hideLoading();
                         if(response.success) {
-                            Swal.fire({
-                                title: 'Pembayaran Dikonfirmasi!',
-                                html: `
-                                    <p>Tagihan <strong>${nama}</strong> telah ditandai lunas.</p>
-                                    <a href="${response.pdfUrl}" target="_blank" class="btn btn-primary mt-3">
-                                        <i class="ri-printer-line me-1"></i> Cetak Kwitansi
-                                    </a>
-                                `,
-                                icon: 'success',
-                                showConfirmButton: false,
-                                allowOutsideClick: true,
-                                didClose: () => location.reload()
-                            });
+                            // Update the row dynamically by removing it
+                            const row = $(`tr[data-tagihan-id="${tagihanId}"]`);
+                            if (row.length) {
+                                row.fadeOut(400, function() {
+                                    $(this).remove();
+                                });
+                            }
+
+                            showToast(`Tagihan ${nama} telah ditandai lunas.`);
                         } else {
                             Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
                         }
@@ -1471,54 +2067,162 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // ========================================
-    // LIHAT BUKTI PEMBAYARAN - MODAL IMAGE
-    // ========================================
-    $(document).on('click', '.btn-lihat-bukti', function(e) {
+    $(document).on('submit', '.delete-form', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        
-        const buktiUrl = $(this).data('bukti');
-        
-        if (buktiUrl) {
-            // Set image source
-            $('#buktiImage').attr('src', buktiUrl);
-            
-            // Hide detail modal and show bukti modal
-            $('#detailModal').modal('hide');
-            
-            // Wait for detail modal to hide before showing bukti modal
-            setTimeout(function() {
-                $('#buktiModal').modal('show');
-            }, 300);
-        }
+
+        const form = this;
+        const $form = $(form);
+        const $row = $form.closest('tr');
+
+        Swal.fire({
+            title: 'Konfirmasi Penghapusan',
+            html: '<p class="mb-0">Yakin ingin menghapus tagihan ini?<br><strong class="text-danger">Data tidak dapat dikembalikan!</strong></p>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '<i class="ri-delete-bin-line me-1"></i>Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                confirmButton: 'btn btn-danger me-2',
+                cancelButton: 'btn btn-secondary'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            $.ajax({
+                url: $form.attr('action'),
+                method: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    _method: 'DELETE'
+                },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                success: function(resp) {
+                    if (resp.success) {
+                        $row.fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                        showToast(resp.message || 'Tagihan berhasil dihapus.');
+                    } else {
+                        Swal.fire('Gagal!', resp.message || 'Terjadi kesalahan.', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    const msg = xhr.responseJSON?.message || 'Terjadi kesalahan server.';
+                    Swal.fire('Gagal!', msg, 'error');
+                }
+            });
+        });
     });
 
     // ========================================
-    // KEMBALI DARI MODAL BUKTI KE MODAL DETAIL
+    // ZOOM + DRAG BUKTI INLINE (tanpa popup)
     // ========================================
-    $(document).on('click', '#btnBackToDetail', function(e) {
-        e.preventDefault();
-        
-        // Hide bukti modal and show detail modal
-        $('#buktiModal').modal('hide');
-        
-        // Wait for bukti modal to hide before showing detail modal
-        setTimeout(function() {
-            $('#detailModal').modal('show');
-        }, 300);
+    function applyInlineTransform($container) {
+        const $img = $container.find('.bukti-inline-image');
+        const scale = Number($container.attr('data-scale') || 1);
+        const x = Number($container.attr('data-x') || 0);
+        const y = Number($container.attr('data-y') || 0);
+        $img.css('transform', `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale})`);
+    }
+
+    function initInlineViewer($container) {
+        if ($container.attr('data-init') === '1') return;
+        $container.attr('data-init', '1');
+        $container.attr('data-scale', '1');
+        $container.attr('data-x', '0');
+        $container.attr('data-y', '0');
+        applyInlineTransform($container);
+    }
+
+    $(document).on('mouseenter', '.bukti-inline-container', function() {
+        initInlineViewer($(this));
     });
+
+    $(document).on('click', '.btn-inline-zoom-toggle', function(e) {
+        e.preventDefault();
+        const $container = $(this).closest('.bg-white').find('.bukti-inline-container');
+        initInlineViewer($container);
+        const current = Number($container.attr('data-scale') || 1);
+        const next = current <= 1 ? 2 : 1;
+        $container.attr('data-scale', String(next));
+        if (next === 1) {
+            $container.attr('data-x', '0');
+            $container.attr('data-y', '0');
+        }
+        applyInlineTransform($container);
+    });
+
+    $(document).on('click', '.btn-inline-zoom-in, .btn-inline-zoom-out, .btn-inline-zoom-reset', function(e) {
+        e.preventDefault();
+        const $container = $(this).closest('.bg-white').find('.bukti-inline-container');
+        initInlineViewer($container);
+
+        const current = Number($container.attr('data-scale') || 1);
+        if ($(this).hasClass('btn-inline-zoom-reset')) {
+            $container.attr('data-scale', '1');
+            $container.attr('data-x', '0');
+            $container.attr('data-y', '0');
+        } else if ($(this).hasClass('btn-inline-zoom-in')) {
+            $container.attr('data-scale', String(Math.min(6, current + 0.2)));
+        } else {
+            $container.attr('data-scale', String(Math.max(0.5, current - 0.2)));
+        }
+        applyInlineTransform($container);
+    });
+
+    $(document).on('wheel', '.bukti-inline-container', function(e) {
+        e.preventDefault();
+        const $container = $(this);
+        initInlineViewer($container);
+        const current = Number($container.attr('data-scale') || 1);
+        const delta = e.originalEvent.deltaY < 0 ? 0.12 : -0.12;
+        $container.attr('data-scale', String(Math.min(6, Math.max(0.5, current + delta))));
+        applyInlineTransform($container);
+    });
+
+    $(document).on('mousedown', '.bukti-inline-container', function(e) {
+        const $container = $(this);
+        initInlineViewer($container);
+        $container.attr('data-dragging', '1');
+        $container.attr('data-start-x', String(e.clientX));
+        $container.attr('data-start-y', String(e.clientY));
+        $container.css('cursor', 'grabbing');
+    });
+
+    $(document).on('mousemove', function(e) {
+        const $container = $('.bukti-inline-container[data-dragging="1"]');
+        if (!$container.length) return;
+
+        const startX = Number($container.attr('data-start-x') || 0);
+        const startY = Number($container.attr('data-start-y') || 0);
+        const x = Number($container.attr('data-x') || 0);
+        const y = Number($container.attr('data-y') || 0);
+
+        $container.attr('data-start-x', String(e.clientX));
+        $container.attr('data-start-y', String(e.clientY));
+        $container.attr('data-x', String(x + (e.clientX - startX)));
+        $container.attr('data-y', String(y + (e.clientY - startY)));
+        applyInlineTransform($container);
+    });
+
+    $(document).on('mouseup', function() {
+        $('.bukti-inline-container[data-dragging="1"]').attr('data-dragging', '0').css('cursor', 'grab');
+    });
+
+    // initial paint untuk indikator "sudah dicek" di tabel
+    syncCheckedStateToTable();
 });
 </script>
 @endsection
 
 @section('content')
-<!-- Loading Overlay -->
-<div class="loading-overlay">
-    <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status">
-        <span class="visually-hidden">Loading...</span>
-    </div>
-</div>
+
 
 <div class="container-fluid px-4 py-4">
   <!-- ========================================= -->
@@ -1559,7 +2263,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <input type="text" 
                   class="form-control" 
                   name="search" 
-                  placeholder="Cari berdasarkan Nama, No. ID, WhatsApp, Paket, Alamat, Kecamatan, Kabupaten..." 
+                  placeholder="Cari berdasarkan Nama, No. ID, WhatsApp, Alamat, Kecamatan, Kabupaten..." 
                   value="{{ request('search') }}"
                   autocomplete="off">
               </div>
@@ -1585,28 +2289,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0 verification-table">
           <thead>
             <tr>
-              <th><i class="ri-eye-line me-1"></i>Detail</th>
-              <th><i class="ri-barcode-line me-1"></i>No. ID</th>
-              <th><i class="ri-user-3-line me-1"></i>Nama</th>
-              <th><i class="ri-whatsapp-line me-1"></i>WhatsApp</th>
-              <th><i class="ri-shield-check-line me-1"></i>Status</th>
-              <th><i class="ri-box-3-line me-1"></i>Paket</th>
-              <th><i class="ri-money-dollar-circle-line me-1"></i>Harga</th>
-              <th><i class="ri-settings-3-line me-1"></i>Actions</th>
+              <th style="width: 56px;"><span class="verification-check"></span></th>
+              <th>Pelanggan</th>
+              <th>Jatuh tempo</th>
+              <th>Progres</th>
+              <th>Tagihan</th>
+              <th>Status</th>
+              <th style="width: 70px;"></th>
             </tr>
           </thead>
           <tbody>
             @forelse($tagihans as $item)
             @php
               $status = strtolower($item->status_pembayaran ?? '');
-              $badgeClass = match($status) {
-                'lunas' => 'badge bg-success',
-                'proses_verifikasi' => 'badge bg-warning',
-                default => 'badge bg-secondary',
-              };
+              $statusLabel = ucwords(str_replace('_', ' ', $status) ?: 'Belum Bayar');
+              $colors = ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899'];
+              $nameSeed = $item->pelanggan->nama_lengkap ?? '-';
+              $bgColor = $colors[strlen($nameSeed) % count($colors)];
 
               $alamatParts = [];
               if($item->pelanggan->alamat_jalan ?? '') $alamatParts[] = $item->pelanggan->alamat_jalan;
@@ -1618,67 +2320,132 @@ document.addEventListener("DOMContentLoaded", function () {
               if($item->pelanggan->kabupaten ?? '') $alamatParts[] = 'Kabupaten '.$item->pelanggan->kabupaten;
               if($item->pelanggan->provinsi ?? '') $alamatParts[] = $item->pelanggan->provinsi;
               $alamatLengkap = implode(', ', $alamatParts);
+              $hargaFormatted = 'Rp ' . number_format($item->paket->harga ?? 0, 0, ',', '.');
+              $tanggalMulaiFormatted = $item->tanggal_mulai ? \Carbon\Carbon::parse($item->tanggal_mulai)->format('d M Y') : '-';
+              $jatuhTempoFormatted = $item->tanggal_berakhir ? \Carbon\Carbon::parse($item->tanggal_berakhir)->format('d M Y') : '-';
+              $rawTypePembayaran = trim((string)($item->type_pembayaran ?? ''));
+              if ($rawTypePembayaran === '') {
+                $typePembayaranLabel = 'Belum dipilih';
+              } elseif (strtolower($rawTypePembayaran) === 'cash') {
+                $typePembayaranLabel = 'Cash / Tunai';
+              } elseif (!empty($item->rekening->nama_bank ?? null)) {
+                $typePembayaranLabel = $item->rekening->nama_bank;
+              } else {
+                $typePembayaranLabel = $rawTypePembayaran;
+              }
+              $buktiRaw = trim((string)($item->bukti_pembayaran ?? ''));
+              if ($buktiRaw !== '' && $buktiRaw !== '-') {
+                $buktiFile = basename(parse_url($buktiRaw, PHP_URL_PATH) ?: $buktiRaw);
+                $buktiUrl = ($buktiFile && $buktiFile !== '-')
+                  ? asset('storage/bukti_pembayaran/' . $buktiFile)
+                  : '';
+              } else {
+                $buktiUrl = '';
+              }
             @endphp
 
             <tr 
               data-tagihan-id="{{ $item->id }}"
+              data-nomor-id="{{ $item->pelanggan->nomer_id ?? '-' }}"
+              data-nama="{{ $item->pelanggan->nama_lengkap ?? '-' }}"
+              data-whatsapp="{{ $item->pelanggan->no_whatsapp ?? '-' }}"
+              data-status-label="{{ $statusLabel }}"
               data-alamat="{{ $alamatLengkap }}"
               data-kecamatan="{{ $item->pelanggan->kecamatan ?? '-' }}"
               data-kabupaten="{{ $item->pelanggan->kabupaten ?? '-' }}"
               data-provinsi="{{ $item->pelanggan->provinsi ?? '-' }}"
               data-paket="{{ $item->paket->nama_paket ?? '-' }}"
               data-paket-id="{{ $item->paket->id ?? '' }}"
-              data-harga="Rp {{ number_format($item->paket->harga ?? 0, 0, ',', '.') }}"
+              data-harga="{{ $hargaFormatted }}"
               data-kecepatan="{{ $item->paket->kecepatan ?? '-' }} Mbps"
-              data-tanggal-mulai="{{ $item->tanggal_mulai ? \Carbon\Carbon::parse($item->tanggal_mulai)->format('d M Y') : '-' }}"
+              data-tanggal-mulai="{{ $tanggalMulaiFormatted }}"
               data-tanggal-mulai-raw="{{ $item->tanggal_mulai ? \Carbon\Carbon::parse($item->tanggal_mulai)->format('Y-m-d') : '' }}"
-              data-jatuh-tempo="{{ $item->tanggal_berakhir ? \Carbon\Carbon::parse($item->tanggal_berakhir)->format('d M Y') : '-' }}"
+              data-jatuh-tempo="{{ $jatuhTempoFormatted }}"
               data-tanggal-berakhir-raw="{{ $item->tanggal_berakhir ? \Carbon\Carbon::parse($item->tanggal_berakhir)->format('Y-m-d') : '' }}"
               data-catatan="{{ $item->catatan ?? '-' }}"
-              data-bukti="{{ !empty($item->bukti_pembayaran) ? asset('storage/' . $item->bukti_pembayaran) : '' }}"
+              data-type-pembayaran="{{ $typePembayaranLabel }}"
+              data-bukti="{{ $buktiUrl }}"
             >
               <td>
-                <button class="btn btn-sm btn-icon btn-outline-primary btn-detail" title="Lihat Detail">
-                  <i class="ri-eye-line"></i>
-                </button>
-              </td>
-              <td><span class="badge bg-label-dark">{{ $item->pelanggan->nomer_id ?? '-' }}</span></td>
-              <td><strong>{{ $item->pelanggan->nama_lengkap ?? '-' }}</strong></td>
-              <td>
-                <a href="https://wa.me/{{ $item->pelanggan->no_whatsapp ?? '' }}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: #18181b; color: #fafafa; padding: 6px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-decoration: none; white-space: nowrap;">
-                  <i class="ri-whatsapp-line"></i>{{ $item->pelanggan->no_whatsapp ?? '-' }}
-                </a>
+                <span class="verification-check"></span>
               </td>
               <td>
-                <span class="{{ $badgeClass }}">
-                  <i class="ri-time-line me-1"></i>{{ ucfirst(str_replace('_', ' ', $status) ?: 'Belum Bayar') }}
-                </span>
+                <div class="verification-customer">
+                  <div>
+                    <h6 class="verification-name">{{ $item->pelanggan->nama_lengkap ?? '-' }}</h6>
+                    <div class="verification-subtext">{{ $item->pelanggan->nomer_id ?? '-' }} · {{ $item->pelanggan->no_whatsapp ?? '-' }}</div>
+                  </div>
+                </div>
               </td>
               <td>
-                <span class="badge bg-label-info">
-                  <i class="ri-box-line me-1"></i>{{ $item->paket->nama_paket ?? '-' }}
-                </span>
+                <div class="verification-date">
+                  {{ $jatuhTempoFormatted }}
+                  <span>{{ $item->tanggal_berakhir ? \Carbon\Carbon::parse($item->tanggal_berakhir)->translatedFormat('h:i a') : '' }}</span>
+                </div>
               </td>
-              <td><strong>Rp {{ number_format($item->paket->harga ?? 0, 0, ',', '.') }}</strong></td>
               <td>
-                <div class="d-flex gap-2 flex-wrap">
-                  @if($status === 'lunas')
-                    <button class="btn btn-sm btn-secondary" disabled>
-                      <i class="ri-check-circle-line me-1"></i> Lunas
-                    </button>
-                  @else
-                    <button class="btn btn-sm btn-success btn-konfirmasi" 
-                      data-id="{{ $item->id }}" 
-                      data-nama="{{ $item->pelanggan->nama_lengkap ?? '-' }}">
-                      <i class="ri-check-circle-line me-1"></i> Konfirmasi Lunas
-                    </button>
-                  @endif
+                <div class="verification-stock">
+                  <div class="verification-stock-bar">
+                    <span class="verification-stock-fill"></span>
+                  </div>
+                  <div class="verification-stock-text">Menunggu verifikasi</div>
+                </div>
+              </td>
+              <td>
+                <span class="verification-price">{{ $hargaFormatted }}</span>
+              </td>
+              <td>
+                <span class="verification-status-pill is-process">{{ $statusLabel }}</span>
+              </td>
+              <td>
+                <div class="dropdown">
+                  <button class="verification-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="ri-more-2-fill"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end verification-action-menu">
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center btn-detail" href="javascript:void(0);">
+                        <i class="ri-eye-line"></i> Detail
+                      </a>
+                    </li>
+                    @if($status === 'lunas')
+                    <li>
+                      <span class="dropdown-item d-flex align-items-center text-muted">
+                        <i class="ri-check-circle-line"></i> Lunas
+                      </span>
+                    </li>
+                    @else
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center btn-konfirmasi" href="javascript:void(0);"
+                        data-id="{{ $item->id }}"
+                        data-nama="{{ $item->pelanggan->nama_lengkap ?? '-' }}">
+                        <i class="ri-checkbox-circle-line"></i> Verifikasi Lunas
+                      </a>
+                    </li>
+                    @endif
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center btn-edit-paket-row" href="javascript:void(0);"
+                        data-id="{{ $item->id }}"
+                        data-nama="{{ $item->pelanggan->nama_lengkap ?? '-' }}">
+                        <i class="ri-pencil-line"></i> Edit
+                      </a>
+                    </li>
+                    <li>
+                      <form action="{{ route('tagihan.destroy', $item->id) }}" method="POST" class="delete-form m-0 p-0">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="dropdown-item danger-action d-flex align-items-center w-100 border-0 bg-transparent text-start">
+                          <i class="ri-delete-bin-line"></i> Delete
+                        </button>
+                      </form>
+                    </li>
+                  </ul>
                 </div>
               </td>
             </tr>
             @empty
             <tr>
-              <td colspan="8" class="text-center py-5">
+              <td colspan="7" class="text-center py-5">
                 <div class="mb-3">
                   <i class="ri-inbox-line" style="font-size: 4rem; color: #ddd;"></i>
                 </div>
@@ -1733,27 +2500,11 @@ document.addEventListener("DOMContentLoaded", function () {
 <!-- MODAL: DETAIL - MODERN UI -->
 <!-- ========================================= -->
 <div class="modal fade" id="detailModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-light">
-        <h5 class="modal-title text-white mb-4">
-          <i class="ri-information-line me-2"></i>Detail Pelanggan & Tagihan
-        </h5>
-        <button type="button" class="btn-close btn-close-white mb-2" data-bs-dismiss="modal"></button>
-      </div>
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen modal-dialog-scrollable">
+    <div class="modal-content border-0">
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-4 z-3" data-bs-dismiss="modal"></button>
       <div class="modal-body">
         <!-- Content will be inserted via JavaScript -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-primary mt-4" id="btnEditPaket">
-          <i class="ri-edit-line me-1"></i> Edit Paket
-        </button>
-        <button type="button" class="btn btn-danger mt-4" id="btnTolakPembayaran">
-          <i class="ri-close-circle-line me-1"></i> Tolak Pembayaran
-        </button>
-        <button type="button" class="btn btn-success mt-4" id="btnKonfirmasiDetail">
-          <i class="ri-check-circle-line me-1"></i> Konfirmasi Lunas
-        </button>
       </div>
     </div>
   </div>
@@ -1799,6 +2550,9 @@ document.addEventListener("DOMContentLoaded", function () {
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary mt-2" id="btnBackToDetail">
           <i class="ri-arrow-left-line me-1"></i>Kembali
+        </button>
+        <button type="button" class="btn btn-success mt-2" id="btnKonfirmasiBukti">
+          <i class="ri-check-circle-line me-1"></i> Verifikasi Tagihan
         </button>
       </div>
     </div>
@@ -2003,6 +2757,25 @@ document.addEventListener('DOMContentLoaded', function() {
         updateZoom();
     });
 });
+
+// ========================================
+// TOAST NOTIFICATION FUNCTION
+// ========================================
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'ticket-toast';
+    toast.innerHTML = '<i class="ri-check-line" style="color: #4ade80; font-size: 1.2rem;"></i><span style="font-weight: 500;">' + message + '</span>';
+    document.body.appendChild(toast);
+    
+    // Trigger reflow to ensure transition works
+    toast.offsetHeight; 
+    
+    setTimeout(() => toast.classList.add('show'), 50);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+    }, 3000);
+}
 </script>
 
 @endsection

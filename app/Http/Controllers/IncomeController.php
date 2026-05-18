@@ -38,7 +38,7 @@ class IncomeController extends Controller
                 'tagihans.nama_paket',
                 'pelanggans.nama_lengkap as nama_pelanggan',
                 'pelanggans.nomer_id as nomer_id',
-                DB::raw('COALESCE(rekenings.nama_bank, "Cash / Tunai") as tipe_pembayaran'),
+                DB::raw('COALESCE(rekenings.nama_bank, NULLIF(tagihans.type_pembayaran, ""), "Cash / Tunai") as tipe_pembayaran'),
                 DB::raw('COALESCE(tagihans.harga, pakets.harga, 0) as jumlah'),
             ])
             ->orderByDesc('tagihans.tanggal_pembayaran');
@@ -62,8 +62,8 @@ class IncomeController extends Controller
             ->whereYear('tagihans.tanggal_pembayaran', $filterYear)
             ->leftJoin('rekenings', 'rekenings.id', '=', 'tagihans.type_pembayaran')
             ->leftJoin('pakets', 'pakets.id', '=', 'tagihans.paket_id')
-            ->selectRaw('COALESCE(rekenings.nama_bank, "Cash / Tunai") as nama_bank, SUM(COALESCE(tagihans.harga, pakets.harga, 0)) as total')
-            ->groupByRaw('COALESCE(rekenings.nama_bank, "Cash / Tunai")')
+            ->selectRaw('COALESCE(rekenings.nama_bank, NULLIF(tagihans.type_pembayaran, ""), "Cash / Tunai") as nama_bank, SUM(COALESCE(tagihans.harga, pakets.harga, 0)) as total')
+            ->groupBy('rekenings.nama_bank', 'tagihans.type_pembayaran')
             ->orderByDesc('total')
             ->get();
 
@@ -103,7 +103,30 @@ class IncomeController extends Controller
 
         $filename = 'Laba_Masuk_' . Carbon::createFromDate($filterYear, $filterMonth, 1)->format('Y_m') . '.xlsx';
 
-        return Excel::download(new IncomeExport($filterMonth, $filterYear, $search), $filename);
+        return Excel::download(new IncomeExport($filterMonth, $filterYear, $search, false), $filename);
+    }
+
+    public function exportDedicated(Request $request)
+    {
+        $today = Carbon::today();
+        $filterMonth = $request->input('filter_month', $today->month);
+        $filterYear = $request->input('filter_year', $today->year);
+        $search = $request->input('search');
+
+        $filename = 'Laba_Masuk_Dedicated_' . Carbon::createFromDate($filterYear, $filterMonth, 1)->format('Y_m') . '.xlsx';
+
+        return Excel::download(new IncomeExport($filterMonth, $filterYear, $search, true), $filename);
+    }
+
+    public function exportMonthly(Request $request)
+    {
+        $today = Carbon::today();
+        $filterMonth = $request->input('filter_month', $today->month);
+        $filterYear = $request->input('filter_year', $today->year);
+
+        $filename = 'Laba_Masuk_Bulanan_1_Sheet_' . Carbon::createFromDate($filterYear, $filterMonth, 1)->format('Y_m') . '.xlsx';
+
+        return Excel::download(new \App\Exports\IncomeMonthlyExport($filterMonth, $filterYear), $filename);
     }
 
 

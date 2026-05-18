@@ -45,20 +45,114 @@ class DatabaseBackupController extends Controller
         return view('content.apps.Backup.index', compact('files', 'backupStatus'));
     }
 
-    // Buat backup baru - AJAX only
+    // Buat backup baru — spawn background process, response balik <1 detik
     public function backup(Request $request)
     {
-        $type = $request->get('type', 'db');
+        $type      = $request->get('type', 'db');
         $timestamp = date('Y-m-d-H-i-s');
-        
-        // Untuk backup database saja, jalankan langsung (cepat)
-        if ($type === 'db') {
-            return $this->backupDatabaseDirect($timestamp);
+        $backupId  = \Illuminate\Support\Str::uuid()->toString();
+
+        // Tulis status awal agar polling langsung bisa baca
+        $this->updateBackupStatus($backupId, 'processing', 'Memulai backup...', 2, 'database');
+
+        // Spawn background process — coba beberapa metode agar selalu berhasil
+        try {
+            $this->spawnBackgroundProcess($type, $timestamp, $backupId);
+        } catch (\Throwable $e) {
+            // Jika spawning gagal, tandai sebagai failed — JANGAN biarkan exception meledak
+            \Illuminate\Support\Facades\Log::error('Backup spawn failed: ' . $e->getMessage());
+            $this->updateBackupStatus($backupId, 'failed',
+                'Gagal memulai proses backup: ' . $e->getMessage(), 0, 'database');
         }
-        
-        // Untuk full backup, gunakan queue (background)
-        return $this->backupFullQueue($timestamp);
+
+        // Selalu return JSON segera — tidak pernah block
+        return response()->json([
+            'success'   => true,
+            'queued'    => true,
+            'backup_id' => $backupId,
+            'message'   => 'Backup berjalan di background.',
+        ]);
     }
+
+    /**
+     * Coba berbagai cara untuk spawn background process.
+     * Tidak ada yang blocking — semua return segera.
+     */
+    private function spawnBackgroundProcess(string $type, string $timestamp, string $backupId): void
+    {
+        // Cari PHP CLI yang benar (hindari php-fpm atau cgi yang sering gagal jalankan artisan)
+        $php = 'php';
+        $possiblePaths = [
+            PHP_BINARY,
+            '/usr/bin/php',
+            '/usr/local/bin/php',
+            '/opt/cpanel/ea-php81/root/usr/bin/php',
+            '/opt/cpanel/ea-php82/root/usr/bin/php',
+            '/opt/cpanel/ea-php83/root/usr/bin/php',
+        ];
+        
+        foreach ($possiblePaths as $path) {
+            if ($path && is_executable($path) && strpos(strtolower($path), 'fpm') === false && strpos(strtolower($path), 'cgi') === false) {
+                $php = escapeshellcmd($path);
+                break;
+            }
+        }
+
+        $artisan = base_path('artisan');
+        $logFile = storage_path('logs/backup_debug.log');
+        
+        $args = escapeshellarg($type) . ' '
+              . escapeshellarg($timestamp) . ' '
+              . escapeshellarg($backupId);
+
+        // Arahkan output ke file log agar kita bisa lihat kenapa gagal jalan
+        $cmd = "nohup {$php} {$artisan} app:backup {$args} >> {$logFile} 2>&1 &";
+
+        $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+
+        if (function_exists('exec') && !in_array('exec', $disabled)) {
+            exec($cmd);
+            \Illuminate\Support\Facades\Log::info("Backup spawned with exec: $cmd");
+            return;
+        }
+
+        if (function_exists('shell_exec') && !in_array('shell_exec', $disabled)) {
+            shell_exec($cmd);
+            \Illuminate\Support\Facades\Log::info("Backup spawned with shell_exec: $cmd");
+            return;
+        }
+
+        if (function_exists('proc_open') && !in_array('proc_open', $disabled)) {
+            $descriptors = [
+                0 => ['file', '/dev/null', 'r'],
+                1 => ['file', $logFile, 'a'],
+                2 => ['file', $logFile, 'a'],
+            ];
+            $pipes = [];
+            proc_open("{$php} {$artisan} app:backup {$args} &", $descriptors, $pipes);
+            \Illuminate\Support\Facades\Log::info("Backup spawned with proc_open");
+            return;
+        }
+
+        if (function_exists('popen') && !in_array('popen', $disabled)) {
+            $handle = popen($cmd, 'r');
+            if ($handle) pclose($handle);
+            \Illuminate\Support\Facades\Log::info("Backup spawned with popen: $cmd");
+            return;
+        }
+
+        // Jika semua disabled, jalan inline (Bisa timeout tapi jalan)
+        $this->updateBackupStatus($backupId, 'processing',
+            'Fungsi exec nonaktif, proses berjalan langsung (bisa timeout)...', 5, 'database');
+            
+        // Paksa jalan synchronous jika tidak bisa background
+        \Illuminate\Support\Facades\Artisan::call('app:backup', [
+            'type' => $type,
+            'timestamp' => $timestamp,
+            'backupId' => $backupId
+        ]);
+    }
+
 
     /**
      * Backup database secara langsung (tanpa queue) - cepat

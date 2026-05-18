@@ -22,26 +22,30 @@ class DashboardController extends Controller
             if ($periode) {
                 $parts = explode('-', $periode);
                 if (count($parts) === 2) {
-                    $query->whereYear('tanggal_mulai', $parts[0])
-                          ->whereMonth('tanggal_mulai', $parts[1]);
+                    $query->whereYear('tagihans.tanggal_mulai', $parts[0])
+                          ->whereMonth('tagihans.tanggal_mulai', $parts[1]);
                 }
             }
         };
 
-        // Status filter for main customers
+        // Status filter for main customers.
         $baseCondition = function($q) {
-            $q->where('progres', Pelanggan::PROGRES_REGISTRASI)
-              ->orWhere('status', 'approve');
+            $q->where(function($subQ) {
+                $subQ->where('progres', Pelanggan::PROGRES_REGISTRASI)
+                     ->orWhere('status', 'approve');
+            });
         };
 
         // Statistik
         $totalCustomer = Pelanggan::where($baseCondition)->count();
         
-        $customerLunas = Tagihan::where('status_pembayaran', 'lunas')
+        $customerLunas = Tagihan::join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+            ->where('tagihans.status_pembayaran', 'lunas')
             ->where($filterDate)
             ->count();
             
-        $belumLunas = Tagihan::where('status_pembayaran', 'belum bayar')
+        $belumLunas = Tagihan::join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+            ->where('tagihans.status_pembayaran', 'belum bayar')
             ->where($filterDate)
             ->count();
             

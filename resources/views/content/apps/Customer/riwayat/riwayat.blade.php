@@ -277,7 +277,7 @@ body {
             </div>
             <div class="payment-amount">
                 <div class="payment-price">Rp {{ number_format($paket->harga ?? 0, 0, ',', '.') }}</div>
-                <div class="payment-status">✓ Lunas</div>
+                <div class="payment-status">? Lunas</div>
             </div>
         </div>
         @empty
@@ -290,23 +290,7 @@ body {
     </div>
 
 </div>
-
-<!-- Bottom Navigation -->
-<div class="bottom-nav">
-    <button class="tab-btn" onclick="window.location.href='/dashboard/customer/tagihan/home'">
-        <i class="bi bi-house-door-fill"></i><span>Home</span>
-    </button>
-    <button class="tab-btn" onclick="window.location.href='/dashboard/customer/tagihan'">
-        <i class="bi bi-receipt"></i><span>Tagihan</span>
-    </button>
-    <button class="tab-btn" onclick="window.location.href='/dashboard/customer/tagihan/selesai'">
-        <i class="bi bi-file-earmark-text"></i><span>Kwitansi</span>
-    </button>
-    
-    <button class="tab-btn" onclick="window.location.href='/dashboard/customer/profile'">
-        <i class="bi bi-person-circle"></i><span>Profile</span>
-    </button>
-</div>
+ 
 
 <script>
 // Year filter

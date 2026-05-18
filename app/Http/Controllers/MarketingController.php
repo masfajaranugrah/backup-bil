@@ -30,29 +30,36 @@ class MarketingController extends Controller
 
         $this->applyGlobalSearch($query, $request->input('search'));
 
-        $pelanggan = $query->latest()->paginate(self::PER_PAGE, ['*'], 'page', $page);
-
-        $statsQuery = $this->visibleMarketingQuery();
-        $progressStats = [
-            'belum_diproses' => (clone $statsQuery)
-                ->where(function ($q) {
+        // Server-side progres filter (from tab)
+        $progresFilter = $request->input('progres');
+        if ($progresFilter && in_array($progresFilter, Pelanggan::PROGRES_STAGES, true)) {
+            if ($progresFilter === Pelanggan::PROGRES_BELUM_DIPROSES) {
+                $query->where(function ($q) {
                     $q->whereNull('progres')
                         ->orWhere('progres', '')
                         ->orWhere('progres', Pelanggan::PROGRES_BELUM_DIPROSES);
-                })
-                ->count(),
-            'tarik_kabel' => (clone $statsQuery)
-                ->where('progres', Pelanggan::PROGRES_TARIK_KABEL)
-                ->count(),
-            'aktivasi' => (clone $statsQuery)
-                ->where('progres', Pelanggan::PROGRES_AKTIVASI)
-                ->count(),
-            'registrasi' => (clone $statsQuery)
-                ->where('progres', Pelanggan::PROGRES_REGISTRASI)
-                ->count(),
-        ];
+                });
+            } else {
+                $query->where('progres', $progresFilter);
+            }
+        }
 
-        return view('content.apps.Marketing.pelanggan', compact('pelanggan', 'progressStats'));
+        $pelanggan = $query->latest()->paginate(self::PER_PAGE, ['*'], 'page', $page);
+
+        $statsQuery = $this->visibleMarketingQuery();
+        $progresStats = [];
+        foreach (Pelanggan::PROGRES_STAGES as $stage) {
+            $progresStats[$stage] = (clone $statsQuery)->where('progres', $stage)->count();
+        }
+        // Count null/empty progres as "Belum Diproses"
+        $progresStats[Pelanggan::PROGRES_BELUM_DIPROSES] = (clone $statsQuery)
+            ->where(function($q) {
+                $q->whereNull('progres')->orWhere('progres', '')->orWhere('progres', Pelanggan::PROGRES_BELUM_DIPROSES);
+            })->count();
+
+        $totalAll = (clone $statsQuery)->count();
+
+        return view('content.apps.Marketing.pelanggan', compact('pelanggan', 'progresStats', 'progresFilter', 'totalAll'));
     }
 
     public function getDataAprove()
@@ -185,7 +192,7 @@ class MarketingController extends Controller
 
         try {
             $fotoKtpPath = null;
-            
+
             if ($request->hasFile('foto_ktp')) {
                 $fotoKtpPath = $request->file('foto_ktp')->store('foto_ktp', 'public');
             }
@@ -234,10 +241,10 @@ class MarketingController extends Controller
             DB::commit();
 
             return redirect()->route('marketing.pelanggan')->with('success', '? Pelanggan baru berhasil dibuat!');
-            
+
         } catch (\Throwable $th) {
             DB::rollBack();
-            
+
             if (isset($fotoKtpPath) && Storage::disk('public')->exists($fotoKtpPath)) {
                 Storage::disk('public')->delete($fotoKtpPath);
             }
@@ -278,9 +285,9 @@ class MarketingController extends Controller
     public function updateProgres(Request $request, $id)
     {
         $validated = $request->validate([
-            'progres' => 'required|in:' . implode(',', Pelanggan::PROGRES_STAGES),
-            'progress_note' => 'required|string|max:1000',
-            'is_pending' => 'nullable|boolean',
+            'progres'       => 'required|in:' . implode(',', Pelanggan::PROGRES_STAGES),
+            'progress_note' => 'nullable|string|max:1000',
+            'is_pending'    => 'nullable|boolean',
         ]);
 
         $pelanggan = Pelanggan::findOrFail($id);
@@ -294,7 +301,7 @@ class MarketingController extends Controller
         }
         $nextStatus = strtolower((string) $pelanggan->status);
 
-        if (! in_array($nextStatus, [Pelanggan::STATUS_APPROVE, Pelanggan::STATUS_REJECT], true)) {
+        if (!in_array($nextStatus, [Pelanggan::STATUS_APPROVE, Pelanggan::STATUS_REJECT], true)) {
             // Kolom status di DB hanya mendukung: pending, approve, reject.
             // Status "proses" direpresentasikan lewat kolom progres (tahapan), bukan enum status.
             $nextStatus = Pelanggan::STATUS_PENDING;
@@ -354,7 +361,7 @@ class MarketingController extends Controller
             'progress_note' => 'nullable|string',
             'progres' => 'nullable|in:' . implode(',', Pelanggan::PROGRES_STAGES),
             'foto_ktp' => 'nullable|image|mimes:jpeg,png,jpg,webp,heic|max:10240',
- 
+
         ]);
 
         DB::beginTransaction();
@@ -369,7 +376,7 @@ class MarketingController extends Controller
                 if ($pelanggan->foto_ktp && Storage::disk('public')->exists($pelanggan->foto_ktp)) {
                     Storage::disk('public')->delete($pelanggan->foto_ktp);
                 }
-                
+
                 // Upload foto baru
                 $validated['foto_ktp'] = $request->file('foto_ktp')->store('foto_ktp', 'public');
             }
@@ -397,7 +404,7 @@ class MarketingController extends Controller
                     $validated['progres'] ?? $pelanggan->progres ?? Pelanggan::PROGRES_BELUM_DIPROSES
                 ),
                 'foto_ktp' => $validated['foto_ktp'] ?? $pelanggan->foto_ktp,
- 
+
             ]);
 
             DB::commit();
@@ -407,22 +414,41 @@ class MarketingController extends Controller
                 : 'marketing.pelanggan';
 
             return redirect()->route($targetRoute)->with('success', '? Data pelanggan berhasil diperbarui!');
-            
+
         } catch (\Throwable $th) {
             DB::rollBack();
             return back()->with('error', '? Terjadi kesalahan: ' . $th->getMessage())->withInput();
         }
     }
 
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:approve,pending,reject',
+        ]);
+
+        $pelanggan = Pelanggan::findOrFail($id);
+        $pelanggan->update(['status' => $request->status]);
+
+        $label = match($request->status) {
+            'approve' => 'Disetujui',
+            'reject'  => 'Ditolak',
+            default   => 'Diubah ke Pending',
+        };
+
+        return redirect()->back()
+            ->with('success', "? Status {$pelanggan->nama_lengkap} berhasil {$label}.");
+    }
+
     public function destroy($id)
     {
         $pelanggan = Pelanggan::findOrFail($id);
-        
+
         // Hapus foto KTP jika ada
         if ($pelanggan->foto_ktp && Storage::disk('public')->exists($pelanggan->foto_ktp)) {
             Storage::disk('public')->delete($pelanggan->foto_ktp);
         }
-        
+
         $pelanggan->delete();
 
         return redirect()->back()->with('success', 'Data pelanggan berhasil dihapus.');
@@ -498,7 +524,7 @@ class MarketingController extends Controller
         $default = route('marketing.pelanggan');
         $candidate = $request->input('return_url');
 
-        if (! is_string($candidate) || blank($candidate)) {
+        if (!is_string($candidate) || blank($candidate)) {
             return $default;
         }
 
@@ -506,11 +532,11 @@ class MarketingController extends Controller
         $path = parse_url($candidate, PHP_URL_PATH) ?? '';
         $sameHost = blank($host) || $host === $request->getHost();
 
-        if (! $sameHost) {
+        if (!$sameHost) {
             return $default;
         }
 
-        if (! str_starts_with($path, '/dashboard/marketing/')) {
+        if (!str_starts_with($path, '/dashboard/marketing/')) {
             return $default;
         }
 

@@ -1597,7 +1597,7 @@
 
             <div class="user-list" id="userList">
                 @foreach($users as $user)
-                    <div class="user-item" data-user-id="{{ $user['id'] }}" data-user-name="{{ $user['name'] }}" title="{{ $user['name'] }}">
+                    <div class="user-item" data-user-id="{{ $user['id'] }}" data-user-name="{{ $user['name'] }}" data-nomer-id="{{ $user['nomer_id'] ?? '' }}" title="{{ $user['name'] }}">
                         <div class="user-item-content">
                             <div class="user-avatar">
                                 {{ strtoupper(substr($user['name'], 0, 1)) }}

@@ -10,7 +10,24 @@
         "admin"
       ]
     },
-
+{
+      "menuHeader": "Cloud",
+      "roles": [
+        "administrator",
+        "admin"
+      ]
+    },
+    {
+      "name": "Cloud",
+      "icon": "menu-icon tf-icons ri-cloud-line",
+      "slug": "app-cloud",
+      "url": "https://cloud.jernih.net.id",
+      "target": "_blank",
+      "roles": [
+        "administrator",
+        "admin"
+      ]
+    },
     {
       "menuHeader": "Data Tagihan",
       "roles": [
@@ -318,22 +335,7 @@
           "slug": "app-user-list",
           "roles": "customer_service",
           "icon": "ri-ticket-2-line"
-        },
-        {
-          "url": "/dashboard/cs/tickets/finished",
-          "name": "Proses Ticket",
-          "slug": "app-user-list",
-          "roles": "customer_service",
-          "icon": "ri-ticket-2-line"
-        },
-        {
-          "url": "/dashboard/cs/tickets/approved",
-          "name": "Ticket Selesai",
-          "slug": "app-user-list",
-          "roles": "customer_service",
-          "icon": "ri-ticket-2-line"
-        }
-      ]
+        }      ]
     },
     {
       "menuHeader": "History",
@@ -675,45 +677,10 @@
       "submenu": [
         {
           "url": "/dashboard/marketing/pelanggan",
-          "name": "List Pelanggan",
+          "name": "Data Pelanggan",
           "slug": "app-user-list",
           "roles": "marketing",
           "icon": "ri-contacts-line"
-        },
-        {
-          "url": "/dashboard/marketing/progres/belum-progres",
-          "name": "Belum Diproses",
-          "slug": "app-marketing-progres-belum",
-          "roles": "marketing",
-          "icon": "ri-time-line"
-        },
-        {
-          "url": "/dashboard/marketing/progres/tarik-kabel",
-          "name": "Tarik Kabel",
-          "slug": "app-marketing-progres-tarik-kabel",
-          "roles": "marketing",
-          "icon": "ri-git-commit-line"
-        },
-        {
-          "url": "/dashboard/marketing/progres/aktivasi",
-          "name": "Aktivasi",
-          "slug": "app-marketing-progres-aktivasi",
-          "roles": "marketing",
-          "icon": "ri-flashlight-line"
-        },
-        {
-          "url": "/dashboard/marketing/progres/registrasi",
-          "name": "Registrasi",
-          "slug": "app-marketing-progres-registrasi",
-          "roles": "marketing",
-          "icon": "ri-checkbox-circle-line"
-        },
-        {
-          "url": "/dashboard/marketing/approve",
-          "name": "Approval Pelanggan",
-          "slug": "app-marketing-approve",
-          "roles": "marketing",
-          "icon": "ri-check-double-line"
         }
       ]
     },
@@ -817,5 +784,8 @@
         "administrator",
         "admin"
       ]
-    }  ]
+    
+ }
+  ]
+
 }

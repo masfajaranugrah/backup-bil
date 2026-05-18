@@ -588,6 +588,25 @@
   gap: 0.75rem;
 }
 
+/* Fullscreen detail modal tanpa ruang footer kosong */
+#detailModal .modal-dialog {
+  margin: 0;
+  max-width: 100%;
+  height: 100dvh;
+}
+
+#detailModal .modal-content {
+  height: 100dvh;
+  border-radius: 0;
+}
+
+#detailModal .modal-body {
+  padding: 0;
+  max-height: none;
+  height: 100%;
+  overflow-y: auto;
+}
+
 .btn-close-white {
   filter: brightness(0) invert(1);
 }
@@ -815,7 +834,7 @@
   align-items: center;
   padding: 1.5rem;
   border-top: 1px solid #f0f0f0;
-  background: #fafafa;
+  background: transparent;
   border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
@@ -848,20 +867,20 @@
 }
 
 .pagination .page-item .page-link:hover {
-  background-color: #f4f4f5;
-  border-color: #18181b;
+  background-color: #fff;
+  border-color: #e4e4e7;
   color: #18181b;
 }
 
 .pagination .page-item.active .page-link {
-  background-color: #18181b !important;
-  border-color: #18181b !important;
-  color: #fafafa !important;
+  background-color: #fff !important;
+  border-color: #e4e4e7 !important;
+  color: #18181b !important;
   box-shadow: none;
 }
 
 .pagination .page-item.disabled .page-link {
-  background-color: #f4f4f5;
+  background-color: #fff;
   border-color: #e4e4e7;
   color: #a1a1aa;
   cursor: not-allowed;
@@ -931,6 +950,61 @@
   content: '';
   display: table;
   clear: both;
+}
+
+.pagination-wrapper .pagination {
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+}
+
+.pagination-wrapper .page-link {
+  min-width: 40px;
+  height: 40px;
+  border-radius: 999px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.pagination-wrapper .mui-pagination {
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.pagination-wrapper .mui-pagination .page-link {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: #1f2937 !important;
+  box-shadow: none !important;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.pagination-wrapper .mui-pagination .page-item.active .page-link {
+  background: #1f2933 !important;
+  color: #ffffff !important;
+}
+
+.pagination-wrapper .mui-pagination .page-link:hover {
+  background: rgba(31, 41, 51, 0.06) !important;
+  color: #111827 !important;
+}
+
+.pagination-wrapper .mui-pagination .page-item.disabled .page-link {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+}
+
+.pagination-wrapper .mui-pagination .pagination-ellipsis .page-link {
+  color: #64748b !important;
+  letter-spacing: 0.08em;
 }
 
 /* Hide DataTables default controls if using custom pagination */
@@ -1003,6 +1077,127 @@ nav[role="navigation"] > div > p {
 const rekeningList = @json($rekeningList ?? []);
 
 document.addEventListener("DOMContentLoaded", function () {
+    const buktiBaseUrl = "{{ asset('storage/bukti_pembayaran') }}";
+    const tagihanDetailBaseUrl = "{{ url('dashboard/admin/tagihan/data') }}";
+
+    function buildBuktiUrl(raw) {
+        const value = String(raw || '').trim();
+        if (!value || value === '-') return '';
+
+        // Jika sudah berupa full URL yang valid (http/https) → ekstrak filename saja
+        try {
+            const parsed = new URL(value);
+            // Adalah URL absolut – ambil bagian filename dari pathname
+            const fileName = parsed.pathname.split('/').filter(Boolean).pop();
+            if (fileName && fileName !== '-') {
+                return `${buktiBaseUrl}/${encodeURIComponent(fileName)}`;
+            }
+        } catch (e) {
+            // Bukan URL absolut, lanjut proses sebagai path relatif / filename
+        }
+
+        // Tangani path relatif seperti "bukti_pembayaran/filename.jpg"
+        // atau path production seperti "/var/www/.../bukti_pembayaran/filename.jpg"
+        const fileName = value.split('/').filter(Boolean).pop();
+        if (!fileName || fileName === '-') return '';
+
+        return `${buktiBaseUrl}/${encodeURIComponent(fileName)}`;
+    }
+
+    function renderBuktiSection(buktiUrl, tagihanId, isChecked) {
+        if (!buktiUrl) {
+            return `
+                <h4 class="fw-bold mb-4 text-dark"><i class="ri-image-line me-2"></i>Bukti Pembayaran</h4>
+                <div class="bg-white p-5 rounded-4 shadow-sm border text-center text-muted d-flex flex-column align-items-center gap-3">
+                    <i class="ri-image-add-line" style="font-size:3.5rem; color:#cbd5e1;"></i>
+                    <div>
+                        <p class="fw-semibold mb-1 text-dark" style="font-size:1rem;">Belum ada bukti pembayaran</p>
+                        <p class="mb-0 text-muted" style="font-size:0.875rem;">Pelanggan belum mengunggah bukti pembayaran untuk tagihan ini.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <h4 class="fw-bold mb-4 text-dark"><i class="ri-image-line me-2"></i>Bukti Pembayaran</h4>
+            <div class="bg-white p-4 rounded-4 shadow-sm border">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div>
+                        <span class="badge ${isChecked ? 'bg-success' : 'bg-secondary'} rounded-pill px-3 py-2 bukti-checked-badge" data-tagihan-id="${tagihanId}">
+                            <i class="ri-pushpin-${isChecked ? 'fill' : 'line'} me-1"></i>
+                            ${isChecked ? 'Sudah dicek' : 'Belum dicek'}
+                        </span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm ${isChecked ? 'btn-success' : 'btn-outline-success'} btn-toggle-checked"
+                            data-tagihan-id="${tagihanId}">
+                            <i class="ri-check-line me-1"></i>${isChecked ? 'Ditandai' : 'Tandai Sudah Dicek'}
+                        </button>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mb-3">
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-zoom-out">-</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-zoom-in">+</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-zoom-reset">Reset</button>
+                </div>
+                <div class="bukti-viewport border rounded-3" style="height: 420px; overflow: hidden; position: relative; cursor: grab; background:#f8fafc;">
+                    <img src="${buktiUrl}" class="bukti-zoom-img" style="position:absolute; top:50%; left:50%; transform: translate(-50%, -50%) scale(1); transform-origin: center center; max-width: none; user-select: none; -webkit-user-drag: none;">
+                </div>
+                <div class="mt-4 text-center">
+                    <a href="${buktiUrl}" target="_blank" class="btn btn-primary btn-lg px-5 rounded-pill shadow-sm"><i class="ri-download-line me-2"></i> Unduh Bukti Pembayaran</a>
+                </div>
+            </div>
+        `;
+    }
+
+    function decrementRecordsCounter() {
+        const counterEl = document.querySelector('.toolbar-top .text-muted');
+        if (!counterEl) return;
+        const match = counterEl.textContent.match(/\d+/);
+        if (!match) return;
+        const current = parseInt(match[0], 10);
+        if (Number.isNaN(current)) return;
+        const next = Math.max(0, current - 1);
+        counterEl.textContent = `${next} RECORDS FOUND`;
+    }
+
+    function showBottomToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        const isError = type === 'error';
+        toast.style.cssText = [
+            'position:fixed',
+            'right:24px',
+            'bottom:28px',
+            'transform:translateY(10px)',
+            'z-index:99999',
+            'display:flex',
+            'align-items:center',
+            'gap:12px',
+            'max-width:min(520px,calc(100vw - 32px))',
+            'min-width:min(360px,calc(100vw - 32px))',
+            'padding:14px 20px',
+            'border-radius:18px',
+            `background:${isError ? '#dc2626' : '#111827'}`,
+            'color:#fff',
+            'box-shadow:0 16px 42px rgba(15,23,42,.32)',
+            'font-size:1rem',
+            'font-weight:500',
+            'opacity:0',
+            'transition:all .2s ease'
+        ].join(';');
+        toast.innerHTML = `<span class="material-symbols-rounded" style="font-size:1.15rem;line-height:1;color:${isError ? '#fecaca' : '#86efac'}">${isError ? 'error' : 'check_circle'}</span><span>${message}</span>`;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        });
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+            setTimeout(() => toast.remove(), 220);
+        }, 3200);
+    }
+
     // ========================================
     // HELPER FUNCTIONS
     // ========================================
@@ -1016,10 +1211,62 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const formatDate = d => d.toISOString().split('T')[0];
 
+    const filterPanel = document.getElementById('tagihanFilterPanel');
+    const filterToggle = document.getElementById('toggleTagihanFilters');
+    const filterClose = document.getElementById('closeTagihanFilters');
+    const topSearchInput = document.getElementById('topSearchInput');
+
+    function setFilterPanel(open) {
+        if (!filterPanel || !filterToggle) return;
+        filterPanel.classList.toggle('is-open', open);
+        filterToggle.classList.toggle('is-active', open);
+        filterToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    filterToggle?.addEventListener('click', function () {
+        setFilterPanel(!filterPanel?.classList.contains('is-open'));
+    });
+
+    filterClose?.addEventListener('click', function () {
+        setFilterPanel(false);
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!filterPanel || !filterToggle) return;
+        if (!filterPanel.classList.contains('is-open')) return;
+        if (filterPanel.contains(event.target) || filterToggle.contains(event.target)) return;
+        setFilterPanel(false);
+    });
+
+    topSearchInput?.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            $('#filterForm').submit();
+        }
+    });
+
+    if (window.matchMedia('(max-width: 767.98px)').matches) {
+        document.querySelectorAll('.tagihan-tool-btn[title]').forEach(function (button) {
+            button.dataset.mobileTitle = button.getAttribute('title') || '';
+            button.removeAttribute('title');
+        });
+    }
+
     // ========================================
     // FLATPICKR INITIALIZATION
     // ========================================
     $(document).on('shown.bs.modal', '[id^="modalEditTagihan-"]', function () {
+        const $modal = $(this);
+
+        $modal.find('.select2-edit-paket').each(function () {
+            if ($(this).hasClass('select2-hidden-accessible')) return;
+            $(this).select2({
+                dropdownParent: $modal,
+                width: '100%',
+                placeholder: '-- Cari dan Pilih Paket --'
+            });
+        });
+
         flatpickr($(this).find('.flatpickr-edit-start'), {
             dateFormat: "Y-m-d",
         allowInput: true,
@@ -1198,9 +1445,11 @@ document.addEventListener("DOMContentLoaded", function () {
     window.resetFilterTagihan = function(e) {
         e.stopPropagation();
         showLoading();
-        // Remove periode param
+        // Remove all filter params
         const url = new URL(window.location.href);
         url.searchParams.delete('periode');
+        url.searchParams.delete('harga_paket');
+        url.searchParams.delete('search');
         window.location.href = url.toString();
     }
 
@@ -1214,15 +1463,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // ========================================
     // SWEETALERT DELETE
     // ========================================
-    $(document).on('submit', '.delete-form', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const form = this;
+    function deleteTagihanRealtime(form) {
         const $form = $(form);
         const actionUrl = $form.attr('action');
         const $row = $form.closest('tr');
+        const namaPelanggan = ($row.data('nama') || '').toString().trim();
 
-        Swal.fire({
+        return Swal.fire({
             title: 'Konfirmasi Penghapusan',
             html: '<p class="mb-0">Yakin ingin menghapus tagihan ini?<br><strong class="text-danger">Data tidak dapat dikembalikan!</strong></p>',
             icon: 'warning',
@@ -1262,43 +1509,109 @@ document.addEventListener("DOMContentLoaded", function () {
                             // Hapus baris dari tabel dengan animasi fade
                             $row.fadeOut(400, function() {
                                 $(this).remove();
-
-                                // Update nomor urut
-                                $('table tbody tr').each(function(index) {
-                                    $(this).find('td:first').text(index + 1);
-                                });
+                                decrementRecordsCounter();
 
                                 // Update badge total tagihan
-                                const $totalBadge = $('.card-header-custom .badge:contains("Tagihan")');
+                                const $totalBadge = $('.tagihan-count-badge');
                                 if ($totalBadge.length) {
-                                    const currentTotal = parseInt($totalBadge.text().replace(/\D/g, '')) || 0;
-                                    if (currentTotal > 1) {
-                                        $totalBadge.html('<i class="ri-database-2-line me-1"></i>' + (currentTotal - 1) + ' Tagihan');
-                                    } else {
-                                        $totalBadge.remove();
-                                    }
+                                    const currentTotal = parseInt($totalBadge.text().replace(/\D/g, ''), 10) || 0;
+                                    const nextTotal = Math.max(0, currentTotal - 1);
+                                    $totalBadge.html(`<span class="material-symbols-rounded" style="font-size:1rem;">database</span> ${nextTotal} Tagihan`);
                                 }
                             });
 
-                            // Tampilkan notifikasi sukses singkat
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil!',
-                                text: resp.message || 'Tagihan berhasil dihapus!',
-                                showConfirmButton: false,
-                                timer: 1500,
-                                timerProgressBar: true
-                            });
+                            // Notif kanan bawah setelah delete berhasil
+                            showBottomToast(`Tagihan ${namaPelanggan || 'pelanggan ini'} berhasil dihapus.`);
                         } else {
                             Swal.fire('Gagal!', resp.message || 'Terjadi kesalahan.', 'error');
                         }
                     },
                     error: function(xhr) {
                         hideLoading();
-                        const msg = xhr.responseJSON?.message || 'Terjadi kesalahan server.';
+                        const msg = xhr.responseJSON?.message || xhr.statusText || 'Terjadi kesalahan server.';
                         Swal.fire('Gagal!', msg, 'error');
                     }
                 });
+            }
+        });
+    }
+
+    $(document).on('submit', '.delete-form', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        deleteTagihanRealtime(this);
+    });
+
+    $(document).on('click', '.btn-delete-tagihan', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        deleteTagihanRealtime(this.closest('form'));
+    });
+
+    // ========================================
+    // EDIT TAGIHAN TANPA RELOAD (REALTIME)
+    // ========================================
+    $(document).on('submit', '.edit-tagihan-form', function(e) {
+        e.preventDefault();
+        const form = this;
+        const $form = $(form);
+        const actionUrl = $form.attr('action');
+        const tagihanId = $form.data('tagihan-id');
+        const formData = new FormData(form);
+        const $row = $(`tr[data-tagihan-id="${tagihanId}"]`);
+        const namaPelanggan = ($row.data('nama') || '').toString().trim();
+
+        showLoading();
+
+        $.ajax({
+            url: actionUrl,
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            success: function(resp) {
+                hideLoading();
+                if (!resp.success) {
+                    Swal.fire('Gagal!', resp.message || 'Terjadi kesalahan.', 'error');
+                    return;
+                }
+
+                const d = resp.data || {};
+                const tanggalBerakhir = d.tanggal_berakhir_formatted || '-';
+                const catatan = d.catatan || '-';
+                const paketNama = d.paket_nama || $row.attr('data-paket') || '-';
+                const hargaFormatted = d.harga_formatted || $row.attr('data-harga') || '-';
+                const kecepatanText = d.kecepatan ? `${d.kecepatan} Mbps` : ($row.attr('data-kecepatan') || '-');
+
+                // Update isi row realtime
+                $row.attr('data-jatuh-tempo', tanggalBerakhir);
+                $row.attr('data-catatan', catatan);
+                $row.attr('data-paket', paketNama);
+                $row.attr('data-harga', hargaFormatted);
+                $row.attr('data-kecepatan', kecepatanText);
+                if (d.paket_id) {
+                    $row.attr('data-paket-id', d.paket_id);
+                }
+
+                $row.find('td:nth-child(3) .date-cell').html(`${tanggalBerakhir}<span class="time"></span>`);
+                $row.find('td:nth-child(2) .product-info span').text(`ID: ${$row.attr('data-nomor-id') || '-'} | ${paketNama}`);
+                $row.find('td:nth-child(5)').text(hargaFormatted);
+
+                // Tutup modal
+                const modalEl = form.closest('.modal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+
+                showBottomToast(`Tagihan ${namaPelanggan || 'pelanggan'} berhasil diperbarui.`);
+            },
+            error: function(xhr) {
+                hideLoading();
+                const msg = xhr.responseJSON?.message || 'Terjadi kesalahan server.';
+                Swal.fire('Gagal!', msg, 'error');
             }
         });
     });
@@ -1387,22 +1700,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     success: function(resp) {
                         hideLoading();
                         if (resp.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Tagihan Lunas!',
-                                html: `
-                                    <p>Pembayaran <strong>${nama}</strong> berhasil dikonfirmasi.</p>
-                                    ${resp.pdfUrl ? `<a href="${resp.pdfUrl}" target="_blank" class="btn btn-sm mt-2" style="background:#18181b;color:#fff;"><i class="ri-file-pdf-line me-1"></i>Cetak Kwitansi</a>` : ''}
-                                `,
-                                showConfirmButton: true,
-                                showDenyButton: false,
-                                showCancelButton: false,
-                                confirmButtonText: 'Tutup',
-                                confirmButtonColor: '#18181b',
-                                timer: 4000,
-                                timerProgressBar: true,
-                                allowOutsideClick: false
-                            }).then(() => location.reload());
+                            const $row = $(`tr[data-tagihan-id="${id}"]`);
+                            if ($row.length) {
+                                // Di halaman "belum bayar", yang sudah lunas langsung disembunyikan.
+                                $row.fadeOut(350, function() {
+                                    $(this).remove();
+                                    decrementRecordsCounter();
+                                });
+                            }
+
+                            showBottomToast(`Tagihan ${nama} telah ditandai lunas.`);
                         } else {
                             Swal.fire('Gagal!', resp.message || 'Terjadi kesalahan.', 'error');
                         }
@@ -1562,166 +1869,291 @@ document.addEventListener("DOMContentLoaded", function () {
     // ? BUTTON DETAIL - SHOW MODAL
     // ========================================
     $(document).on('click', '.btn-detail', function() {
-        const $row = $(this).closest('tr');
+        const row = this.closest('tr');
+        const readDetail = (key, fallback = '-') => {
+            const attrName = 'data-' + key.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase());
+            const value = this.dataset?.[key] ?? row?.dataset?.[key] ?? this.getAttribute(attrName) ?? row?.getAttribute(attrName);
+            return value === undefined || value === null || value === '' ? fallback : value;
+        };
 
-        // Ambil data dari table cells
-        // Ambil data utama sesuai urutan kolom tabel
-        const nomorId = $row.find('.badge.bg-label-dark').text().trim();
-        const namaLengkap = $row.find('td:nth-child(4) strong').text().trim();
-        const noWhatsapp = $row.find('code').text().trim().replace(/\D/g, '');
-        const noWhatsappDisplay = $row.find('code').text().trim();
-        const status = $row.find('td:nth-child(6) .badge').text().trim();
-        const paket = $row.find('td:nth-child(7) .badge').text().trim();
-        const harga = $row.find('td:nth-child(8) strong').text().trim();
-
-        // Data dari attribute
-        const alamat = $row.data('alamat') || '-';
-        const kecamatan = $row.data('kecamatan') || '-';
-        const kabupaten = $row.data('kabupaten') || '-';
-        const provinsi = $row.data('provinsi') || '-';
-        const kecepatan = $row.data('kecepatan') || '-';
-        const tanggalMulai = $row.data('tanggal-mulai') || '-';
-        const jatuhTempo = $row.data('jatuh-tempo') || '-';
-        const catatan = $row.data('catatan') || '-';
-        const buktiUrl = $row.data('bukti') || '';
+        // Ambil data dari data-attribute agar tidak rusak saat struktur tabel berubah.
+        const nomorId = readDetail('nomorId');
+        const namaLengkap = readDetail('nama');
+        const noWhatsappDisplay = readDetail('whatsapp');
+        const noWhatsapp = noWhatsappDisplay.replace(/\D/g, '');
+        const tagihanId = readDetail('tagihanId', '');
+        const status = readDetail('status');
+        const paket = readDetail('paket');
+        const harga = readDetail('harga');
+        const alamat = readDetail('alamat');
+        const kecamatan = readDetail('kecamatan');
+        const kabupaten = readDetail('kabupaten');
+        const provinsi = readDetail('provinsi');
+        const kecepatan = readDetail('kecepatan');
+        const tanggalMulai = readDetail('tanggalMulai');
+        const jatuhTempo = readDetail('jatuhTempo');
+        const catatan = readDetail('catatan');
+        const buktiUrl = buildBuktiUrl(readDetail('bukti', ''));
 
         // Badge status color
-        const statusClass = status.toLowerCase().includes('lunas') ? 'bg-success' : 'bg-danger';
-        const statusIcon = status.toLowerCase().includes('lunas') ? 'checkbox-circle' : 'close-circle';
+        const normalizedStatus = String(status).toLowerCase();
+        const isProcessStatus = normalizedStatus.includes('proses') || normalizedStatus.includes('verifikasi');
+        const statusClass = normalizedStatus.includes('lunas') ? 'bg-success' : (isProcessStatus ? 'bg-warning' : 'bg-danger');
+        const statusIcon = normalizedStatus.includes('lunas') ? 'checkbox-circle' : (isProcessStatus ? 'time' : 'close-circle');
+        const checkedKey = `tagihan_checked_${tagihanId}`;
+        const isChecked = localStorage.getItem(checkedKey) === '1';
 
-        // Build modal content
+        // Build modal content (Premium Fullscreen UI)
         const modalContent = `
-            <div class="customer-header-info">
-                <div class="customer-avatar">
-                    ${namaLengkap.charAt(0).toUpperCase()}
-                </div>
-                <h5 class="customer-name">${namaLengkap}</h5>
-                <span class="badge ${statusClass} customer-status">
-                    <i class="ri-${statusIcon}-line me-1"></i>
-                    ${status}
-                </span>
-            </div>
+            <div class="row g-0 min-vh-100">
+                <!-- Left Sidebar -->
+                <div class="col-lg-4 col-xl-3 border-end bg-light p-4 p-xl-5 d-flex flex-column align-items-center">
+                    <div class="customer-avatar mb-4" style="width: 120px; height: 120px; font-size: 3.5rem;">
+                        ${(namaLengkap || '-').charAt(0).toUpperCase()}
+                    </div>
+                    <h3 class="fw-bold text-center mb-1" style="color: #1e293b;">${namaLengkap}</h3>
+                    <p class="text-muted text-center mb-4 fs-5">${nomorId}</p>
+                    
+                    <span class="badge ${statusClass} rounded-pill px-4 py-2 mb-5 fs-6 shadow-sm">
+                        <i class="ri-${statusIcon}-line me-1"></i> ${status.toUpperCase()}
+                    </span>
 
-            <!-- Informasi Dasar -->
-            <div class="detail-section">
-                <h6><i class="ri-user-3-line"></i>Informasi Dasar</h6>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-barcode-line"></i>
-                        Nomor ID
+                    <div class="w-100 mt-2">
+                        <div class="d-flex align-items-center mb-4 p-3 bg-white rounded-3 shadow-sm border">
+                            <div class="bg-light p-3 rounded shadow-sm me-3"><i class="ri-whatsapp-line text-success fs-3"></i></div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">WhatsApp</small>
+                                <a href="https://wa.me/${noWhatsapp}" target="_blank" class="text-dark fw-bold text-decoration-none fs-5">${noWhatsappDisplay}</a>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-4 p-3 bg-white rounded-3 shadow-sm border">
+                            <div class="bg-light p-3 rounded shadow-sm me-3"><i class="ri-map-pin-line text-primary fs-3"></i></div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">Alamat</small>
+                                <span class="text-dark fw-bold fs-6">${alamat}</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-4 p-3 bg-white rounded-3 shadow-sm border">
+                            <div class="bg-light p-3 rounded shadow-sm me-3"><i class="ri-building-line text-info fs-3"></i></div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">Area</small>
+                                <span class="text-dark fw-bold fs-6">${kecamatan}, ${kabupaten}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="detail-value"><strong>${nomorId}</strong></div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-user-line"></i>
-                        Nama Lengkap
-                    </div>
-                    <div class="detail-value">${namaLengkap}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-whatsapp-line"></i>
-                        WhatsApp
-                    </div>
-                    <div class="detail-value">
-                        <a href="https://wa.me/${noWhatsapp}" target="_blank" class="text-success text-decoration-none">
-                            <i class="ri-whatsapp-line me-1"></i>${noWhatsappDisplay}
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alamat -->
-            <div class="detail-section">
-                <h6><i class="ri-map-pin-line"></i>Alamat Lengkap</h6>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-map-2-line"></i>
-                        Alamat
-                    </div>
-                    <div class="detail-value">${alamat}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-building-line"></i>
-                        Kecamatan
-                    </div>
-                    <div class="detail-value">${kecamatan}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-map-pin-range-line"></i>
-                        Kabupaten
-                    </div>
-                    <div class="detail-value">${kabupaten}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-global-line"></i>
-                        Provinsi
-                    </div>
-                    <div class="detail-value">${provinsi}</div>
-                </div>
-            </div>
-
-            <!-- Paket Internet -->
-            <div class="detail-section">
-                <h6><i class="ri-wifi-line"></i>Paket Internet</h6>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-box-3-line"></i>
-                        Nama Paket
-                    </div>
-                    <div class="detail-value">${paket}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-speed-line"></i>
-                        Kecepatan
-                    </div>
-                    <div class="detail-value"><strong>${kecepatan}</strong></div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-money-dollar-circle-line"></i>
-                        Harga
-                    </div>
-                    <div class="detail-value"><strong class="text-primary">${harga}</strong></div>
-                </div>
-            </div>
-
-            <!-- Tagihan -->
-            <div class="detail-section">
-                <h6><i class="ri-calendar-check-line"></i>Detail Tagihan</h6>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-calendar-line"></i>
-                        Tanggal Mulai
-                    </div>
-                    <div class="detail-value">${tanggalMulai}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-calendar-close-line"></i>
-                        Jatuh Tempo
-                    </div>
-                    <div class="detail-value"><strong class="text-danger">${jatuhTempo}</strong></div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="ri-file-text-line"></i>
-                        Catatan
-                    </div>
-                    <div class="detail-value">${catatan}</div>
                 </div>
 
+                <!-- Right Content -->
+                <div class="col-lg-8 col-xl-9 p-4 p-xl-5">
+                    <div class="max-w-4xl mx-auto py-4">
+                        <h2 class="fw-bold mb-2 text-dark">Ringkasan Tagihan</h2>
+                        <p class="text-muted mb-5 fs-5">Rincian paket layanan dan status penagihan pelanggan.</p>
+                        
+                        <div class="row g-4 mb-5">
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100 rounded-4" style="background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 6px solid #3b82f6 !important;">
+                                    <div class="card-body p-4 p-xl-5">
+                                        <div class="d-flex justify-content-between align-items-start mb-4">
+                                            <div>
+                                                <p class="text-primary fw-bold mb-1 text-uppercase" style="letter-spacing: 1px;">Paket Layanan</p>
+                                                <h3 class="fw-bold mb-0 text-dark">${paket}</h3>
+                                            </div>
+                                            <div class="bg-white p-3 rounded-circle shadow-sm"><i class="ri-router-line text-primary fs-2"></i></div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-4 mt-5">
+                                            <div>
+                                                <small class="text-muted d-block mb-1 text-uppercase fw-bold">Kecepatan</small>
+                                                <span class="fw-bold fs-4 text-dark">${kecepatan}</span>
+                                            </div>
+                                            <div class="border-start ps-4">
+                                                <small class="text-muted d-block mb-1 text-uppercase fw-bold">Harga per Bulan</small>
+                                                <span class="fw-bold text-success fs-4">${harga}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100 rounded-4" style="background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%); border-left: 6px solid #ef4444 !important;">
+                                    <div class="card-body p-4 p-xl-5">
+                                        <div class="d-flex justify-content-between align-items-start mb-4">
+                                            <div>
+                                                <p class="text-danger fw-bold mb-1 text-uppercase" style="letter-spacing: 1px;">Jatuh Tempo</p>
+                                                <h3 class="fw-bold mb-0 text-dark">${jatuhTempo}</h3>
+                                            </div>
+                                            <div class="bg-white p-3 rounded-circle shadow-sm"><i class="ri-calendar-event-line text-danger fs-2"></i></div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-4 mt-5">
+                                            <div>
+                                                <small class="text-muted d-block mb-1 text-uppercase fw-bold">Tanggal Mulai</small>
+                                                <span class="fw-bold fs-4 text-dark">${tanggalMulai}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 class="fw-bold mb-4 text-dark"><i class="ri-file-text-line me-2"></i>Catatan Tambahan</h4>
+                        <div class="bg-white p-4 rounded-4 shadow-sm border mb-5">
+                            <p class="mb-0 text-secondary fs-5" style="line-height: 1.6;">${catatan || 'Tidak ada catatan khusus untuk pelanggan ini.'}</p>
+                        </div>
+
+                        <div class="bukti-section-wrap" data-tagihan-id="${tagihanId}">
+                            ${renderBuktiSection(buktiUrl, tagihanId, isChecked)}
+                        </div>
+
+                        <div class="d-flex flex-wrap justify-content-end gap-2 mt-4 pt-3 border-top">
+                            ${normalizedStatus.includes('lunas') ? '' : `
+                            <button type="button" class="btn btn-success rounded-pill px-4 btn-modal-verify"
+                                data-id="${tagihanId}" data-nama="${namaLengkap}">
+                                <i class="ri-checkbox-circle-line me-1"></i>Verifikasi
+                            </button>
+                            `}
+                            <button type="button" class="btn btn-dark rounded-pill px-4 btn-modal-edit"
+                                data-tagihan-id="${tagihanId}">
+                                <i class="ri-edit-2-line me-1"></i>Edit
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
 
         // Populate modal dan tampilkan
         $('#detailModal .modal-body').html(modalContent);
         $('#detailModal').modal('show');
+
+        if (tagihanId) {
+            $.getJSON(`${tagihanDetailBaseUrl}/${tagihanId}`)
+                .done(function(resp) {
+                    const rawBukti = resp?.data?.bukti_pembayaran ?? '';
+                    const detailBuktiUrl = buildBuktiUrl(rawBukti);
+                    const checked = localStorage.getItem(checkedKey) === '1';
+                    // Selalu update section bukti dari server (termasuk jika kosong → tampil pesan)
+                    $(`.bukti-section-wrap[data-tagihan-id="${tagihanId}"]`)
+                        .html(renderBuktiSection(detailBuktiUrl, tagihanId, checked));
+                });
+        }
+    });
+
+    // Aksi dari tombol dalam modal detail
+    $(document).on('click', '.btn-modal-verify', function() {
+        const id = $(this).data('id');
+        $('#detailModal').modal('hide');
+        setTimeout(() => {
+            $(`.btn-konfirmasi[data-id="${id}"]`).first().trigger('click');
+        }, 180);
+    });
+
+    $(document).on('click', '.btn-modal-edit', function() {
+        const tagihanId = $(this).data('tagihan-id');
+        $('#detailModal').modal('hide');
+        setTimeout(() => {
+            $(`#modalEditTagihan-${tagihanId}`).modal('show');
+        }, 180);
+    });
+
+    // Zoom + drag bukti pembayaran
+    function applyBuktiTransform($viewport) {
+        const $img = $viewport.find('.bukti-zoom-img');
+        const scale = Number($viewport.attr('data-scale') || 1);
+        const x = Number($viewport.attr('data-x') || 0);
+        const y = Number($viewport.attr('data-y') || 0);
+        $img.css('transform', `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale})`);
+    }
+
+    $(document).on('mouseenter', '.bukti-viewport', function() {
+        const $viewport = $(this);
+        if (!$viewport.attr('data-init')) {
+            $viewport.attr('data-init', '1');
+            $viewport.attr('data-scale', '1');
+            $viewport.attr('data-x', '0');
+            $viewport.attr('data-y', '0');
+            applyBuktiTransform($viewport);
+        }
+    });
+
+    $(document).on('wheel', '.bukti-viewport', function(e) {
+        e.preventDefault();
+        const $viewport = $(this);
+        const current = Number($viewport.attr('data-scale') || 1);
+        const delta = e.originalEvent.deltaY < 0 ? 0.15 : -0.15;
+        const next = Math.min(6, Math.max(0.5, current + delta));
+        $viewport.attr('data-scale', String(next));
+        applyBuktiTransform($viewport);
+    });
+
+    $(document).on('mousedown', '.bukti-viewport', function(e) {
+        const $viewport = $(this);
+        $viewport.attr('data-dragging', '1');
+        $viewport.attr('data-start-x', String(e.clientX));
+        $viewport.attr('data-start-y', String(e.clientY));
+        $viewport.css('cursor', 'grabbing');
+    });
+
+    $(document).on('mousemove', function(e) {
+        const $viewport = $('.bukti-viewport[data-dragging="1"]');
+        if (!$viewport.length) return;
+        const startX = Number($viewport.attr('data-start-x') || 0);
+        const startY = Number($viewport.attr('data-start-y') || 0);
+        const lastX = Number($viewport.attr('data-x') || 0);
+        const lastY = Number($viewport.attr('data-y') || 0);
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        $viewport.attr('data-start-x', String(e.clientX));
+        $viewport.attr('data-start-y', String(e.clientY));
+        $viewport.attr('data-x', String(lastX + dx));
+        $viewport.attr('data-y', String(lastY + dy));
+        applyBuktiTransform($viewport);
+    });
+
+    $(document).on('mouseup', function() {
+        $('.bukti-viewport[data-dragging="1"]').attr('data-dragging', '0').css('cursor', 'grab');
+    });
+
+    $(document).on('click', '.btn-zoom-in, .btn-zoom-out, .btn-zoom-reset', function() {
+        const $box = $(this).closest('.bg-white');
+        const $viewport = $box.find('.bukti-viewport');
+        if (!$viewport.length) return;
+        const current = Number($viewport.attr('data-scale') || 1);
+
+        if ($(this).hasClass('btn-zoom-reset')) {
+            $viewport.attr('data-scale', '1');
+            $viewport.attr('data-x', '0');
+            $viewport.attr('data-y', '0');
+        } else if ($(this).hasClass('btn-zoom-in')) {
+            $viewport.attr('data-scale', String(Math.min(6, current + 0.2)));
+        } else {
+            $viewport.attr('data-scale', String(Math.max(0.5, current - 0.2)));
+        }
+        applyBuktiTransform($viewport);
+    });
+
+    // Tandai bukti sudah dicek (persist di browser per tagihan)
+    $(document).on('click', '.btn-toggle-checked', function() {
+        const $btn = $(this);
+        const tagihanId = String($btn.data('tagihan-id') || '');
+        if (!tagihanId) return;
+
+        const key = `tagihan_checked_${tagihanId}`;
+        const nextChecked = localStorage.getItem(key) !== '1';
+        localStorage.setItem(key, nextChecked ? '1' : '0');
+
+        const $badge = $(`.bukti-checked-badge[data-tagihan-id="${tagihanId}"]`);
+        if (nextChecked) {
+            $btn.removeClass('btn-outline-success').addClass('btn-success')
+                .html('<i class="ri-check-line me-1"></i>Ditandai');
+            $badge.removeClass('bg-secondary').addClass('bg-success')
+                .html('<i class="ri-pushpin-fill me-1"></i>Sudah dicek');
+        } else {
+            $btn.removeClass('btn-success').addClass('btn-outline-success')
+                .html('<i class="ri-check-line me-1"></i>Tandai Sudah Dicek');
+            $badge.removeClass('bg-success').addClass('bg-secondary')
+                .html('<i class="ri-pushpin-line me-1"></i>Belum dicek');
+        }
     });
 });
 </script>
@@ -1737,288 +2169,1298 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <div class="container-fluid px-4 py-4">
   <!-- ========================================= -->
-  <!-- FILTER & SEARCH -->
+  <!-- MODERN TOOLBAR & DAFTAR TAGIHAN -->
   <!-- ========================================= -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0');
 
-  <div class="card mb-4">
-    <div class="card-body">
-      <form method="GET" action="{{ route('tagihan.get') }}" id="filterForm">
-        <div class="row g-3 align-items-end">
-          <div class="col-md-6">
-            <label class="form-label small fw-semibold mb-2">
-              <i class="ri-search-line me-1"></i>Pencarian
-            </label>
-            <input
-              type="text"
-              name="search"
-              class="form-control"
-              placeholder="Cari nama, No. ID, WhatsApp..."
-              value="{{ request('search') }}">
-          </div>
+    .tagihan-page-shell,
+    .tagihan-page-shell *,
+    .tagihan-grid-card,
+    .tagihan-grid-card *,
+    .pagination-wrapper,
+    .pagination-wrapper * {
+      font-family: 'Inter', sans-serif !important;
+    }
 
-          <div class="col-md-3">
-             <label class="form-label small fw-semibold mb-2" style="color: #4b5563;">
-              <i class="ri-calendar-line me-1"></i>Periode Laporan
-            </label>
-             <input type="hidden" name="periode" id="periodeInput" value="{{ request('periode') }}">
-             
-             <div id="periodeTrigger" class="d-flex align-items-center gap-2 px-3 py-2 bg-white border rounded-pill shadow-sm cursor-pointer position-relative w-100" style="transition: all 0.2s; height: 38px;">
-                <i class="ri-calendar-event-line text-muted"></i>
-                <span class="fw-semibold small text-dark flex-grow-1" style="font-size: 0.85rem;">
-                  {{ request('periode') ? \Carbon\Carbon::createFromFormat('Y-m', request('periode'))->translatedFormat('F Y') : 'Pilih Periode' }}
-                </span>
-                <i class="ri-arrow-down-s-line text-muted" style="font-size: 1rem;"></i>
+    .material-symbols-rounded {
+      font-family: 'Material Symbols Rounded' !important;
+      font-weight: normal;
+      font-style: normal;
+      font-size: 1.25rem;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-flex;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
 
-                @if(request('periode'))
-                  <div onclick="resetFilterTagihan(event)" class="d-flex align-items-center justify-content-center bg-danger-subtle rounded-circle text-danger ms-2" style="width: 20px; height: 20px; transition: 0.2s;" title="Hapus Filter">
-                    <i class="ri-close-line" style="font-size: 14px;"></i>
-                  </div>
-                @endif
-             </div>
-          </div>
+    .tagihan-page-shell {
+      max-width: 100%;
+    }
 
-          <div class="col-md-3">
-            <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-search-dark flex-grow-1">
-                <i class="ri-search-line me-1"></i>Cari
-              </button>
-              @if(request()->hasAny(['search', 'periode']))
-                <a href="{{ route('tagihan.get') }}" class="btn btn-secondary">
-                  <i class="ri-refresh-line me-1"></i>Reset
-                </a>
-              @endif
-            </div>
-          </div>
+    .tagihan-page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tagihan-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .tagihan-title-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #18181b;
+      background: #f4f4f5;
+      border: 1px solid #e4e4e7;
+    }
+
+    .tagihan-count-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      color: #3f3f46;
+      background: #f4f4f5;
+      border: 1px solid #e4e4e7;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .tagihan-page-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .tagihan-grid-card {
+      background: #fff;
+      border: 1px solid #e9edf3;
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+      overflow: visible;
+      position: relative;
+    }
+
+    .tagihan-grid-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #eef2f7;
+      background: #fff;
+      flex-wrap: wrap;
+    }
+
+    .tagihan-toolbar-left,
+    .tagihan-toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .tagihan-control {
+      position: relative;
+      min-width: 260px;
+    }
+
+    .tagihan-control.search {
+      display: block;
+      min-width: min(520px, 100%);
+      flex: 1 1 420px;
+    }
+
+    .tagihan-control .control-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      z-index: 2;
+    }
+
+    .tagihan-control .control-chevron {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .tagihan-input,
+    .tagihan-select {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      color: #111827;
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 0.75rem 2.7rem 0.75rem 3rem;
+      outline: none;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .tagihan-select {
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .tagihan-input::placeholder {
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .tagihan-input:focus,
+    .tagihan-select:focus {
+      border-color: #18181b;
+      box-shadow: 0 0 0 4px rgba(24, 24, 27, 0.12);
+    }
+
+    .tagihan-tool-btn {
+      border: 0;
+      background: transparent;
+      color: #252b35;
+      min-height: 42px;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.16s ease, color 0.16s ease;
+    }
+
+    .tagihan-tool-btn:hover,
+    .tagihan-tool-btn.is-active {
+      background: #f4f4f5;
+      color: #18181b;
+    }
+
+    .tagihan-filter-panel {
+      display: none;
+      position: absolute;
+      top: 74px;
+      right: 1.25rem;
+      z-index: 200;
+      width: min(760px, calc(100% - 2.5rem));
+      grid-template-columns: auto minmax(260px, 1fr) auto;
+      align-items: end;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
+      background: linear-gradient(90deg, #fff4f1 0%, #f5fcff 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+    }
+
+    .tagihan-filter-panel .tagihan-input,
+    .tagihan-filter-panel .tagihan-select {
+      background-color: rgba(255, 255, 255, 0.76);
+      border-color: #e2e8f0;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+
+    .tagihan-filter-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(210px, 1fr));
+      gap: 0.9rem;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .tagihan-filter-panel.is-open {
+      display: grid !important;
+    }
+
+    .tagihan-filter-panel::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      right: 145px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-left: 1px solid #e2e8f0;
+      border-top: 1px solid #e2e8f0;
+      transform: rotate(45deg);
+    }
+
+    .tagihan-filter-close {
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      border: 0;
+      background: rgba(15, 23, 42, 0.08);
+      color: #64748b;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0;
+      flex: 0 0 48px;
+    }
+
+    .tagihan-filter-field label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0 0 -0.35rem 1rem;
+      padding: 0 0.35rem;
+      color: #475569;
+      background: linear-gradient(90deg, #fff8f5 0%, #f8fcff 100%);
+      font-weight: 800;
+      font-size: 0.78rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    .tagihan-filter-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      height: 48px;
+      margin-bottom: 0;
+    }
+
+    .tagihan-filter-actions .btn {
+      height: 48px;
+      min-width: 48px;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .tagihan-filter-actions .btn-outline-secondary {
+      padding-left: 0.85rem !important;
+      padding-right: 0.85rem !important;
+    }
+
+    .tagihan-filter-field .tagihan-input,
+    .tagihan-filter-field .tagihan-select {
+      min-height: 48px;
+      height: 48px;
+    }
+
+    /* Custom Table UI Styles based on Screenshot */
+    .table-container {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      border: 1px solid #f1f5f9;
+      overflow: hidden;
+    }
+    .toolbar-top {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .toolbar-left, .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .modern-select {
+      appearance: none;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      padding: 0.5rem 2.25rem 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #334155;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 14px;
+      cursor: pointer;
+    }
+    .modern-search {
+      position: relative;
+    }
+    .modern-search i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+    }
+    .modern-search input {
+      padding: 0.5rem 1rem 0.5rem 2.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      width: 200px;
+      transition: width 0.3s;
+    }
+    .modern-search input:focus {
+      outline: none;
+      border-color: #cbd5e1;
+      width: 250px;
+    }
+    .toolbar-btn {
+      background: transparent;
+      border: none;
+      color: #0f172a;
+      font-weight: 600;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toolbar-btn:hover {
+      background: #f8fafc;
+    }
+    .toolbar-btn i {
+      font-size: 1.1rem;
+      color: #475569;
+    }
+    .modern-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .modern-table th {
+      text-align: left;
+      padding: 1rem 1.25rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      font-weight: 800;
+      border-bottom: 1px solid #e5eaf0;
+      background: #f8fafc;
+    }
+    .modern-table td {
+      padding: 1.05rem 1.25rem;
+      vertical-align: middle;
+      border-bottom: 1px dashed #e5eaf0;
+      transition: background 0.2s;
+    }
+    .modern-table tr:hover td {
+      background: #fcfcfd;
+    }
+    
+    /* Product / Customer Item */
+    .product-cell {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .product-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .product-info h6 {
+      margin: 0 0 0.25rem 0;
+      font-weight: 800;
+      color: #0f172a;
+      font-size: 0.95rem;
+    }
+    .product-info span {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    /* Date Cell */
+    .date-cell {
+      color: #0f172a;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    .date-cell .time {
+      display: block;
+      color: #94a3b8;
+      font-weight: 400;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    /* Stock/Status Bar */
+    .stock-bar-container {
+      width: 60px;
+      height: 4px;
+      background: #f1f5f9;
+      border-radius: 2px;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+    }
+    .stock-bar {
+      height: 100%;
+      border-radius: 2px;
+    }
+    .stock-text {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    /* Price */
+    .price-cell {
+      font-weight: 800;
+      color: #0f172a;
+      font-size: 1rem;
+    }
+
+    /* Status Pill */
+    .status-pill {
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+    }
+    .status-draft { background: #f1f5f9; color: #475569; }
+    .status-published { background: #e0f2fe; color: #0284c7; }
+    .status-scheduled { background: #fef3c7; color: #b45309; }
+
+    /* Action Button */
+    .action-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .action-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .action-btn .material-symbols-rounded {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .tagihan-action-menu {
+      min-width: 160px;
+      padding: 0.7rem;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 14px !important;
+      background: linear-gradient(115deg, #fff4f1 0%, #ffffff 50%, #f1fbff 100%) !important;
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16) !important;
+      margin-top: -65px !important;
+    }
+
+    .tagihan-action-menu::after {
+      content: '';
+      position: absolute;
+      top: 90px;
+      right: -8px;
+      width: 16px;
+      height: 16px;
+      background: #f7fdff;
+      border-right: 1px solid #e2e8f0;
+      border-top: 1px solid #e2e8f0;
+      transform: rotate(45deg);
+    }
+
+    .tagihan-action-menu .dropdown-item {
+      position: relative;
+      z-index: 1;
+      border-radius: 10px;
+      padding: 0.55rem 0.6rem;
+      font-weight: 600;
+      color: #1f2937;
+      gap: 0.65rem;
+    }
+
+    .tagihan-action-menu .dropdown-item:hover {
+      background: rgba(255, 255, 255, 0.72);
+      color: #111827;
+    }
+
+    .tagihan-action-menu .dropdown-item.danger-action {
+      color: #ff4528 !important;
+    }
+
+    .tagihan-action-menu .dropdown-item.danger-action:hover {
+      background: rgba(255, 69, 40, 0.08) !important;
+    }
+
+    @media (max-width: 1199.98px) {
+      .tagihan-grid-toolbar {
+        align-items: stretch;
+      }
+
+      .tagihan-toolbar-right {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 767.98px) {
+      html,
+      body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+
+      .container-fluid {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        max-width: 100vw;
+      }
+
+      .tagihan-page-header {
+        align-items: stretch;
+        gap: 1rem;
+      }
+
+      .tagihan-title-row {
+        flex-wrap: wrap;
+      }
+
+      .tagihan-title-row h4 {
+        font-size: 1.25rem;
+      }
+
+      .tagihan-count-badge {
+        width: fit-content;
+      }
+
+      .tagihan-page-actions,
+      .tagihan-page-actions .btn {
+        width: 100%;
+      }
+
+      .tagihan-page-actions {
+        gap: 0.75rem;
+      }
+
+      .tagihan-page-actions .btn {
+        justify-content: center !important;
+        min-height: 46px;
+        white-space: nowrap;
+      }
+
+      .tagihan-grid-card {
+        border-radius: 12px;
+        overflow: visible;
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .tagihan-grid-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.85rem;
+      }
+
+      .tagihan-toolbar-left,
+      .tagihan-toolbar-right {
+        width: 100%;
+      }
+
+      .tagihan-control,
+      .tagihan-control.search {
+        width: 100%;
+        min-width: 100%;
+        flex-basis: auto;
+      }
+
+      .tagihan-input,
+      .tagihan-select {
+        min-height: 46px;
+        height: 46px;
+        font-size: 0.92rem;
+      }
+
+      .tagihan-grid-toolbar {
+        padding: 0.9rem;
+      }
+
+      .tagihan-filter-panel.is-open {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        position: fixed;
+        top: auto;
+        left: 0.75rem;
+        right: 0.75rem;
+        bottom: max(0.75rem, env(safe-area-inset-bottom));
+        width: auto;
+        max-width: calc(100vw - 1.5rem);
+        padding: 0.95rem;
+        gap: 0.75rem;
+        border-radius: 18px;
+        z-index: 1080;
+        background: linear-gradient(100deg, #fff1ed 0%, #ffffff 48%, #eefbff 100%);
+        box-shadow: 0 18px 46px rgba(15, 23, 42, 0.24);
+        border: 1px solid #e2e8f0;
+        box-sizing: border-box;
+      }
+
+      .tagihan-filter-panel::before {
+        display: none;
+      }
+
+      .tagihan-filter-close {
+        align-self: flex-start;
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+        background: rgba(15, 23, 42, 0.08);
+      }
+
+      .tagihan-filter-actions {
+        width: 100%;
+        height: auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 52px;
+        gap: 0.65rem;
+      }
+
+      .tagihan-filter-actions .btn {
+        height: 46px;
+        min-width: 0;
+      }
+
+      .tagihan-filter-actions .btn-outline-secondary {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+
+      .tagihan-filter-field label {
+        margin-left: 0.75rem;
+        font-size: 0.72rem;
+        background: #fff;
+      }
+
+      .tagihan-filter-fields {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+
+      .tagihan-toolbar-right {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+      }
+
+      .tagihan-tool-btn {
+        width: 100%;
+        min-height: 42px;
+        padding: 0.55rem 0.4rem;
+        font-size: 0.84rem;
+        justify-content: center;
+        min-width: 0;
+        background: #f8fafc;
+        border: 1px solid #e5eaf0;
+      }
+
+      .tagihan-tool-btn .material-symbols-rounded {
+        font-size: 1.1rem;
+      }
+
+      .toolbar-top {
+        align-items: flex-start;
+        padding: 0.85rem 1rem !important;
+      }
+
+      .toolbar-top > div {
+        flex-wrap: wrap;
+        row-gap: 0.45rem;
+      }
+
+      .modern-table {
+        min-width: 0;
+        width: 100%;
+        display: block;
+      }
+
+      .tagihan-grid-card > div[style*="overflow-x"] {
+        overflow: visible !important;
+      }
+
+      .modern-table thead {
+        display: none;
+      }
+
+      .modern-table tbody {
+        display: grid;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
+      }
+
+      .modern-table tr {
+        display: grid;
+        grid-template-columns: 30px 46px minmax(0, 1fr);
+        gap: 0.75rem;
+        padding: 0.85rem;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 72%, #f1f5f9 100%);
+        border: 1px solid #dfe7f0;
+        border-radius: 16px;
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+
+      .modern-table th,
+      .modern-table td {
+        padding: 0;
+        border-bottom: 0;
+        background: transparent !important;
+      }
+
+      .modern-table td:first-child {
+        grid-column: 1;
+        grid-row: 1;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 0.15rem;
+      }
+
+      .modern-table td:nth-child(2) {
+        grid-column: 2 / 4;
+      }
+
+      .modern-table td:nth-child(n + 3) {
+        grid-column: 1 / 4;
+        display: grid;
+        grid-template-columns: 104px minmax(0, 1fr);
+        align-items: center;
+        gap: 0.65rem;
+        min-width: 0;
+      }
+
+      .modern-table td:nth-child(3)::before {
+        content: 'Jatuh Tempo';
+      }
+
+      .modern-table td:nth-child(4)::before {
+        content: 'Status Bayar';
+      }
+
+      .modern-table td:nth-child(5)::before {
+        content: 'Tagihan';
+      }
+
+      .modern-table td:nth-child(6)::before {
+        content: 'Status';
+      }
+
+      .modern-table td:nth-child(7)::before {
+        content: 'Aksi';
+      }
+
+      .modern-table td:nth-child(n + 3)::before {
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      .product-avatar {
+        width: 46px;
+        height: 46px;
+        font-size: 1rem;
+      }
+
+      .product-info h6 {
+        font-size: 0.86rem;
+        line-height: 1.25;
+        word-break: break-word;
+      }
+
+      .product-cell {
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      .product-info span {
+        display: block;
+        line-height: 1.35;
+        word-break: break-word;
+      }
+
+      .date-cell,
+      .price-cell {
+        font-size: 0.88rem;
+        min-width: 0;
+      }
+
+      .stock-bar-container {
+        width: 100%;
+        max-width: 110px;
+        margin-bottom: 0.35rem;
+      }
+
+      .status-pill {
+        width: fit-content;
+      }
+
+      .modern-table td:nth-child(7) {
+        align-items: center;
+      }
+
+      .modern-table td:nth-child(7) .dropdown {
+        justify-self: start;
+      }
+
+      .d-flex.justify-content-between.align-items-center.px-4.py-3 {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.85rem;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+      }
+
+      .d-flex.justify-content-between.align-items-center.px-4.py-3 > .d-flex {
+        flex-wrap: wrap;
+        gap: 0.65rem !important;
+      }
+
+      .pagination-wrapper {
+        overflow-x: auto;
+        padding-bottom: 0.2rem;
+      }
+
+      .pagination-wrapper .pagination {
+        justify-content: flex-start;
+      }
+
+      .pagination-wrapper .page-link {
+        min-width: 34px;
+        height: 34px;
+        font-size: 0.82rem;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .container-fluid {
+        padding-left: 0.6rem !important;
+        padding-right: 0.6rem !important;
+      }
+
+      .tagihan-page-actions .btn {
+        min-height: 44px;
+        font-size: 0.86rem !important;
+      }
+
+      .tagihan-grid-toolbar {
+        padding: 0.75rem;
+      }
+
+      .tagihan-input,
+      .tagihan-select {
+        height: 44px;
+        min-height: 44px;
+      }
+
+      .tagihan-toolbar-right {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .tagihan-tool-btn {
+        font-size: 0.78rem;
+        gap: 0.3rem;
+      }
+
+      .toolbar-top {
+        padding: 0.75rem !important;
+      }
+
+      .toolbar-top .vr {
+        display: none;
+      }
+
+      .modern-table tbody {
+        padding: 0.65rem;
+      }
+
+      .modern-table tr {
+        grid-template-columns: 28px 42px minmax(0, 1fr);
+        padding: 0.75rem;
+        gap: 0.65rem;
+      }
+
+      .modern-table td:nth-child(n + 3) {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+        padding-top: 0.35rem;
+      }
+
+      .modern-table td:nth-child(n + 3)::before {
+        font-size: 0.68rem;
+      }
+
+      .product-avatar {
+        width: 42px;
+        height: 42px;
+      }
+
+      .product-info h6 {
+        font-size: 0.82rem;
+      }
+
+      .product-info span {
+        font-size: 0.78rem;
+      }
+
+      .tagihan-filter-panel.is-open {
+        left: 0;
+        right: 0;
+        bottom: max(0.6rem, env(safe-area-inset-bottom));
+        width: auto;
+        max-width: calc(100vw - 1.2rem);
+      }
+    }
+    
+    /* Custom Checkbox */
+    .custom-check {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      position: relative;
+    }
+    .custom-check:checked {
+      background: #0f172a;
+      border-color: #0f172a;
+    }
+    .custom-check:checked::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 6px;
+      width: 4px;
+      height: 8px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+  </style>
+
+  <!-- Header Section -->
+  <div class="tagihan-page-shell">
+    <div class="tagihan-page-header">
+      <div>
+        <div class="tagihan-title-row">
+          <span class="tagihan-title-icon material-symbols-rounded">receipt_long</span>
+          <h4 class="fw-bold text-dark m-0">Daftar Tagihan</h4>
+          <span class="tagihan-count-badge">
+            <span class="material-symbols-rounded" style="font-size:1rem;">database</span>
+            {{ $tagihans->total() }} Tagihan
+          </span>
         </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ========================================= -->
-  <!-- DAFTAR TAGIHAN -->
-  <!-- ========================================= -->
-  <div class="card border-0 shadow-sm">
-    <div class="card-header-custom">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div>
-          <h4 class="mb-1 fw-bold">
-            <i class="ri-file-list-3-line me-2"></i>Daftar Tagihan
-          </h4>
-          <p class="mb-0 opacity-75 small">Kelola seluruh tagihan pelanggan secara efisien.</p>
-        </div>
-
-        <div class="d-flex align-items-center gap-2">
-          @if($tagihans->total() > 0)
-            <span class="badge" style="padding: 10px 20px; font-size: 0.9rem; background: rgba(24, 24, 27, 0.1); color: #18181b; border: 1px solid rgba(24, 24, 27, 0.2);">
-              <i class="ri-database-2-line me-1"></i>
-              {{ $tagihans->total() }} Tagihan
-            </span>
-          @endif
-
-          <button type="button" id="btnExportBelumLunas" class="btn btn-secondary">
-            <i class="ri-file-excel-line me-1"></i>Export Belum Lunas
-          </button>
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahTagihan">
-            <i class="ri-add-line me-1"></i>Tambah Tagihan
-          </button>
-          <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalMassTagihan">
-            <i class="ri-group-line me-1"></i>Tagihan Massal
-          </button>
-        </div>
+        <p class="text-muted m-0" style="font-size: 0.92rem;">Kelola seluruh tagihan pelanggan secara efisien dan akurat.</p>
+      </div>
+      <div class="tagihan-page-actions">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahTagihan">
+          <span class="material-symbols-rounded" style="font-size:1.1rem;">add</span> Tambah Tagihan
+        </button>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMassTagihan">
+          <span class="material-symbols-rounded" style="font-size:1.1rem;">groups</span> Tagihan Massal
+        </button>
       </div>
     </div>
 
-    <div class="card-body p-0">
-      <div class="table-responsive p-3">
-        <table class="table table-hover align-middle" style="width: 100%;">
+  <form method="GET" action="{{ route('tagihan.get') }}" id="filterForm">
+    <input type="hidden" name="periode" id="periodeInput" value="{{ request('periode') }}">
+
+    <div class="tagihan-grid-card mb-4">
+      <div class="tagihan-grid-toolbar">
+        <div class="tagihan-toolbar-left">
+          <div class="tagihan-control search" id="tagihanSearchControl">
+            <span class="control-icon material-symbols-rounded">search</span>
+            <input type="text" name="search" class="tagihan-input" id="topSearchInput" placeholder="Search..."
+              value="{{ request('search') }}">
+          </div>
+        </div>
+        <div class="tagihan-toolbar-right">
+          <button type="button" class="tagihan-tool-btn" title="Columns">
+            <span class="material-symbols-rounded">view_column</span> Columns
+          </button>
+          <button type="button" class="tagihan-tool-btn {{ request('search') || request('periode') || request('harga_paket') ? 'is-active' : '' }}" id="toggleTagihanFilters" aria-expanded="false" aria-controls="tagihanFilterPanel">
+            <span class="material-symbols-rounded">filter_alt</span> Filters
+          </button>
+          <button type="button" id="btnExportBelumLunas" class="tagihan-tool-btn" title="Export belum lunas">
+            <span class="material-symbols-rounded">download</span> Export
+          </button>
+        </div>
+      </div>
+
+      <div class="tagihan-filter-panel" id="tagihanFilterPanel">
+        <button type="button" class="tagihan-filter-close" id="closeTagihanFilters" aria-label="Tutup filter">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+        <div class="tagihan-filter-fields">
+          <div class="tagihan-filter-field">
+            <label>Periode Bulan Tahun</label>
+            <input type="text" class="tagihan-input" id="periodeTrigger" readonly placeholder="Pilih periode"
+              value="{{ request('periode') ?: '' }}">
+          </div>
+          <div class="tagihan-filter-field">
+            <label>Biaya Paket</label>
+            <select name="harga_paket" class="tagihan-select" id="hargaPaketFilter">
+              <option value="">Semua Biaya</option>
+              @foreach($paket->pluck('harga')->filter()->unique()->sort()->values() as $hargaPaket)
+                <option value="{{ $hargaPaket }}" {{ (string) request('harga_paket') === (string) $hargaPaket ? 'selected' : '' }}>
+                  Rp {{ number_format((int) $hargaPaket, 0, ',', '.') }}
+                </option>
+              @endforeach
+            </select>
+          </div>
+        </div>
+        <div class="tagihan-filter-actions">
+          <button type="submit" class="btn btn-primary">
+            <span class="material-symbols-rounded" style="font-size:1.05rem;">search</span> Apply
+          </button>
+          @if(request('periode') || request('search') || request('filter_status') || request('harga_paket'))
+            <a href="{{ route('tagihan.get') }}" class="btn btn-outline-secondary">
+              <span class="material-symbols-rounded" style="font-size:1.05rem;">restart_alt</span>
+            </a>
+          @endif
+        </div>
+      </div>
+
+      <div class="toolbar-top" style="padding: 0.85rem 1.25rem; border-bottom: 1px solid #eef2f7; background:#f8fafc;">
+        <div class="d-flex align-items-center gap-3">
+          <span class="fw-bold text-dark" style="font-size: 0.86rem; text-transform: uppercase;">Status Bayar</span>
+          <div class="vr" style="height: 22px; color: #dbe3ec;"></div>
+          <span class="text-muted" style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase;">
+            {{ $tagihans->total() }} Records Found
+          </span>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div style="overflow-x: auto;">
+        <table class="modern-table">
           <thead>
             <tr>
-              <th>No</th>
-              <th><i class="ri-eye-line me-1"></i>Detail</th>
-              <th><i class="ri-barcode-line me-1"></i>No. ID</th>
-              <th><i class="ri-user-3-line me-1"></i>Nama</th>
-              <th><i class="ri-whatsapp-line me-1"></i>No. WA</th>
-              <th><i class="ri-shield-check-line me-1"></i>Status</th>
-              <th><i class="ri-money-dollar-circle-line me-1"></i>Harga</th>
-              <th><i class="ri-settings-3-line me-1"></i>Actions</th>
+              <th style="width: 50px; text-align: center;"><input type="checkbox" class="custom-check" id="selectAllPelanggan"></th>
+              <th>Customer / Paket</th>
+              <th>Jatuh Tempo</th>
+              <th>Status Bayar</th>
+              <th>Tagihan</th>
+              <th>Status</th>
+              <th style="width: 50px; text-align: center;">Actions</th>
             </tr>
           </thead>
           <tbody>
             @forelse($tagihans as $item)
             @php
               $status = strtolower($item['status_pembayaran'] ?? '');
-              $badgeClass = match($status) {
-                'lunas' => 'badge bg-success',
-                'belum bayar' => 'badge bg-danger',
-                default => 'badge bg-secondary',
-              };
+              $isLunas = $status == 'lunas';
+              $isProsesVerifikasi = $status == 'proses_verifikasi';
+              
+              // Colors for Avatar based on string length to simulate variety
+              $colors = ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899'];
+              $colorIdx = strlen($item['nama_lengkap']) % count($colors);
+              $bgColor = $colors[$colorIdx];
 
               $alamatParts = [];
               if($item['alamat_jalan']) $alamatParts[] = $item['alamat_jalan'];
-              if($item['rt'] || $item['rw']) $alamatParts[] = 'RT '.$item['rt'].' / RW '.$item['rw'];
+              if($item['rt'] || $item['rw']) $alamatParts[] = 'RT '.($item['rt'] ?? '-').' / RW '.($item['rw'] ?? '-');
               if($item['desa']) $alamatParts[] = 'Desa '.$item['desa'];
               if($item['kecamatan']) $alamatParts[] = 'Kecamatan '.$item['kecamatan'];
               if($item['kabupaten']) $alamatParts[] = 'Kabupaten '.$item['kabupaten'];
               if($item['provinsi']) $alamatParts[] = $item['provinsi'];
               $alamatLengkap = implode(', ', $alamatParts);
 
-              $buktiUrl = !empty($item['bukti_pembayaran']) ? asset('storage/kwitansi/' . $item['bukti_pembayaran']) : '';
+              $buktiRaw = trim((string)($item['bukti_pembayaran'] ?? ''));
+              if ($buktiRaw !== '' && $buktiRaw !== '-') {
+                $buktiFile = basename(parse_url($buktiRaw, PHP_URL_PATH) ?: $buktiRaw);
+                $buktiUrl = ($buktiFile && $buktiFile !== '-') 
+                  ? asset('storage/bukti_pembayaran/' . $buktiFile)
+                  : '';
+              } else {
+                $buktiUrl = '';
+              }
+              $statusLabel = $status ? ucwords(str_replace('_', ' ', $status)) : '-';
+              $statusPillClass = $isLunas ? 'status-published' : ($isProsesVerifikasi ? 'status-scheduled' : 'status-draft');
+              $stockWidth = $isLunas ? '100%' : ($isProsesVerifikasi ? '65%' : '20%');
+              $stockColor = $isLunas ? '#10b981' : ($isProsesVerifikasi ? '#3b82f6' : '#f59e0b');
+              $stockText = $isLunas ? 'Selesai' : ($isProsesVerifikasi ? 'Verifikasi' : 'Pending');
+              $hargaFormatted = 'Rp ' . number_format($item['paket']['harga'] ?? 0, 0, ',', '.');
+              $tanggalMulaiFormatted = $item['tanggal_mulai'] ? \Carbon\Carbon::parse($item['tanggal_mulai'])->format('d M Y') : '-';
+              $jatuhTempoFormatted = $item['tanggal_berakhir'] ? \Carbon\Carbon::parse($item['tanggal_berakhir'])->format('d M Y') : '-';
             @endphp
-            <tr
-              data-alamat="{{ $alamatLengkap }}"
+            <tr class="pelanggan-item"
+              data-tagihan-id="{{ $item['id'] }}"
+              data-nomor-id="{{ $item['nomer_id'] ?? '-' }}"
+              data-nama="{{ $item['nama_lengkap'] ?? '-' }}"
+              data-whatsapp="{{ $item['no_whatsapp'] ?? '-' }}"
+              data-status="{{ $statusLabel }}"
+              data-paket="{{ $item['paket']['nama_paket'] ?? '-' }}"
+              data-harga="{{ $hargaFormatted }}"
+              data-alamat="{{ $alamatLengkap ?: '-' }}"
               data-kecamatan="{{ $item['kecamatan'] ?? '-' }}"
               data-kabupaten="{{ $item['kabupaten'] ?? '-' }}"
               data-provinsi="{{ $item['provinsi'] ?? '-' }}"
               data-kecepatan="{{ $item['paket']['kecepatan'] ?? '-' }} Mbps"
-              data-tanggal-mulai="{{ $item['tanggal_mulai'] ? \Carbon\Carbon::parse($item['tanggal_mulai'])->format('d M Y') : '-' }}"
-              data-jatuh-tempo="{{ $item['tanggal_berakhir'] ? \Carbon\Carbon::parse($item['tanggal_berakhir'])->format('d M Y') : '-' }}"
+              data-tanggal-mulai="{{ $tanggalMulaiFormatted }}"
+              data-jatuh-tempo="{{ $jatuhTempoFormatted }}"
               data-catatan="{{ $item['catatan'] ?? '-' }}"
-              data-bukti="{{ $buktiUrl }}"
-            >
-              <td class="text-muted fw-semibold" style="width: 60px;">{{ ($tagihans->firstItem() ?? 1) + $loop->index }}</td>
+              data-bukti="{{ $buktiUrl }}">
+              <td><input type="checkbox" class="custom-check pelanggan-checkbox" value="{{ $item['id'] }}"></td>
               <td>
-                <button class="btn btn-sm btn-icon btn-outline-primary btn-detail" title="Lihat Detail">
-                  <i class="ri-eye-line"></i>
-                </button>
-              </td>
-              <td><span class="badge bg-label-dark">{{ $item['nomer_id'] }}</span></td>
-              <td><strong>{{ $item['nama_lengkap'] }}</strong></td>
-              <td style="min-width: 180px;">
-                <a href="https://wa.me/{{ $item['no_whatsapp'] }}" target="_blank" class="text-decoration-none">
-                  <code style="background: #18181b; padding: 6px 12px; border-radius: 9999px; font-size: 0.875rem; font-weight: 500; color: #fafafa; white-space: nowrap; display: inline-flex; align-items: center;">
-                    <i class="ri-whatsapp-line me-1"></i>{{ $item['no_whatsapp'] }}
-                  </code>
-                </a>
+                <div class="product-cell">
+                  <div class="product-info">
+                    <h6>{{ $item['nama_lengkap'] }}</h6>
+                    <span>ID: {{ $item['nomer_id'] ?? '-' }} | {{ $item['paket']['nama_paket'] ?? '-' }}</span>
+                  </div>
+                </div>
               </td>
               <td>
-                <span class="{{ $badgeClass }}">
-                  <i class="ri-{{ $status == 'lunas' ? 'checkbox-circle' : 'close-circle' }}-line me-1"></i>
-                  {{ ucfirst($status ?: '-') }}
+                <div class="date-cell">
+                  {{ $item['tanggal_berakhir'] ? \Carbon\Carbon::parse($item['tanggal_berakhir'])->translatedFormat('d M Y') : '-' }}
+                  <span class="time">{{ $item['tanggal_berakhir'] ? \Carbon\Carbon::parse($item['tanggal_berakhir'])->translatedFormat('h:i a') : '' }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="stock-bar-container">
+                  <div class="stock-bar" style="width: {{ $stockWidth }}; background: {{ $stockColor }};"></div>
+                </div>
+                <span class="stock-text">{{ $stockText }}</span>
+              </td>
+              <td class="price-cell">
+                {{ $hargaFormatted }}
+              </td>
+              <td>
+                <span class="status-pill {{ $statusPillClass }}">
+                  {{ $statusLabel }}
                 </span>
               </td>
-              <td><strong>Rp {{ number_format($item['paket']['harga'] ?? 0, 0, ',', '.') }}</strong></td>
               <td>
-                <div class="d-flex gap-2 flex-wrap">
-                  {{-- Tombol Verifikasi Lunas --}}
-                  <button type="button"
-                    class="btn btn-sm btn-konfirmasi"
-                    style="background:#16a34a;color:#fff;border:1px solid #16a34a;"
-                    data-id="{{ $item['id'] }}"
-                    data-nama="{{ $item['nama_lengkap'] }}"
-                    title="Verifikasi Lunas">
-                    <i class="ri-checkbox-circle-line me-1"></i>Verifikasi Lunas
+                <div class="dropdown">
+                  <button class="action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="material-symbols-rounded">more_vert</span>
                   </button>
-
-                  <button type="button"
-                    class="btn btn-sm btn-outline-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalEditTagihan-{{ $item['id'] }}"
-                    title="Edit">
-                    <i class="ri-edit-2-line"></i>
-                  </button>
-
-                  <form action="{{ route('tagihan.destroy', $item['id']) }}" method="POST" class="delete-form d-inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
-                      <i class="ri-delete-bin-line"></i>
-                    </button>
-                  </form>
+                  <ul class="dropdown-menu dropdown-menu-end tagihan-action-menu">
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center btn-detail" href="javascript:void(0);"
+                        data-nomor-id="{{ $item['nomer_id'] ?? '-' }}"
+                        data-nama="{{ $item['nama_lengkap'] ?? '-' }}"
+                        data-whatsapp="{{ $item['no_whatsapp'] ?? '-' }}"
+                        data-status="{{ $statusLabel }}"
+                        data-paket="{{ $item['paket']['nama_paket'] ?? '-' }}"
+                        data-harga="{{ $hargaFormatted }}"
+                        data-alamat="{{ $alamatLengkap ?: '-' }}"
+                        data-kecamatan="{{ $item['kecamatan'] ?? '-' }}"
+                        data-kabupaten="{{ $item['kabupaten'] ?? '-' }}"
+                        data-provinsi="{{ $item['provinsi'] ?? '-' }}"
+                        data-kecepatan="{{ $item['paket']['kecepatan'] ?? '-' }} Mbps"
+                        data-tanggal-mulai="{{ $tanggalMulaiFormatted }}"
+                        data-jatuh-tempo="{{ $jatuhTempoFormatted }}"
+                        data-catatan="{{ $item['catatan'] ?? '-' }}"
+                        data-bukti="{{ $buktiUrl }}">
+                        <span class="material-symbols-rounded" style="font-size:1.25rem;">visibility</span> Detail
+                      </a>
+                    </li>
+                    @if(!$isLunas)
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center btn-konfirmasi" href="javascript:void(0);" data-id="{{ $item['id'] }}" data-nama="{{ $item['nama_lengkap'] }}">
+                        <span class="material-symbols-rounded text-success" style="font-size:1.25rem;">check_circle</span> Verifikasi Lunas
+                      </a>
+                    </li>
+                    @endif
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#modalEditTagihan-{{ $item['id'] }}">
+                        <span class="material-symbols-rounded" style="font-size:1.25rem;">edit</span> Edit
+                      </a>
+                    </li>
+                    <li>
+                      <form action="{{ route('tagihan.destroy', $item['id']) }}" method="POST" class="delete-form m-0 p-0">
+                        @csrf
+                        @method('DELETE')
+                        <button type="button" class="dropdown-item danger-action btn-delete-tagihan d-flex align-items-center w-100 border-0 bg-transparent text-start">
+                          <span class="material-symbols-rounded" style="font-size:1.25rem;">delete</span> Delete
+                        </button>
+                      </form>
+                    </li>
+                  </ul>
                 </div>
               </td>
             </tr>
             @empty
-            <tr class="empty-state-row">
-              <td colspan="8" class="text-center">
-                <div class="empty-state-content">
-                  <div class="mb-3">
-                    <i class="ri-inbox-line" style="font-size: 4rem; color: #ddd;"></i>
-                  </div>
-
-                  @if(request()->hasAny(['search', 'periode']))
-                    <h5 class="text-muted mb-2">
-                      <i class="ri-search-eye-line me-2"></i>Data Tidak Ditemukan
-                    </h5>
-                    <p class="text-muted mb-3">
-                      Tidak ada data yang sesuai dengan filter Anda.
-                    </p>
-
-                    <div class="mb-3">
-                      @if(request('search'))
-                        <span class="badge bg-label-primary me-2" style="padding: 8px 16px;">
-                          <i class="ri-search-line me-1"></i>
-                          Pencarian: "{{ request('search') }}"
-                        </span>
-                      @endif
-                      @if(request('periode'))
-                        @php
-                          try {
-                              $dateObj = \Carbon\Carbon::createFromFormat('Y-m', request('periode'));
-                              $periodeLabel = $dateObj->translatedFormat('F Y');
-                          } catch (\Exception $e) {
-                              $periodeLabel = request('periode');
-                          }
-                        @endphp
-                        <span class="badge bg-label-primary me-2" style="padding: 8px 16px;">
-                          <i class="ri-calendar-line me-1"></i>
-                          Periode: {{ $periodeLabel }}
-                        </span>
-                      @endif
-                    </div>
-
-                    <a href="{{ route('tagihan.get') }}" class="btn btn-primary mt-2">
-                      <i class="ri-refresh-line me-1"></i>Reset & Tampilkan Semua Data
-                    </a>
-                  @else
-                    <h5 class="text-muted mb-2">
-                      <i class="ri-file-list-line me-2"></i>Belum Ada Data Tagihan
-                    </h5>
-                    <p class="text-muted">
-                      Saat ini belum ada data tagihan yang terdaftar dalam sistem.
-                    </p>
-                  @endif
-                </div>
+            <tr>
+              <td colspan="7" class="text-center py-5">
+                <span class="material-symbols-rounded" style="font-size: 3rem; color: #cbd5e1;">inbox</span>
+                <h6 class="mt-3 text-muted">Tidak ada data tagihan.</h6>
               </td>
             </tr>
             @endforelse
           </tbody>
         </table>
+      <!-- Pagination Footer -->
+      <div class="d-flex justify-content-between align-items-center px-4 py-3" style="border-top: 1px solid #f1f5f9; background: #ffffff;">
+        <div class="d-flex align-items-center gap-4">
+          <span class="text-muted" style="font-size: 0.8125rem;">
+            Showing {{ $tagihans->firstItem() ?? 0 }}-{{ $tagihans->lastItem() ?? 0 }} of {{ $tagihans->total() }}
+          </span>
+        </div>
+        <div class="pagination-wrapper">
+          {{ $tagihans->appends(request()->query())->links('vendor.pagination.tagihan-compact') }}
+        </div>
       </div>
     </div>
-
-    @if($tagihans->hasPages())
-      <div class="pagination-wrapper">
-        <div class="pagination-info">
-          Menampilkan <strong>{{ $tagihans->firstItem() ?? 0 }}</strong> - <strong>{{ $tagihans->lastItem() ?? 0 }}</strong>
-          dari <strong>{{ $tagihans->total() }}</strong> tagihan
-        </div>
-        <div>
-          {{ $tagihans->appends(request()->query())->onEachSide(1)->links('pagination::bootstrap-5') }}
-        </div>
-      </div>
-    @endif
-  </div>
+    </div>
+  </form>
 </div>
+
 
 
 {{-- MODAL DETAIL --}}
 <div class="modal fade" id="detailModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-primary py-4">
-        <h5 class="modal-title text-white fw-bold">
-          <i class="ri-information-line me-2"></i>Detail Pelanggan
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen modal-dialog-scrollable">
+    <div class="modal-content border-0">
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-4 z-3" style="background-color: white; padding: 1rem; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); filter: none;" data-bs-dismiss="modal"></button>
+      <div class="modal-body p-0">
         <!-- Content will be inserted via JavaScript -->
       </div>
-      {{-- <div class="modal-footer py-4">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          <i class="ri-close-line me-1"></i>Tutup
-        </button>
-      </div> --}}
     </div>
   </div>
 </div>
@@ -2208,7 +3650,7 @@ document.addEventListener("DOMContentLoaded", function () {
 <div class="modal fade" id="modalEditTagihan-{{ $tagihan['id'] }}" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
-      <form action="{{ route('tagihan.update', $tagihan['id']) }}" method="POST" enctype="multipart/form-data">
+      <form action="{{ route('tagihan.update', $tagihan['id']) }}" method="POST" enctype="multipart/form-data" class="edit-tagihan-form" data-tagihan-id="{{ $tagihan['id'] }}">
         @csrf
         @method('PUT')
 
@@ -2227,7 +3669,17 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
 
             <input type="hidden" name="pelanggan_id" value="{{ $tagihan['pelanggan_id'] ?? '' }}">
-            <input type="hidden" name="paket_id" value="{{ $tagihan['paket']['id'] ?? '' }}">
+
+            <div class="col-12 mt-3">
+              <label class="form-label fw-semibold">Pilih Paket</label>
+              <select name="paket_id" class="form-select select2-edit-paket" required>
+                @foreach($paket as $pkt)
+                  <option value="{{ $pkt->id }}" {{ ($tagihan['paket']['id'] ?? '') == $pkt->id ? 'selected' : '' }}>
+                    {{ $pkt->nama_paket }} - Rp {{ number_format($pkt->harga, 0, ',', '.') }}
+                  </option>
+                @endforeach
+              </select>
+            </div>
 
             <div class="col-md-6">
               <label class="form-label fw-semibold">Tanggal Mulai</label>
@@ -2271,8 +3723,8 @@ document.addEventListener("DOMContentLoaded", function () {
 <!-- MODAL: BROADCAST TAGIHAN (BATCH + MANUAL) -->
 <!-- ========================================= -->
 <div class="modal fade" id="modalMassTagihan" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-xl">
-    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+  <div class="modal-dialog modal-fullscreen modal-dialog-scrollable m-0">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 0; overflow: hidden;">
       
       <!-- Modern Header -->
       <div class="modal-header border-0 py-4 px-5" style="background: linear-gradient(135deg, #18181b 0%, #27272a 100%);">
@@ -2288,7 +3740,7 @@ document.addEventListener("DOMContentLoaded", function () {
       </div>
 
       <div class="modal-body p-0">
-        <div class="d-flex flex-column flex-lg-row h-100" style="min-height: 500px;">
+        <div class="d-flex flex-column flex-lg-row h-100" style="min-height: calc(100vh - 120px);">
             
             <!-- Sidebar / Mode Selection -->
             <div class="col-lg-3 bg-light border-end p-4">
@@ -2342,11 +3794,20 @@ document.addEventListener("DOMContentLoaded", function () {
                             Sistem akan memindai <span class="fw-bold text-dark">semua pelanggan</span> yang belum memiliki tagihan di bulan ini.
                        </p>
 
-                       <div class="card bg-dark bg-gradient text-white border-0 d-inline-block px-5 py-3 rounded-4 shadow-lg">
+                       <div class="card bg-dark bg-gradient text-white border-0 d-inline-block px-5 py-3 rounded-4 shadow-lg mb-3">
                             <h1 class="display-4 fw-bold mb-0" id="broadcastCount">
                                 <span class="spinner-border spinner-border-sm"></span>
                             </h1>
-                            <span class="text-white small text-uppercase spacing-2">Pelanggan Eligible</span>
+                            <span class="text-white small text-uppercase spacing-2">Pelanggan Approve</span>
+                       </div>
+
+                       <div class="d-flex flex-wrap justify-content-center gap-2">
+                           <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                               Siap dikirim: <strong id="broadcastEligibleCount">-</strong>
+                           </span>
+                           <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2">
+                               Pending status: <strong id="broadcastPendingCount">-</strong>
+                           </span>
                        </div>
                     </div>
                 </div>
@@ -2513,6 +3974,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const sectionAll = document.getElementById('sectionAll');
     const sectionManual = document.getElementById('sectionManual');
     const countEl = document.getElementById('broadcastCount');
+    const eligibleCountEl = document.getElementById('broadcastEligibleCount');
+    const pendingCountEl = document.getElementById('broadcastPendingCount');
     const btnSubmit = document.getElementById('btnBroadcastSubmit');
     const progressSection = document.getElementById('broadcastProgressSection');
     const progressBar = document.getElementById('broadcastProgressBar');
@@ -2607,14 +4070,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- LOGIC: FETCH COUNT (ALL) ---
     function fetchBroadcastCount() {
         countEl.innerHTML = '<span class="spinner-border spinner-border-sm text-warning"></span>';
-        fetch('{{ route("tagihan.broadcast.count") }}')
+        const countUrl = new URL('{{ route("tagihan.broadcast.count") }}', window.location.origin);
+        countUrl.searchParams.set('_ts', String(Date.now()));
+
+        return fetch(countUrl.toString(), {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'Accept': 'application/json'
+            }
+        })
             .then(res => res.json())
             .then(data => {
                 countEl.textContent = data.count;
+                if (eligibleCountEl) eligibleCountEl.textContent = data.approve_count ?? data.eligible_count ?? data.count ?? 0;
+                if (pendingCountEl) pendingCountEl.textContent = data.pending_status_count ?? 0;
+                return data;
             })
             .catch(err => {
                 console.error(err);
                 countEl.textContent = '-';
+                if (eligibleCountEl) eligibleCountEl.textContent = '-';
+                if (pendingCountEl) pendingCountEl.textContent = '-';
+                return null;
             });
     }
 
@@ -2763,7 +4242,12 @@ document.addEventListener('DOMContentLoaded', function() {
              try {
                 btnSubmit.disabled = true;
                 btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-                
+
+                // Refresh angka real-time sebelum proses agar sesuai data approve terbaru
+                const latestCount = await fetchBroadcastCount();
+                const totalApprove = Number(
+                    (latestCount?.approve_count ?? countEl?.textContent ?? '0').toString().replace(/[^\d]/g, '')
+                ) || 0;
                 const res = await fetch('{{ route("tagihan.broadcast.ids") }}');
                 const data = await res.json();
                 targetIds = data.ids || [];
@@ -2786,7 +4270,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Confirmation (Using standard Swal but visually consistent)
         const result = await Swal.fire({
             title: 'Konfirmasi Proses',
-            html: `Anda akan membuat tagihan untuk <strong>${targetIds.length} pelanggan</strong>.<br>Pastikan tanggal sudah benar.`,
+            html: `Total approve: <strong>${mode === 'all' ? (Number((countEl?.textContent || '0').replace(/[^\d]/g, '')) || 0) : targetIds.length}</strong><br>Yang akan diproses: <strong>${targetIds.length} pelanggan</strong>.<br><small class="text-muted">Sisanya biasanya sudah punya tagihan bulan ini atau belum memiliki paket.</small>`,
             icon: 'info',
             showCancelButton: true,
             confirmButtonColor: '#18181b', // Dark

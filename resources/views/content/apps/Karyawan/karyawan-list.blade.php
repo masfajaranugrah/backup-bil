@@ -992,21 +992,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         </td>
 
                         <td>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar avatar-sm me-3">
-                                    @if($employee->foto)
-                                        <img src="{{ route('karyawan.image', ['id' => $employee->id, 'type' => 'foto']) }}" 
-                                             alt="Avatar" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
-                                    @else
-                                        <div class="avatar-initial rounded-circle bg-label-dark" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
-                                            {{ strtoupper(substr($employee->full_name, 0, 1)) }}
-                                        </div>
-                                    @endif
-                                </div>
-                                <div>
-                                    <span class="fw-semibold">{{ $employee->full_name }}</span>
-                                </div>
-                            </div>
+                            <span class="fw-semibold">{{ $employee->full_name }}</span>
                         </td>
 
                         <td>{{ Str::limit($employee->full_address, 30) }}</td>

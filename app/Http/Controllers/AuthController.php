@@ -27,7 +27,26 @@ class AuthController extends Controller
     {
         $pageConfigs = ['myLayout' => 'blank'];
 
-        return view('content.apps.Auth.login', ['pageConfigs' => $pageConfigs]);
+        return view('content.apps.Auth.login', [
+            'pageConfigs' => $pageConfigs,
+            'loginActionRoute' => 'login.create',
+            'brandTitle' => 'Smart Billing',
+            'brandSubtitle' => 'Masuk ke dashboard Anda',
+            'footerText' => date('Y').' Smart Billing JMK',
+        ]);
+    }
+
+    public function indexLoginKaryawan()
+    {
+        $pageConfigs = ['myLayout' => 'blank'];
+
+        return view('content.apps.Karyawan.auth.login', [
+            'pageConfigs' => $pageConfigs,
+            'loginActionRoute' => 'login.karyawan.post',
+            'brandTitle' => 'Smart Billing',
+            'brandSubtitle' => 'Masuk ke dashboard Anda',
+            'footerText' => date('Y').' Smart Billing JMK login karyawan JMK',
+        ]);
     }
 
     public function loginMember()
@@ -196,13 +215,13 @@ public function loginMem(Request $request)
                     return redirect('/dashboard/cs/tickets');
 
                 case 'teknisi':
-                    return redirect('/dashboard/teknisi/jobs');
+                    return redirect('/karyawan/jobs');
 
                 case 'koordinator':
                     return redirect('/dashboard/koordinator/jobs');
 
                 case 'karyawan':
-                    return redirect('/dashboard/karyawan/absensi');
+                    return redirect('/karyawan/home');
                 case 'logistic':
                     return redirect('/dashboard/admin/barangs');
                 case 'verifikasi':
@@ -225,10 +244,17 @@ public function loginMem(Request $request)
     // Logout 
     public function logout(Request $request)
     {
+        $user = Auth::user();
+        $normalizedRole = $this->normalizeWebRole($user->role ?? '');
+
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if (in_array($normalizedRole, ['karyawan', 'teknisi'], true)) {
+            return redirect('/karyawan/login')->with('success', 'Berhasil logout.');
+        }
 
         return redirect('/dashboard/auth/login')->with('success', 'Berhasil logout.');
     }

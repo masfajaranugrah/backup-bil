@@ -853,9 +853,19 @@ document.addEventListener("DOMContentLoaded", function() {
                     </div>
                 </form>
                 
-                <a href="{{ route('income.export', request()->only(['filter_month', 'filter_year', 'search'])) }}" class="btn btn-outline-primary btn-add">
-                    <i class="ri-download-line me-2"></i>Export Excel
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('income.export', request()->only(['filter_month', 'filter_year', 'search'])) }}" class="btn btn-outline-secondary" title="Export Harian (Pisah Sheet)">
+                        <i class="ri-file-excel-line me-1"></i>Export (Pisah Sheet)
+                    </a>
+                    
+                    <a href="{{ route('income.export.monthly', request()->only(['filter_month', 'filter_year'])) }}" class="btn btn-outline-success" title="Export Rekap Sebulan Penuh">
+                        <i class="ri-file-excel-2-line me-1"></i>Export Bulanan (1 Sheet)
+                    </a>
+
+                    <a href="{{ route('income.export.dedicated', request()->only(['filter_month', 'filter_year', 'search'])) }}" class="btn btn-outline-info" title="Export Khusus Paket Dedicated">
+                        <i class="ri-vip-crown-line me-1"></i>Export Dedicated
+                    </a>
+                </div>
                 <a href="{{ route('income.create') }}" class="btn btn-primary btn-add">
                     <i class="ri-add-circle-line me-2"></i>Tambah Laba Masuk
                 </a>

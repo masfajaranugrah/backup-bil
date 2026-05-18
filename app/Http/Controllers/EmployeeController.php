@@ -27,9 +27,21 @@ class EmployeeController extends Controller
     // }
 
     // Menampilkan semua data
-    public function index()
+    public function index(Request $request)
     {
-        $employees = Employee::latest()->paginate(10);
+        $query = Employee::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nik', 'like', "%{$search}%")
+                  ->orWhere('full_name', 'like', "%{$search}%")
+                  ->orWhere('no_hp', 'like', "%{$search}%")
+                  ->orWhere('jabatan', 'like', "%{$search}%");
+            });
+        }
+
+        $employees = $query->latest()->paginate(10)->withQueryString();
 
         return view('content.apps.Karyawan.karyawan-list', compact('employees'));
     }

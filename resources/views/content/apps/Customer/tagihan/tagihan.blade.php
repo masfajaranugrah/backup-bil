@@ -730,7 +730,7 @@
             transform: scale(0.9);
         }
 
-        /* Center capture — big shutter circle */
+        /* Center capture  big shutter circle */
         .camera-btn-capture {
             width: 80px;
             height: 80px;
@@ -1398,9 +1398,8 @@
 <body>
 
     <div class="container">
-        <div class="header-section">
-            <h4>Tagihan</h4>
-            <p>Kelola pembayaran tagihan Anda</p>
+        <div class="header-section d-flex justify-content-between align-items-center mb-4">
+            <h4 class="mb-0" style="font-weight: 700; color: #334155; font-size: 1.75rem;">Tagihan aktif</h4>
         </div>
 
         <div class="invoice-container">
@@ -1412,9 +1411,7 @@
             'proses_verifikasi';
             @endphp
 
-            <div class="card card-invoice {{ $isPriority ? 'priority' : '' }}">
-
-
+            <div class="card card-invoice {{ $isPriority ? 'priority' : '' }}" style="border: 1px solid #f1f5f9; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 20px;">
                 @php
                 $jatuhTempo = \Carbon\Carbon::parse($tagihan->tanggal_berakhir);
                 $sekarang = \Carbon\Carbon::now();
@@ -1423,95 +1420,82 @@
                 // Tunggakan = jatuh tempo di bulan sebelumnya atau lebih lama
                 $isPastMonth = $jatuhTempo->format('Y-m') < $sekarang->format('Y-m');
 
-                    $isUnpaid = $tagihan->status_pembayaran !== 'lunas' && $tagihan->status_pembayaran !==
-                    'proses_verifikasi';
+                $isUnpaid = $tagihan->status_pembayaran !== 'lunas' && $tagihan->status_pembayaran !== 'proses_verifikasi';
 
-                    // Tunggakan muncul hanya jika: belum bayar DAN sudah lewat bulan
-                    $isTunggakan = $isUnpaid && $isPastMonth;
-                    @endphp
+                // Tunggakan muncul hanya jika: belum bayar DAN sudah lewat bulan
+                $isTunggakan = $isUnpaid && $isPastMonth;
+                @endphp
 
-                    <div class="card-header-invoice d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5>Invoice Tagihan</h5>
-                            <small>PT. Jernih Multi Komunikasi</small>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 style="font-weight: 700; color: #334155; font-size: 1.15rem; margin-bottom: 4px;">Periode {{ \Carbon\Carbon::parse($tagihan->tanggal_mulai)->translatedFormat('F Y') }}</h5>
+                        <div style="color: #94a3b8; font-size: 0.95rem;">
+                            {{ \Carbon\Carbon::parse($tagihan->tanggal_mulai)->translatedFormat('j M') }} - {{ \Carbon\Carbon::parse($tagihan->tanggal_berakhir)->translatedFormat('j M Y') }}
                         </div>
+                    </div>
+                    @if($isTunggakan)
+                    <div style="background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                        Tunggakan
+                    </div>
+                    @elseif($isUnpaid)
+                    <div style="background: #e0f2fe; color: #0284c7; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                        Tagihan Baru
+                    </div>
+                    @endif
+                </div>
 
-                        @if($isTunggakan)
-                        <span class="badge-tunggakan">
-                            <i class="bi bi-exclamation-triangle-fill"></i> Tunggakan
+                <hr style="border-color: #f1f5f9; margin: 16px 0;">
+
+                <div class="d-flex justify-content-between mb-3 align-items-center">
+                    <div style="color: #94a3b8; font-size: 1.05rem;">Batas Waktu Bayar</div>
+                    <div style="color: #334155; font-size: 1.05rem; font-weight: 500;">{{ \Carbon\Carbon::parse($tagihan->tanggal_berakhir)->translatedFormat('j M Y') }}</div>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-4 align-items-center">
+                    <div style="color: #94a3b8; font-size: 1.05rem;">Total Tagihan</div>
+                    <div style="color: #16a34a; font-size: 1.3rem; font-weight: 700;">+Rp{{ number_format($paket->harga ?? 0, 0, ',', '.') }}</div>
+                </div>
+
+                @if($tagihan->status_pembayaran === 'lunas')
+                    <div class="status-wrapper mt-0 pt-0 border-0">
+                        <span class="status-badge status-lunas w-100 justify-content-center">
+                            <i class="bi bi-check-circle-fill"></i> Lunas
                         </span>
-                        @endif
                     </div>
-
-                    <div class="card-body">
-
-
-
-                        <div class="price-section">
-                            <!-- <p class="period-label">
-                  Periode: {{ \Carbon\Carbon::parse($tagihan->tanggal_berakhir)->translatedFormat('F Y') }}
-              </p> -->
-                            <p class="period-label">
-                                Periode: {{ \Carbon\Carbon::parse($tagihan->tanggal_mulai)->translatedFormat('F Y') }}
-                            </p>
-                            <div class="price-amount">
-                                Rp {{ number_format($paket->harga ?? 0, 0, ',', '.') }}
+                @elseif($tagihan->status_pembayaran === 'proses_verifikasi')
+                    <div class="verification-alert mt-0">
+                        <div class="verif-alert-body">
+                            <div class="verif-alert-icon">
+                                <i class="bi bi-clock-history"></i>
                             </div>
-
-                            <p class="price-text">
-                                {{ ucwords(\NumberFormatter::create('id_ID',
-                                \NumberFormatter::SPELLOUT)->format($paket->harga ?? 0)) }} rupiah
-                            </p>
+                            <div class="verif-alert-content">
+                                <h6 class="verif-alert-title">Verifikasi Pembayaran</h6>
+                                <p class="verif-alert-text">Bukti pembayaran Anda sedang ditinjau. Mohon tunggu konfirmasi admin.</p>
+                            </div>
                         </div>
-
-                        <div class="status-wrapper">
-                            @if($tagihan->status_pembayaran === 'lunas')
-                            <span class="status-badge status-lunas">
-                                <i class="bi bi-check-circle-fill"></i> Lunas
-                            </span>
-                            @elseif($tagihan->status_pembayaran === 'proses_verifikasi')
-                            {{-- VERIFICATION SHADCN ALERT --}}
-                            <div class="verification-alert">
-                                <div class="verif-alert-body">
-                                    <div class="verif-alert-icon">
-                                        <i class="bi bi-clock-history"></i>
-                                    </div>
-                                    <div class="verif-alert-content">
-                                        <h6 class="verif-alert-title">Verifikasi Pembayaran</h6>
-                                        <p class="verif-alert-text">Bukti pembayaran Anda sedang ditinjau. Mohon tunggu
-                                            konfirmasi admin.</p>
-                                    </div>
-                                </div>
-                                <div class="verif-alert-actions">
-                                    @if($tagihan->bukti_pembayaran)
-                                    <button class="verif-btn verif-btn-view lihat-bukti-btn"
-                                        data-url="{{ asset('storage/' . $tagihan->bukti_pembayaran) }}"
-                                        data-type="{{ pathinfo($tagihan->bukti_pembayaran, PATHINFO_EXTENSION) }}"
-                                        data-rekening-id="{{ $tagihan->type_pembayaran ?? '' }}"
-                                        data-id="{{ $tagihan->id }}">
-                                        <i class="bi bi-eye"></i> Lihat Bukti
-                                    </button>
-                                    @endif
-                                    <button class="verif-btn verif-btn-change ganti-bukti-btn"
-                                        data-rekening-id="{{ $tagihan->type_pembayaran ?? '' }}"
-                                        data-id="{{ $tagihan->id }}">
-                                        <i class="bi bi-arrow-repeat"></i> Ganti Bukti
-                                    </button>
-                                </div>
-                            </div>
-                            @else
-                            <span class="status-badge status-belum">
-                                <i class="bi bi-cloud-arrow-up-fill"></i> Menunggu Upload
-                            </span>
-                            <div>
-                                <button class="btn btn-bayar bayar-btn" data-id="{{ $tagihan->id }}">
-                                    <i class="bi bi-upload"></i> Upload Bukti Pembayaran
-                                </button>
-                            </div>
+                        <div class="verif-alert-actions">
+                            @if($tagihan->bukti_pembayaran)
+                            <button class="verif-btn verif-btn-view lihat-bukti-btn"
+                                data-url="{{ asset('storage/' . $tagihan->bukti_pembayaran) }}"
+                                data-type="{{ pathinfo($tagihan->bukti_pembayaran, PATHINFO_EXTENSION) }}"
+                                data-rekening-id="{{ $tagihan->type_pembayaran ?? '' }}"
+                                data-id="{{ $tagihan->id }}">
+                                <i class="bi bi-eye"></i> Lihat Bukti
+                            </button>
                             @endif
+                            <button class="verif-btn verif-btn-change ganti-bukti-btn"
+                                data-rekening-id="{{ $tagihan->type_pembayaran ?? '' }}"
+                                data-id="{{ $tagihan->id }}">
+                                <i class="bi bi-arrow-repeat"></i> Ganti Bukti
+                            </button>
                         </div>
-
                     </div>
+                @else
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn flex-grow-1" data-bs-toggle="modal" data-bs-target="#caraBayarModal" style="background: white; color: #0f172a; border: 1px solid #0f172a; font-weight: 600; border-radius: 8px; padding: 10px 0;">Lihat Cara upload</button>
+                        <button class="btn flex-grow-1 bayar-btn" data-id="{{ $tagihan->id }}" style="background: #0f172a; color: white; border: 1px solid #0f172a; font-weight: 600; border-radius: 8px; padding: 10px 0;">Upload Pembayaran</button>
+                    </div>
+                @endif
             </div>
 
             @empty
@@ -1527,6 +1511,32 @@
                 </a>
             </div>
             @endforelse
+        </div>
+    </div>
+
+    <!-- Modal Cara Bayar -->
+    <div class="modal fade" id="caraBayarModal" tabindex="-1" aria-labelledby="caraBayarModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content" style="background: #f8fafc;">
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="modal-title" id="caraBayarModalLabel" style="font-weight: 700; color: #0f172a; font-size: 1.25rem;">Langkah-langkah Upload Bukti Pembayaran</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 pt-4 pb-4">
+                    <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f1f5f9;">
+                        <ol style="line-height: 1.8; font-size: 0.95rem; color: #334155; margin-bottom: 0; padding-left: 20px;">
+                            <li class="mb-3">Klik tombol <strong>Upload Pembayaran</strong>.</li>
+                            <li class="mb-3">Pilih <strong>Bank Tujuan</strong> transfer kemana.</li>
+                            <li class="mb-3">Klik kamera jika ingin langsung foto struk / bisa pilih foto melalui galeri.</li>
+                            <li class="mb-3">Setelah bukti pembayaran diunggah, admin akan melakukan konfirmasi.</li>
+                            <li class="mb-0">Jika pembayaran sudah dikonfirmasi, kwitansi akan otomatis muncul di menu Kwitansi.</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn w-100" data-bs-dismiss="modal" style="background: #0f172a; color: white; border-radius: 8px; padding: 12px 24px; font-weight: 600;">Mengerti</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -2515,5 +2525,6 @@
             });
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

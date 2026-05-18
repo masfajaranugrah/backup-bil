@@ -36,32 +36,62 @@ class TicketController extends Controller
         ]);
     }
 
-public function index()
-{
-    // Ambil semua pelanggan & paket untuk dropdown modal
-    $pelanggan = Pelanggan::all();
-    $paket = Paket::all();
+    /**
+     * Admin polling endpoint - returns all ticket statuses + technician_note as JSON
+     */
+    public function pollStatus()
+    {
+        $tickets = Ticket::with('user:id,name')
+            ->get(['id', 'status', 'technician_note', 'user_id', 'updated_at', 'technician_attachment']);
 
-    // Ambil semua tagihan beserta relasinya
-    $tagihans = Tagihan::with(['pelanggan', 'paket'])->latest()->get();
+        return response()->json($tickets->map(fn($t) => [
+            'id'              => $t->id,
+            'status'          => $t->status,
+            'technician_note' => $t->technician_note,
+            'teknisi'         => optional($t->user)->name ?? '-',
+            'photo'           => $t->technician_attachment ? asset('storage/' . $t->technician_attachment) : '',
+            'updated_at'      => $t->updated_at->timestamp,
+        ]));
+    }
+
+public function index(Request $request)
+{
+    // Ambil pelanggan ringan jika masih dibutuhkan untuk dropdown
+    $pelanggan = Pelanggan::select('id', 'nama_lengkap', 'no_whatsapp', 'no_telp')->get();
+    $paket = Paket::select('id', 'nama_paket')->get();
+
     $kabupatenList = Pelanggan::distinct()->pluck('kabupaten');
     $kecamatanList = Pelanggan::distinct()->pluck('kecamatan');
     
-    // Statistik
-    $totalCustomer = $pelanggan->count();
-    $lunas = $tagihans->where('status_pembayaran', 'lunas')->count();
-    $belumLunas = $tagihans->where('status_pembayaran', 'belum bayar')->count();
-    $totalPaket = $paket->count();
+    // Statistik Optimal
+    $totalCustomer = Pelanggan::count();
+    $lunas = Tagihan::where('status_pembayaran', 'lunas')->count();
+    $belumLunas = Tagihan::where('status_pembayaran', 'belum bayar')->count();
+    $totalPaket = Paket::count();
 
-    // ? FILTER HANYA STATUS 'pending'
-    $tickets = Ticket::with(['user', 'creator'])
-        ->where('status', 'pending')
-        ->latest()
-        ->get();
+    // Custom Backend Search
+    $search = $request->input('search');
+
+    // ? FILTER STATUS AKTIF (Pending, Assigned, Progress) & Lakukan Pagination
+    $query = Ticket::with(['user', 'creator', 'pelanggan'])
+        ->whereIn('status', ['pending', 'assigned', 'progress']);
+
+    if ($search) {
+        $query->where(function($q) use ($search) {
+            $q->whereHas('pelanggan', function($pq) use ($search) {
+                $pq->where('nama_lengkap', 'like', "%{$search}%");
+            })
+            ->orWhere('title', 'like', "%{$search}%")
+            ->orWhere('issue_description', 'like', "%{$search}%")
+            ->orWhere('category', 'like', "%{$search}%")
+            ->orWhere('priority', 'like', "%{$search}%");
+        });
+    }
+
+    $tickets = $query->latest()->paginate(40)->withQueryString();
 
     return view('content.apps.Ticket.ticket', compact(
         'tickets',
-        'tagihans',
         'pelanggan',
         'paket',
         'totalCustomer',
@@ -75,29 +105,23 @@ public function index()
 
     public function create()
     {
+        // Data sudah tidak diload via query untuk optimasi (di-load via AJAX)
+        $pelanggan = [];
+        $paket = [];
+        $kabupatenList = [];
+        $kecamatanList = [];
+        
+        // Statistik Optimal
+        $totalCustomer = Pelanggan::count(); // jumlah pelanggan
+        $lunas = Tagihan::where('status_pembayaran', 'lunas')->count(); // jumlah tagihan lunas
+        $belumLunas = Tagihan::where('status_pembayaran', 'belum bayar')->count(); // jumlah tagihan belum lunas
+        $totalPaket = Paket::count(); // jumlah paket
 
-        // Ambil semua pelanggan & paket untuk dropdown modal
-        $pelanggan = Pelanggan::all();
-        $paket = Paket::all();
-
-        // Ambil semua tagihan beserta relasinya
-        $tagihans = Tagihan::with(['pelanggan', 'paket'])->latest()->get();
-        $kabupatenList = Pelanggan::distinct()->pluck('kabupaten');
-        $kecamatanList = Pelanggan::distinct()->pluck('kecamatan');
-        // Statistik
-        $totalCustomer = $pelanggan->count(); // jumlah pelanggan
-        $lunas = $tagihans->where('status_pembayaran', 'lunas')->count(); // jumlah tagihan lunas
-        $belumLunas = $tagihans->where('status_pembayaran', 'belum bayar')->count(); // jumlah tagihan belum lunas
-        $totalPaket = $paket->count(); // jumlah paket
-
-        // Ambil semua tiket terbaru, bisa ditambahkan pagination jika perlu
-
-        // Ambil semua user dengan role 'team' untuk dijadikan pilihan penugas
-        $users = User::where('role', 'team')->get();
+        // Ambil semua user dengan role 'karyawan' untuk dijadikan pilihan penugas
+        $users = User::where('role', 'karyawan')->orderBy('name')->get();
 
         return view('content.apps.Ticket.add-ticket', compact(
             'users',
-            'tagihans',
             'pelanggan',
             'paket',
             'totalCustomer',
@@ -111,86 +135,113 @@ public function index()
 
      public function store(Request $request)
 {
-    $request->validate([
-        'pelanggan_id' => 'required|exists:pelanggans,id',
-        'location_link' => 'nullable|url',
-        'category' => 'nullable|string|max:50',
-        'issue_description' => 'required|string',
-        'additional_note' => 'nullable|string',
-        'cs_note' => 'nullable|string',
-        'cs_attachment' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-        'priority' => 'required|in:urgent,medium,low',
-        // UBAH: user_id jadi nullable (tidak wajib)
-        'user_id' => 'nullable|exists:users,id',
-        // UBAH: status jadi nullable dengan default pending
-        'status' => 'nullable|in:pending,assigned,progress,finished,approved,rejected',
-        'complaint_source' => 'nullable|in:whatsapp,telepon,datang,email,app',
-    ]);
+    $ticketType = $request->input('ticket_type', 'customer');
 
-    $pelanggan = Pelanggan::findOrFail($request->pelanggan_id);
+        if ($ticketType === 'internal') {
+        // ─── Tiket Internal (tanpa pelanggan) ───
+        $request->validate([
+            'title'             => 'required|string|max:200',
+            'category'          => 'required|string|max:50',
+            'issue_description' => 'required|string',
+            'priority'          => 'required|in:urgent,medium,low',
+            'user_id'           => 'nullable|exists:users,id',
+            'assignment_date'   => 'nullable|date',
+            'location_link'     => 'nullable|url',
+            'additional_note'   => 'nullable|string',
+        ]);
 
-    // Upload foto CS jika ada
-    $csAttachment = null;
-    if ($request->hasFile('cs_attachment')) {
-        $csAttachment = $request->file('cs_attachment')->store('tickets/cs', 'public');
+        $ticket = Ticket::create([
+            'ticket_type'       => 'internal',
+            'title'             => $request->title,
+            'pelanggan_id'      => null,
+            'phone'             => null,
+            'location_link'     => $request->location_link,
+            'category'          => $request->category,
+            'issue_description' => $request->issue_description,
+            'additional_note'   => $request->additional_note,
+            'priority'          => $request->priority,
+            'status'            => $request->user_id ? 'assigned' : 'pending',
+            'user_id'           => $request->user_id ?: null,
+            'assignment_date'   => $request->assignment_date ?: null,
+            'created_by'        => Auth::id(),
+        ]);
+
+    } else {
+        // ─── Tiket Pelanggan ───
+        $request->validate([
+            'pelanggan_id'      => 'required|exists:pelanggans,id',
+            'location_link'     => 'nullable|url',
+            'category'          => 'nullable|string|max:50',
+            'issue_description' => 'required|string',
+            'additional_note'   => 'nullable|string',
+            'cs_note'           => 'nullable|string',
+            'cs_attachment'     => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'priority'          => 'required|in:urgent,medium,low',
+            'user_id'           => 'nullable|exists:users,id',
+            'assignment_date'   => 'nullable|date',
+        ]);
+
+        $pelanggan = Pelanggan::findOrFail($request->pelanggan_id);
+
+        $csAttachment = null;
+        if ($request->hasFile('cs_attachment')) {
+            $csAttachment = $request->file('cs_attachment')->store('tickets/cs', 'public');
+        }
+
+        $ticket = Ticket::create([
+            'ticket_type'       => 'customer',
+            'title'             => null,
+            'pelanggan_id'      => $pelanggan->id,
+            'phone'             => $pelanggan->no_whatsapp ?? $pelanggan->no_telp,
+            'location_link'     => $request->location_link,
+            'category'          => $request->category,
+            'issue_description' => $request->issue_description,
+            'additional_note'   => $request->additional_note,
+            'cs_note'           => $request->cs_note,
+            'attachment'        => $csAttachment,
+            'complaint_source'  => $request->complaint_source ?? 'whatsapp',
+            'priority'          => $request->priority,
+            'status'            => $request->user_id ? 'assigned' : 'pending',
+            'user_id'           => $request->user_id ?: null,
+            'assignment_date'   => $request->assignment_date ?: null,
+            'created_by'        => Auth::id(),
+        ]);
+
+        event(new TicketCreated($ticket));
     }
 
-    // Simpan ticket - CS hanya create, belum assign teknisi
-    $ticket = Ticket::create([
-        'pelanggan_id' => $pelanggan->id,
-        'phone' => $pelanggan->no_whatsapp ?? $pelanggan->no_telp,
-        'location_link' => $request->location_link,
-        'category' => $request->category,
-        'issue_description' => $request->issue_description,
-        'additional_note' => $request->additional_note,
-        'cs_note' => $request->cs_note,
-        'attachment' => $csAttachment,
-        'complaint_source' => $request->complaint_source ?? 'whatsapp',
-        'priority' => $request->priority,
-        'status' => 'pending', // Default pending, nanti admin yang assign
-        'user_id' => null, // Belum ada teknisi
-        'created_by' => Auth::id(),
-        'technician_attachment' => null,
-    ]);
-    
-    event(new TicketCreated($ticket));
-    
     // Log status awal
     TicketStatusLog::create([
         'ticket_id' => $ticket->id,
-        'status' => $ticket->status,
-        'user_id' => Auth::id(),
+        'status'    => $ticket->status,
+        'user_id'   => Auth::id(),
     ]);
 
     return redirect()->route('tickets.indexs')
-        ->with('success', 'Ticket berhasil dibuat. Menunggu assignment teknisi.');
+        ->with('success', 'Ticket berhasil dibuat.');
 }
 
     public function edit(Ticket $ticket)
     {
-        // Ambil semua pelanggan & paket untuk dropdown modal
-        $pelanggan = Pelanggan::all();
-        $paket = Paket::all();
+        // Ambil pelanggan dan paket seperlunya
+        $pelanggan = Pelanggan::select('id', 'nama_lengkap', 'no_whatsapp', 'no_telp')->get();
+        $paket = Paket::select('id', 'nama_paket')->get();
 
-        // Ambil semua tagihan beserta relasinya
-        $tagihans = Tagihan::with(['pelanggan', 'paket'])->latest()->get();
         $kabupatenList = Pelanggan::distinct()->pluck('kabupaten');
         $kecamatanList = Pelanggan::distinct()->pluck('kecamatan');
-        // Statistik
-        $totalCustomer = $pelanggan->count(); // jumlah pelanggan
-        $lunas = $tagihans->where('status_pembayaran', 'lunas')->count(); // jumlah tagihan lunas
-        $belumLunas = $tagihans->where('status_pembayaran', 'belum bayar')->count(); // jumlah tagihan belum lunas
-        $totalPaket = $paket->count(); // jumlah paket
+        
+        // Statistik Optimal
+        $totalCustomer = Pelanggan::count(); // jumlah pelanggan
+        $lunas = Tagihan::where('status_pembayaran', 'lunas')->count(); // jumlah tagihan lunas
+        $belumLunas = Tagihan::where('status_pembayaran', 'belum bayar')->count(); // jumlah tagihan belum lunas
+        $totalPaket = Paket::count(); // jumlah paket
 
-        // Ambil semua tiket terbaru, bisa ditambahkan pagination jika perlu
-
-        // Ambil semua user role 'team' untuk dropdown
-        $users = User::where('role', 'team')->get();
+        // Ambil semua user role 'karyawan' untuk dropdown
+        $users = User::where('role', 'karyawan')->orderBy('name')->get();
 
         return view('content.apps.Ticket.edit-ticket', compact(
             'ticket',
             'users',
-            'tagihans',
             'pelanggan',
             'paket',
             'totalCustomer',
@@ -204,32 +255,42 @@ public function index()
 
 
 
-public function finished()
+public function finished(Request $request)
 {
-    // Ambil semua pelanggan & paket untuk dropdown modal
-    $pelanggan = Pelanggan::all();
-    $paket = Paket::all();
+    $pelanggan = Pelanggan::select('id', 'nama_lengkap', 'no_whatsapp', 'no_telp')->get();
+    $paket = Paket::select('id', 'nama_paket')->get();
 
-    // Ambil semua tagihan beserta relasinya
-    $tagihans = Tagihan::with(['pelanggan', 'paket'])->latest()->get();
     $kabupatenList = Pelanggan::distinct()->pluck('kabupaten');
     $kecamatanList = Pelanggan::distinct()->pluck('kecamatan');
     
-    // Statistik
-    $totalCustomer = $pelanggan->count();
-    $lunas = $tagihans->where('status_pembayaran', 'lunas')->count();
-    $belumLunas = $tagihans->where('status_pembayaran', 'belum bayar')->count();
-    $totalPaket = $paket->count();
+    // Statistik Optimal
+    $totalCustomer = Pelanggan::count();
+    $lunas = Tagihan::where('status_pembayaran', 'lunas')->count();
+    $belumLunas = Tagihan::where('status_pembayaran', 'belum bayar')->count();
+    $totalPaket = Paket::count();
+
+    $search = $request->input('search');
 
     // ? TICKET YANG STATUS 'finished' SAJA
-    $tickets = Ticket::with(['user', 'creator'])
-        ->where('status', 'finished')
-        ->latest()
-        ->get();
+    $query = Ticket::with(['user', 'creator', 'pelanggan'])
+        ->where('status', 'finished');
+
+    if ($search) {
+        $query->where(function($q) use ($search) {
+            $q->whereHas('pelanggan', function($pq) use ($search) {
+                $pq->where('nama_lengkap', 'like', "%{$search}%");
+            })
+            ->orWhere('title', 'like', "%{$search}%")
+            ->orWhere('issue_description', 'like', "%{$search}%")
+            ->orWhere('category', 'like', "%{$search}%")
+            ->orWhere('priority', 'like', "%{$search}%");
+        });
+    }
+
+    $tickets = $query->latest()->paginate(40)->withQueryString();
 
     return view('content.apps.Ticket.ticket-finished', compact(
         'tickets',
-        'tagihans',
         'pelanggan',
         'paket',
         'totalCustomer',
@@ -247,32 +308,45 @@ public function finished()
 
 
 
-public function approved()
+public function approved(Request $request)
 {
-    // Ambil semua pelanggan & paket untuk dropdown modal
-    $pelanggan = Pelanggan::all();
-    $paket = Paket::all();
+    $pelanggan = Pelanggan::select('id', 'nama_lengkap', 'no_whatsapp', 'no_telp')->get();
+    $paket = Paket::select('id', 'nama_paket')->get();
 
-    // Ambil semua tagihan beserta relasinya
-    $tagihans = Tagihan::with(['pelanggan', 'paket'])->latest()->get();
     $kabupatenList = Pelanggan::distinct()->pluck('kabupaten');
     $kecamatanList = Pelanggan::distinct()->pluck('kecamatan');
     
-    // Statistik
-    $totalCustomer = $pelanggan->count();
-    $lunas = $tagihans->where('status_pembayaran', 'lunas')->count();
-    $belumLunas = $tagihans->where('status_pembayaran', 'belum bayar')->count();
-    $totalPaket = $paket->count();
+    // Statistik Optimal
+    $totalCustomer = Pelanggan::count();
+    $lunas = Tagihan::where('status_pembayaran', 'lunas')->count();
+    $belumLunas = Tagihan::where('status_pembayaran', 'belum bayar')->count();
+    $totalPaket = Paket::count();
 
-    // ? TICKET YANG STATUS 'approved' SAJA
-    $tickets = Ticket::with(['user', 'creator'])
-        ->where('status', 'approved')
-        ->latest()
-        ->get();
+    $search = $request->input('search');
 
-    return view('content.apps.Ticket.ticket-approved', compact(
+    // Ticket selesai yang sudah dikonfirmasi admin.
+    $query = Ticket::with(['user', 'creator', 'pelanggan'])
+        ->where('status', 'approved');
+
+    if ($search) {
+        $query->where(function($q) use ($search) {
+            $q->whereHas('pelanggan', function($pq) use ($search) {
+                $pq->where('nama_lengkap', 'like', "%{$search}%");
+            })
+            ->orWhere('title', 'like', "%{$search}%")
+            ->orWhere('issue_description', 'like', "%{$search}%")
+            ->orWhere('category', 'like', "%{$search}%")
+            ->orWhere('priority', 'like', "%{$search}%");
+        });
+    }
+
+    $tickets = $query->latest()->paginate(40)->withQueryString();
+    $pageTitle = 'Daftar Ticket Selesai';
+    $pageDescription = 'Kelola dan monitor tiket yang sudah dikonfirmasi selesai.';
+    $searchRoute = route('approved');
+
+    return view('content.apps.Ticket.ticket-finished', compact(
         'tickets',
-        'tagihans',
         'pelanggan',
         'paket',
         'totalCustomer',
@@ -280,7 +354,10 @@ public function approved()
         'belumLunas',
         'totalPaket',
         'kabupatenList',
-        'kecamatanList'
+        'kecamatanList',
+        'pageTitle',
+        'pageDescription',
+        'searchRoute'
     ));
 }
 
@@ -304,6 +381,7 @@ public function approved()
             'cs_attachment' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'priority' => 'required|in:urgent,medium,low',
             'user_id' => 'required|exists:users,id',
+            'assignment_date' => 'nullable|date',
             'status' => 'required|in:pending,assigned,progress,finished,approved,rejected',
         ]);
 
@@ -329,6 +407,7 @@ public function approved()
             'cs_attachment' => $ticket->cs_attachment ?? $ticket->cs_attachment,
             'priority' => $request->priority,
             'user_id' => $request->user_id,
+            'assignment_date' => $request->assignment_date ?: null,
             'status' => $request->status,
         ]);
 
@@ -347,8 +426,37 @@ public function approved()
         if ($ticket->cs_attachment) {
             \Storage::disk('public')->delete($ticket->cs_attachment);
         }
+        if ($ticket->technician_attachment) {
+            \Storage::disk('public')->delete($ticket->technician_attachment);
+        }
         $ticket->delete();
 
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Ticket berhasil dihapus.',
+            ]);
+        }
+
         return redirect()->route('tickets.indexs')->with('success', 'Ticket berhasil dihapus');
+    }
+
+    public function review(Request $request, Ticket $ticket)
+    {
+        $request->validate([
+            'status' => 'required|in:approved,rejected',
+        ]);
+
+        $ticket->update([
+            'status' => $request->status,
+        ]);
+
+        TicketStatusLog::create([
+            'ticket_id' => $ticket->id,
+            'status' => $request->status,
+            'user_id' => Auth::id(),
+        ]);
+
+        return redirect()->back()->with('success', 'Status ticket berhasil diperbarui.');
     }
 }

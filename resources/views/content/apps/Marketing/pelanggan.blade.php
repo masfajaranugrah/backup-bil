@@ -17,1223 +17,474 @@ use Illuminate\Support\Str;
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'
 ])
 <style>
-  /* ========== SHADCN-LIKE THEME (Black & White) ========== */
-  :root {
-    --primary-color: #0f172a;
-    --secondary-color: #f8fafc;
-    --border-color: #e2e8f0;
-    --text-primary: #0f172a;
-    --text-secondary: #64748b;
-    --text-muted: #94a3b8;
-    --radius: 0.5rem;
-    --radius-lg: 0.75rem;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  }
-
-  body {
-    background-color: #f8fafc;
-    color: var(--text-primary);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  }
-
-  /* Card */
-  .card-main {
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
-    background: #fff;
-    overflow: hidden;
-  }
-
-  /* Page Header */
-  .page-header {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-    background: #fff;
-  }
-
-  .page-header h4 {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 0.125rem;
-    letter-spacing: -0.025em;
-  }
-
-  .page-header p {
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-    margin-bottom: 0;
-  }
-
-  /* Toolbar */
-  .toolbar {
-    padding: 0.75rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--secondary-color);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  /* Search */
-  .search-box {
-    position: relative;
-    flex: 1;
-    min-width: 200px;
-    max-width: 320px;
-  }
-
-  .search-box .search-icon {
-    position: absolute;
-    left: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    font-size: 0.875rem;
-    pointer-events: none;
-  }
-
-  .search-box input {
-    width: 100%;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    padding: 0.5rem 0.75rem 0.5rem 2.25rem;
-    font-size: 0.8125rem;
-    color: var(--text-primary);
-    background: #fff;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    outline: none;
-    height: 36px;
-  }
-
-  .search-box input::placeholder {
-    color: var(--text-muted);
-  }
-
-  .search-box input:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
-  }
-
-  /* Buttons */
-  .btn-shadcn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.375rem;
-    padding: 0 0.875rem;
-    min-height: 36px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    border-radius: var(--radius);
-    border: 1px solid var(--border-color);
-    background: #fff;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.15s;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .btn-shadcn:hover {
-    background: var(--secondary-color);
-    color: var(--text-primary);
-  }
-
-  .btn-shadcn-primary {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: #fff;
-  }
-
-  .btn-shadcn-primary:hover {
-    background: #1e293b;
-    border-color: #1e293b;
-    color: #fff;
-  }
-
-  .btn-shadcn-icon {
-    width: 36px;
-    padding: 0;
-  }
-
-  .btn-shadcn-sm {
-    height: 30px;
-    padding: 0 0.625rem;
-    font-size: 0.75rem;
-  }
-
-  .btn-shadcn-sm.btn-shadcn-icon {
-    width: 30px;
-    padding: 0;
-  }
-
-  .btn-shadcn-danger {
-    border-color: #fecaca;
-    color: #dc2626;
-    background: #fff;
-  }
-
-  .btn-shadcn-danger:hover {
-    background: #fef2f2;
-    border-color: #fca5a5;
-    color: #b91c1c;
-  }
-
-  /* Stat Cards */
-  .stat-cards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-  }
-
-  .stat-card {
-    background: #fff;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: 1.25rem 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
-  }
-
-  .stat-card:hover {
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05);
-    transform: translateY(-2px);
-  }
-
-  .stat-card-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    flex-shrink: 0;
-  }
-
-  .stat-card-icon.icon-total {
-    background: #f1f5f9;
-    color: #0f172a;
-  }
-
-  .stat-card-icon.icon-approve {
-    background: #dcfce7;
-    color: #15803d;
-  }
-
-  .stat-card-icon.icon-pending {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  .stat-card-icon.icon-tarik {
-    background: #dbeafe;
-    color: #1d4ed8;
-  }
-
-  .stat-card-icon.icon-aktivasi {
-    background: #dcfce7;
-    color: #15803d;
-  }
-
-  .stat-card-icon.icon-registrasi {
-    background: #ede9fe;
-    color: #6d28d9;
-  }
-
-  .stat-card-body .stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1;
-    margin-bottom: 0.25rem;
-  }
-
-  .stat-card-body .stat-label {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  @media (max-width: 767px) {
-    .stat-cards {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.5rem;
-    }
-    .stat-card {
-      padding: 0.75rem;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-    .stat-card-icon {
-      width: 36px;
-      height: 36px;
-      font-size: 1rem;
-    }
-    .stat-card-body .stat-value {
-      font-size: 1.125rem;
-    }
-  }
-
-  /* Table */
-  .table-clean {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 0;
-  }
-
-  .table-clean thead th {
-    background: var(--secondary-color);
-    color: var(--text-secondary);
-    font-weight: 500;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.625rem 1rem;
-    border-bottom: 1px solid var(--border-color);
-    white-space: nowrap;
-  }
-
-  .table-clean tbody td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border-color);
-    font-size: 0.8125rem;
-    color: var(--text-primary);
-    vertical-align: middle;
-  }
-
-  .table-clean tbody tr {
-    transition: background-color 0.1s;
-  }
-
-  .table-clean tbody tr:hover {
-    background-color: var(--secondary-color);
-  }
-
-  .table-clean tbody tr.row-urgent {
-    background-color: #fff5f5;
-  }
-
-  .table-clean tbody tr.row-urgent:hover {
-    background-color: #ffe9e9;
-  }
-
-  .table-clean tbody tr:last-child td {
-    border-bottom: none;
-  }
-
-  .table-clean tbody tr.row-hidden {
-    display: none;
-  }
-
-  /* Cell styling */
-  .cell-name {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.8125rem;
-    margin-bottom: 0.125rem;
-  }
-
-  .cell-sub {
-    font-size: 0.6875rem;
-    color: var(--text-muted);
-    font-family: 'SF Mono', 'Fira Code', monospace;
-  }
-
-  .cell-wa {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    color: var(--text-secondary);
-    font-size: 0.8125rem;
-    text-decoration: none;
-    transition: color 0.15s;
-  }
-
-  .cell-wa:hover {
-    color: #16a34a;
-  }
-
-  .cell-wa i {
-    color: #16a34a;
-  }
-
-  .cell-address {
-    max-width: 180px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 0.8125rem;
-    color: var(--text-primary);
-  }
-
-  .cell-address-sub {
-    font-size: 0.6875rem;
-    color: var(--text-muted);
-  }
-
-  .cell-date {
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-    white-space: nowrap;
-  }
-
-  /* Badges */
-  .badge-status {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.625rem;
-    border-radius: 9999px;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    line-height: 1;
-  }
-
-  .badge-approve {
-    background: #dcfce7;
-    color: #15803d;
-  }
-
-  .badge-pending {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  .badge-reject {
-    background: #fee2e2;
-    color: #b91c1c;
-  }
-
-  .badge-default {
-    background: #f1f5f9;
-    color: #475569;
-  }
-
-  .badge-id {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.125rem 0.5rem;
-    border-radius: var(--radius);
-    font-size: 0.6875rem;
-    font-weight: 500;
-    background: #f1f5f9;
-    color: #475569;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-  }
-
-  .stepper-mini {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .step-dot {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 2px solid #e2e8f0;
-    background: #f8fafc;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #94a3b8;
-    font-size: 0.65rem;
-    font-weight: 700;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-  }
-
-  .step-dot.done {
-    border-color: #10b981;
-    background: #10b981;
-    color: #fff;
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
-  }
-
-  .step-dot.current {
-    border-color: var(--primary-color);
-    background: var(--primary-color);
-    color: #fff;
-    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
-  }
-
-  .step-dot.pending-current {
-    border-color: #f59e0b;
-    background: #f59e0b;
-    color: #fff;
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
-  }
-
-  .step-line {
-    width: 14px;
-    height: 2px;
-    background: #e2e8f0;
-    border-radius: 1px;
-    flex-shrink: 0;
-    transition: background 0.2s ease;
-  }
-
-  .step-line.done {
-    background: #10b981;
-  }
-
-  .desktop-progress-cell {
-    min-width: 0;
-  }
-
-  .desktop-progress-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-    padding: 0;
-    border: none;
-    background: transparent;
-  }
-
-  .desktop-progress-card.is-urgent,
-  .m-card.is-urgent {
-    border: 1px solid #fecaca;
-    border-radius: 1rem;
-    background: linear-gradient(180deg, #fff7f7 0%, #fff 100%);
-    padding: 0.85rem;
-  }
-
-  .urgency-chip {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.3rem 0.65rem;
-    border-radius: 999px;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  .urgency-chip.urgent {
-    background: #fee2e2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
-  }
-
-  .desktop-progress-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-  }
-
-  .desktop-progress-label {
-    min-width: 0;
-  }
-
-  .desktop-progress-label span {
-    display: block;
-    margin-bottom: 0.125rem;
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .desktop-progress-label strong {
-    display: block;
-    font-size: 0.8125rem;
-    color: var(--primary-color);
-    font-weight: 600;
-  }
-
-  /* Pagination */
-  .pagination-wrapper {
-    padding: 0.875rem 1.25rem;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 0.625rem;
-    background: #fff;
-  }
-
-  .pagination-info {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-  }
-
-  .pagination-info strong {
-    color: var(--text-primary);
-    font-weight: 600;
-  }
-
-  .pagination {
-    margin-bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.375rem;
-    flex-wrap: wrap;
-  }
-
-  .pagination .page-item {
-    margin: 0 !important;
-  }
-
-  .pagination .page-item .page-link {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
-    border-radius: 999px !important;
-    border: 1px solid #d1d5db;
-    color: #1f2937;
-    background: #fff;
-    font-size: 0.95rem;
-    font-weight: 600;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-  }
-
-  .pagination .page-item.active .page-link {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    color: #fff;
-    box-shadow: 0 6px 14px -8px rgba(15, 23, 42, 0.75);
-  }
-
-  .pagination .page-item.disabled .page-link {
-    color: #cbd5e1;
-    background: #f8fafc;
-    border-color: #e5e7eb;
-    opacity: 1;
-  }
-
-  .pagination .page-item .page-link:hover {
-    background: #f8fafc;
-    color: #0f172a;
-  }
-
-  .pagination .page-item.active .page-link:hover {
-    background-color: #1e293b;
-    color: #fff;
-  }
-
-  /* Mobile Cards */
-  .mobile-cards {
-    padding: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-  }
-
-  .m-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 0.875rem;
-    background: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    transition: all 0.2s ease;
-  }
-
-  .m-card:hover {
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-    border-color: #cbd5e1;
-  }
-
-  .m-card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .m-card-top .badge-id {
-    background: #f1f5f9;
-    color: #475569;
-    font-size: 0.75rem;
-    padding: 0.25rem 0.625rem;
-    border-radius: 9999px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-  }
-
-  .m-card-name {
-    font-weight: 700;
-    font-size: 1rem;
-    color: #0f172a;
-    line-height: 1.2;
-    margin-bottom: 0.35rem;
-  }
-
-  .m-card-creator {
-    display: none;
-    align-items: center;
-    gap: 0.375rem;
-    font-size: 0.8125rem;
-    color: #64748b;
-    background: #f8fafc;
-    padding: 0.25rem 0.5rem;
-    border-radius: 6px;
-    margin-bottom: 1.25rem;
-  }
-  .m-card-creator i {
-    color: #94a3b8;
-  }
-
-  .m-progress-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 0.75rem;
-  }
-
-  .m-progress-head {
-    font-size: 0.75rem;
-    color: #64748b;
-    margin-bottom: 0.5rem;
-    text-align: center;
-  }
-
-  .m-progress-head strong {
-    color: #0f172a;
-    font-weight: 700;
-    display: block;
-    text-align: center;
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-  }
-
-  .stepper-mini {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 0.5rem;
-  }
-  .step-dot {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #f1f5f9;
-    color: #94a3b8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.65rem;
-    font-weight: 700;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 1px #e2e8f0;
-    z-index: 2;
-  }
-  .step-dot.current {
-    background: #0f172a;
-    color: #fff;
-    box-shadow: 0 0 0 2px #0f172a;
-  }
-  .step-dot.pending-current {
-    background: #f59e0b;
-    color: #fff;
-    box-shadow: 0 0 0 2px #f59e0b;
-  }
-  .step-dot.done {
-    background: #10b981;
-    color: #fff;
-    box-shadow: 0 0 0 1px #10b981;
-  }
-  .step-line {
-    width: 20px;
-    height: 2px;
-    background: #e2e8f0;
-    z-index: 1;
-    margin: 0 -0.25rem;
-  }
-  .step-line.done {
-    background: #10b981;
-  }
-
-  .m-card-detail-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid #f1f5f9;
-    margin-bottom: 0.75rem;
-  }
-
-  .m-card-detail {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    font-size: 0.8125rem;
-    color: #475569;
-    line-height: 1.4;
-  }
-
-  .m-card-detail i {
-    font-size: 0.875rem;
-    color: #94a3b8;
-    margin-top: 0.125rem;
-  }
-
-  .m-card-detail a {
-    color: #10b981;
-    font-weight: 500;
-    text-decoration: none;
-  }
-  .m-card-detail a:hover { text-decoration: underline; }
-
-  .quick-mobile-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0;
-  }
-  .quick-mobile-title span {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: #0f172a;
-  }
-  .quick-mobile-title small {
-    font-size: 0.75rem;
-    color: #94a3b8;
-  }
-
-  .m-card-actions {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-  }
-
-  .mobile-quick-panel {
-    border-top: 1px solid #f1f5f9;
-    padding-top: 0.625rem;
-  }
-
-  .mobile-quick-panel summary {
-    list-style: none;
-    cursor: pointer;
-  }
-
-  .mobile-quick-panel summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .mobile-quick-panel .quick-mobile-title::after {
-    content: '+';
-    font-size: 1rem;
-    font-weight: 700;
-    color: #94a3b8;
-  }
-
-  .mobile-quick-panel[open] .quick-mobile-title::after {
-    content: '-';
-  }
-
-  .mobile-quick-body {
-    padding-top: 0.625rem;
-  }
-
-  .m-card-actions .btn-shadcn {
-    width: 100%;
-    justify-content: center;
-    height: 36px;
-    font-size: 0.8125rem;
-    border-radius: 8px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    color: #475569;
-    box-shadow: none;
-    font-weight: 500;
-  }
-  .m-card-actions .btn-shadcn:hover {
-    background: #f1f5f9;
-    color: #0f172a;
-  }
-  .m-card-actions .btn-shadcn-danger {
-    color: #ef4444;
-  }
-  .m-card-actions .btn-shadcn-danger:hover {
-    background: #fef2f2;
-    border-color: #fca5a5;
-    color: #dc2626;
-  }
-
-  .quick-progress-form {
-    display: grid;
-    gap: 0.5rem;
-  }
-
-  .quick-progress-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.5rem;
-    align-items: start;
-  }
-
-  .quick-progress-inline {
-    display: flex;
-    gap: 0.375rem;
-    align-items: stretch;
-  }
-
-  .quick-note-input {
-    width: 100%;
-    min-height: 38px;
-    max-height: 110px;
-    border: 1px solid var(--border-color);
-    border-radius: 0.375rem;
-    background: #fff;
-    color: var(--text-primary);
-    font-size: 0.8125rem;
-    padding: 0.5rem 0.75rem;
-    outline: none;
-    resize: vertical;
-    transition: all 0.2s ease;
-  }
-
-  .quick-note-input::placeholder {
-    color: var(--text-muted);
-  }
-
-  .quick-note-input:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
-  }
-
-  .quick-save-btn {
-    min-width: unset;
-    padding: 0 0.875rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    font-size: 0.8125rem;
-  }
-
-  .quick-note-preview {
-    padding: 0.625rem 0.75rem;
-    border: 1px dashed var(--border-color);
-    border-radius: var(--radius);
-    background: var(--secondary-color);
-  }
-
-  .quick-note-preview-label {
-    display: block;
-    margin-bottom: 0.25rem;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  .quick-note-preview p {
-    margin: 0;
-    font-size: 0.8125rem;
-    line-height: 1.5;
-    color: var(--text-secondary);
-    white-space: pre-wrap;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .note-hidden {
-    display: none !important;
-  }
-
-  .quick-mobile-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .quick-mobile-title span {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--text-primary);
-  }
-
-  select.progress-select,
-  .quick-progress-form select.progress-select {
-    width: 100%;
-    height: 48px !important;
-    min-height: 48px !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 0.375rem;
-    background: #f8fafc !important;
-    color: var(--text-primary) !important;
-    font-size: 1rem !important;
-    font-weight: 500;
-    padding: 0.5rem 0.875rem !important;
-    line-height: 1.2 !important;
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    appearance: none !important;
-    outline: none !important;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  select.progress-select:hover,
-  .quick-progress-form select.progress-select:hover {
-    background: #f1f5f9;
-  }
-
-  select.progress-select:focus,
-  .quick-progress-form select.progress-select:focus {
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
-    background: #fff;
-  }
-
-  .stepper-current {
-    margin-left: 0.5rem;
-  }
-
-  .desktop-actions {
-    display: flex;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-  }
-
-  /* Detail Modal */
-  .detail-label {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.375rem;
-  }
-
-  .detail-section {
-    padding: 0.875rem;
-    background: var(--secondary-color);
-    border-radius: var(--radius);
-    border: 1px solid var(--border-color);
-  }
-
-  .detail-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.375rem 0;
-  }
-
-  .detail-row:not(:last-child) {
-    border-bottom: 1px solid var(--border-color);
-  }
-
-  .detail-row-label {
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-  }
-
-  .detail-row-value {
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--text-primary);
-  }
-
-  /* Empty State */
-  .empty-state {
-    padding: 3rem 1rem;
-    text-align: center;
-  }
-
-  .empty-state i {
-    font-size: 2.5rem;
-    color: var(--border-color);
-    margin-bottom: 0.75rem;
-    display: block;
-  }
-
-  .empty-state p {
-    color: var(--text-secondary);
-    font-size: 0.8125rem;
-    margin: 0;
-  }
-
-  /* Loading */
-  .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.85);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    backdrop-filter: blur(4px);
-  }
-
-  /* No results from client-side search */
-  .no-results-row {
-    display: none;
-  }
-
-  .no-results-row td {
-    text-align: center;
-    padding: 2rem 1rem !important;
-    color: var(--text-secondary);
-  }
-
-  /* Responsive */
-  @media (max-width: 767px) {
-    .page-header {
-      padding: 1rem;
-    }
-    .toolbar {
-      padding: 0.75rem 1rem;
-    }
-    .search-box {
-      max-width: 100%;
-      order: 10;
-      min-width: 100%;
-    }
-    .stats-bar {
-      padding: 0.75rem 1rem;
-      gap: 1rem;
-    }
-    .pagination-wrapper {
-      padding: 0.75rem 1rem;
-      justify-content: center;
-    }
-
-    .m-card {
-      padding: 0.95rem;
-      border-radius: 12px;
-    }
-
-    .m-card-actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.5rem;
-      padding-top: 0.65rem;
-      margin-top: 0.65rem;
-    }
-
-    .m-card-actions .btn-shadcn {
-      width: 100%;
-      padding: 0 0.4rem;
-      font-size: 0.8rem;
-      height: 38px;
-      gap: 0.25rem;
-    }
-
-    .m-card-actions .btn-shadcn i {
-      font-size: 0.9rem;
-    }
-
-    .m-card-actions > form {
-      margin: 0;
-    }
-
-    .m-card-actions form:last-child {
-      grid-column: 1 / -1;
-    }
-
-    .m-card-top {
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-
-    .m-progress-head {
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      gap: 0.2rem;
-      margin-bottom: 0.65rem;
-    }
-
-    .m-card .badge-status {
-      font-size: 0.72rem;
-      padding: 0.28rem 0.65rem;
-    }
-
-    .m-card-name {
-      font-size: 1.02rem;
-      margin-bottom: 0.4rem;
-    }
-
-    .m-card-detail {
-      font-size: 0.9rem;
-      margin-bottom: 0.45rem;
-    }
-
-    .stepper-mini {
-      flex-wrap: wrap;
-      row-gap: 0.35rem;
-      justify-content: center;
-      text-align: center;
-    }
-
-    .stepper-current {
-      width: 100%;
-      margin-left: 0;
-      font-size: 0.75rem;
-      text-align: center;
-      display: block;
-    }
-
-    .m-progress-row {
-      text-align: center;
-    }
-
-    .quick-progress-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .quick-progress-inline {
-      grid-template-columns: 1fr;
-    }
-
-    .quick-save-btn {
-      width: 100%;
-    }
-
-    select.progress-select,
-    .quick-progress-form select.progress-select {
-      height: 50px !important;
-      min-height: 50px !important;
-      font-size: 1.03rem !important;
-      text-align: center;
-      text-align-last: center;
-      padding-inline: 2rem !important;
-    }
-  }
-
-  @media (max-width: 390px) {
-    .m-card-actions {
-      grid-template-columns: 1fr;
-    }
-
-    .m-card-actions form:last-child {
-      grid-column: auto;
-    }
-  }
+/* ========================================= */
+/* MODERN CLEAN STYLES (Match tagihan.blade.php) */
+/* ========================================= */
+:root {
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --card-hover-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  --border-radius: 12px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --primary-color: #111827;
+  --success-color: #28c76f;
+}
+
+.tagihan-page-shell {
+  padding: 0;
+  max-width: 100%;
+}
+
+.tagihan-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.tagihan-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.tagihan-title-icon {
+  background: #111827;
+  color: white;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 1.25rem;
+}
+
+.tagihan-count-badge {
+  background: #f3f4f6;
+  color: #111827;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tagihan-header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Stats Card */
+.stats-card {
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e5e7eb;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stats-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.stats-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: #f3f4f6;
+  color: #111827;
+}
+
+/* Card Design */
+.card-main {
+  border: 1px solid #e5e7eb;
+  border-radius: var(--border-radius);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  background: #fff;
+  transition: var(--transition);
+  overflow: hidden;
+}
+
+.card-main:hover {
+  box-shadow: var(--card-hover-shadow);
+}
+
+/* Search Bar */
+.search-container {
+  display: flex;
+  align-items: center;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  width: 100%;
+  max-width: 350px;
+  transition: var(--transition);
+}
+.search-container:focus-within {
+  border-color: #111827;
+  background: #fff;
+}
+.search-container input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  padding-left: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Table */
+.modern-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.modern-table thead th {
+  background: #f9fafb;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+.modern-table tbody td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+.modern-table tbody tr {
+  transition: background-color 0.15s;
+}
+.modern-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Cell info */
+.product-cell { display: flex; align-items: center; gap: 0.75rem; }
+.product-info h6 { margin: 0 0 0.25rem 0; font-weight: 600; font-size: 0.9rem; color: #111827; }
+.product-info span { font-size: 0.8rem; color: #6b7280; }
+
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.badge-approve { background: #dcfce7; color: #15803d; }
+.badge-pending { background: #fef3c7; color: #92400e; }
+.badge-reject { background: #fee2e2; color: #b91c1c; }
+.badge-default { background: #f1f5f9; color: #475569; }
+
+/* Action Buttons */
+.btn-action {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #4b5563;
+  transition: all 0.2s;
+}
+.btn-action:hover {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+.table-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.btn-kebab {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.action-menu {
+  min-width: 260px;
+  padding: 0.5rem;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(191, 232, 255, 0.38) 0%, rgba(191, 232, 255, 0) 42%),
+    radial-gradient(circle at 12% 92%, rgba(255, 199, 199, 0.24) 0%, rgba(255, 199, 199, 0) 48%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.action-menu .dropdown-item {
+  border-radius: 12px;
+  padding: 0.62rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+.action-menu .dropdown-item i {
+  font-size: 1.25rem;
+}
+
+.action-menu .dropdown-item:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.action-menu .action-danger-wrap {
+  margin-top: 0.45rem;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(255, 214, 214, 0.55) 0%, rgba(255, 230, 230, 0.32) 100%);
+  padding: 0.2rem;
+}
+
+.action-menu .action-danger {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.action-menu .action-danger:hover {
+  background: rgba(239, 68, 68, 0.14);
+  color: #dc2626;
+}
+
+.action-menu .action-section-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 700;
+  margin: 0.5rem 0.45rem 0.3rem;
+}
+
+.progress-label {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.alamat-main {
+  font-size: 0.85rem;
+  color: #1f2937;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+.alamat-sub {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.3;
+}
+
+/* Stepper */
+.stepper-mini {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-height: 20px;
+}
+.step-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #9ca3af;
+}
+.step-dot.done {
+  background: #10b981;
+  border-color: #10b981;
+  color: #fff;
+}
+.step-dot.current {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+.step-dot.done::before {
+  content: "\2713";
+  font-size: 0.65rem;
+  line-height: 1;
+}
+.step-line {
+  width: 12px;
+  height: 2px;
+  background: #e5e7eb;
+}
+.step-line.done { background: #10b981; }
+
+/* Empty State */
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.empty-state i {
+  font-size: 2.5rem;
+  color: #d1d5db;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.empty-state p {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* No results from client-side search */
+.no-results-row {
+  display: none;
+}
+
+.no-results-row td {
+  text-align: center;
+  padding: 2rem 1rem !important;
+  color: #6b7280;
+}
+
+/* Pagination */
+.pagination-wrapper {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: #fff;
+}
+
+.pagination-info {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.pagination-info strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+.pagination {
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+}
+
+.pagination .page-item {
+  margin: 0 !important;
+}
+
+.pagination .page-item .page-link {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 8px !important;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  background: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #111827;
+  border-color: #111827;
+  color: #fff;
+  box-shadow: 0 4px 6px -1px rgba(17, 24, 39, 0.2);
+}
+
+.pagination .page-item.disabled .page-link {
+  color: #9ca3af;
+  background: #f9fafb;
+  border-color: #f3f4f6;
+  opacity: 1;
+  pointer-events: none;
+}
+
+.pagination .page-item .page-link:hover {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+.pagination .page-item.active .page-link:hover {
+  background-color: #1f2937;
+  color: #fff;
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+@media (min-width: 768px) {
+  .modern-table thead th:nth-child(4),
+  .modern-table tbody td:nth-child(4) {
+    min-width: 210px;
+  }
+
+  .modern-table thead th:last-child,
+  .modern-table tbody td:last-child {
+    width: 176px;
+  }
+}
 </style>
 @endsection
 
@@ -1249,444 +500,459 @@ use Illuminate\Support\Str;
 
 {{-- PAGE SCRIPT --}}
 @section('page-script')
+<style>
+/* Force hide SweetAlert deny button agar modal hanya 2 tombol */
+.swal2-deny,
+.swal2-styled.swal2-deny {
+    display: none !important;
+}
+</style>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    // ====== Server-side search (lintas semua halaman data) ======
-    const serverSearchInput = document.querySelector('input[name="search"]');
-    if (serverSearchInput) {
-        serverSearchInput.addEventListener('search', function() {
-            this.form.submit();
+    // Search: submit on Enter key
+    const searchInput = document.getElementById('search-pelanggan');
+    if (searchInput) {
+        // Auto-submit after 600ms debounce
+        let searchTimer;
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                this.closest('form').submit();
+                return;
+            }
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                this.closest('form').submit();
+            }, 600);
         });
     }
 
-    // ====== Detail Modal ======
-    $(document).on('click', '.btn-detail', function(e) {
-        e.preventDefault();
-        const target = $(this).closest('tr').length ? $(this).closest('tr') : $(this).closest('.m-card');
 
-        const data = {
-            nomerId: target.data('nomer-id'),
-            nama: target.data('nama'),
-            whatsapp: target.data('whatsapp'),
-            alamat: target.data('alamat'),
-            rt: target.data('rt'),
-            rw: target.data('rw'),
-            kecamatan: target.data('kecamatan'),
-            kabupaten: target.data('kabupaten'),
-            tanggal: target.data('tanggal-mulai'),
-            foto: target.data('foto-ktp'),
-            status: target.data('status'),
-            marketing: target.data('marketing-name'),
-            email: target.data('marketing-email'),
-            created: target.data('created-at'),
-            progres: target.data('progres'),
-            is_pending: Number(target.data('is-pending')) === 1,
-            progress_note: target.attr('data-progress-note'),
-            deskripsi: target.attr('data-deskripsi')
-        };
-
-        const effectiveProgress = data.progres || 'Belum Diproses';
-        const statusKey = (data.status || '').toLowerCase();
-        let statusBadge = '';
-        if (statusKey === 'approve') statusBadge = '<span class="badge-status badge-approve">Approve</span>';
-        else if (statusKey === 'reject') statusBadge = '<span class="badge-status badge-reject">Reject</span>';
-        else if (data.is_pending && effectiveProgress !== 'Belum Diproses') statusBadge = '<span class="badge-status badge-pending">Pending</span>';
-        else if (effectiveProgress !== 'Belum Diproses') statusBadge = '<span class="badge-status badge-pending">Progres</span>';
-        else if (statusKey === 'pending' || statusKey === 'proses') statusBadge = '<span class="badge-status badge-pending">Belum Diproses</span>';
-        else statusBadge = '<span class="badge-status badge-default">' + data.status + '</span>';
-
-        const steps = ['Belum Diproses', 'Tarik Kabel', 'Aktivasi', 'Registrasi'];
-        const currentIndex = steps.indexOf(data.progres);
-        const isApproved = (data.status || '').toLowerCase() === 'approve';
-        const isPendingAtStage = data.is_pending && effectiveProgress !== 'Belum Diproses' && currentIndex !== -1;
-        const stepperHtml = `
-            <div class="stepper-mini">
-                ${steps.map((step, index) => {
-                    const done = isApproved || (currentIndex !== -1 && index < currentIndex);
-                    const current = !isApproved && currentIndex !== -1 && index === currentIndex;
-                    const dotClass = done ? 'done' : (current ? (isPendingAtStage ? 'pending-current' : 'current') : '');
-                    const stepNumber = done ? '<i class="ri-check-line"></i>' : (index + 1);
-                    const lineClass = done ? 'done' : '';
-                    const line = index < steps.length - 1 ? `<div class="step-line ${lineClass}"></div>` : '';
-                    return `<div class="step-dot ${dotClass}" title="${step}">${stepNumber}</div>${line}`;
-                }).join('')}
-            </div>
-            <div class="cell-sub mt-1">${data.progres || 'Belum Diproses'}</div>
-        `;
-
-        const html = `
-            <div class="text-center mb-3 pb-3" style="border-bottom: 1px solid var(--border-color);">
-                <div class="cell-name" style="font-size: 1rem;">${data.nama}</div>
-                <span class="badge-id mt-1">${data.nomerId}</span>
-            </div>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="detail-label">Tahapan Progres</div>
-                    <div class="detail-section mb-3">${stepperHtml}</div>
-
-                    <div class="detail-label">Info Kontak</div>
-                    <div class="detail-section">
-                        <div class="detail-row">
-                            <span class="detail-row-label">WhatsApp</span>
-                            <a href="https://wa.me/${data.whatsapp}" class="cell-wa" target="_blank">
-                                <i class="ri-whatsapp-line"></i> ${data.whatsapp || '-'}
-                            </a>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-row-label">Status</span>
-                            <span>${statusBadge}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-row-label">Tgl Gabung</span>
-                            <span class="detail-row-value">${data.tanggal || '-'}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-row-label">Diinput Oleh</span>
-                            <span class="detail-row-value">${data.marketing || '-'}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-row-label">Email User</span>
-                            <span class="detail-row-value">${data.email || '-'}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="detail-label">Alamat</div>
-                    <div class="detail-section">
-                        <div class="detail-row-value mb-1">${data.alamat || '-'}</div>
-                        <div class="detail-row-label">RT ${data.rt || '-'}/RW ${data.rw || '-'}, ${data.kecamatan || '-'}, ${data.kabupaten || '-'}</div>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <div class="detail-label">Catatan & Deskripsi</div>
-                    <div class="detail-section">
-                        <div class="detail-row">
-                            <span class="detail-row-label">Catatan Progres</span>
-                            <span class="detail-row-value" style="white-space: pre-wrap;">${(data.progress_note || '-').replace(/^\[PENDING\]\s*/i, '')}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-row-label">Deskripsi</span>
-                            <span class="detail-row-value" style="white-space: pre-wrap;">${data.deskripsi || '-'}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <div class="detail-label">Foto KTP</div>
-                    <div class="detail-section text-center">
-                        ${data.foto ? `<img src="${data.foto}" class="img-fluid rounded" style="max-height: 200px;">` : '<span class="detail-row-label">Tidak ada foto</span>'}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        $('#detailModal .modal-body').html(html);
-        $('#detailModal').modal('show');
+    // Modal Update Progres
+    $(document).on('click', '.btn-update-progres', function() {
+        const id = $(this).data('id');
+        const progres = $(this).data('progres');
+        const note = $(this).data('note');
+        const isPending = $(this).data('pending') == 1;
+        
+        $('#formUpdateProgres').attr('action', `/dashboard/marketing/pelanggan/${id}/progres`);
+        $('#progresSelect').val(progres);
+        $('#isPendingCheck').prop('checked', isPending);
+        $('#progressNote').val(note);
+        
+        $('#modalUpdateProgres').modal('show');
     });
 
-    // ====== Delete Confirmation ======
-    $(document).on('click', '.btn-delete', function(e) {
-        e.preventDefault();
-        const form = $(this).closest('form');
+    // Detail Modal
+    $(document).on('click', '.btn-detail', function() {
+        const row = $(this).closest('tr[data-nomer-id], div[data-nomer-id]');
+        const modal = $('#detailModal');
 
+        modal.find('#detail-nama').text(row.data('nama') || '-');
+        modal.find('#detail-id').text(row.data('nomer-id') || '-');
+        modal.find('#detail-whatsapp').text(row.data('whatsapp') || '-');
+        modal.find('#detail-whatsapp-link').attr('href', 'https://wa.me/' + (row.data('whatsapp') || ''));
+        modal.find('#detail-alamat').text(row.data('alamat') || '-');
+        modal.find('#detail-rt-rw').text((row.data('rt') || '-') + ' / ' + (row.data('rw') || '-'));
+        modal.find('#detail-kecamatan').text(row.data('kecamatan') || '-');
+        modal.find('#detail-kabupaten').text(row.data('kabupaten') || '-');
+        modal.find('#detail-tanggal-mulai').text(row.data('tanggal-mulai') || '-');
+        modal.find('#detail-status').text(row.data('status') || '-');
+        modal.find('#detail-progres').text(row.data('progres') || 'Belum Diproses');
+        modal.find('#detail-marketing').text((row.data('marketing-name') || '-'));
+        modal.find('#detail-note').text(row.data('progress-note') || '-');
+        modal.find('#detail-deskripsi').text(row.data('deskripsi') || '-');
+
+        const fotoKtp = row.data('foto-ktp');
+        if (fotoKtp) {
+            modal.find('#detail-foto-ktp').attr('src', fotoKtp).removeClass('d-none');
+            modal.find('#detail-no-foto').addClass('d-none');
+        } else {
+            modal.find('#detail-foto-ktp').addClass('d-none');
+            modal.find('#detail-no-foto').removeClass('d-none');
+        }
+
+        modal.modal('show');
+    });
+
+    // Delete confirmation
+    $(document).on('click', '.btn-delete', function() {
+        const form = $(this).closest('form');
         Swal.fire({
-            title: 'Hapus Data?',
-            text: "Data yang dihapus tidak dapat dikembalikan",
+            title: 'Hapus Pelanggan?',
+            text: 'Data yang dihapus tidak dapat dikembalikan.',
             icon: 'warning',
+            showDenyButton: false,
             showCancelButton: true,
-            confirmButtonColor: '#0f172a',
-            cancelButtonColor: '#e2e8f0',
-            confirmButtonText: 'Ya, Hapus',
-            cancelButtonText: 'Batal',
-            customClass: {
-                confirmButton: 'btn btn-dark me-2',
-                cancelButton: 'btn btn-outline-secondary'
-            },
-            buttonsStyling: false
+            confirmButtonColor: '#111827',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) form.submit();
         });
     });
+
+    // Quick progres change confirmation
+    $(document).on('click', '.quick-progres-form button[type="submit"]', function(e) {
+        e.preventDefault();
+        const form = $(this).closest('form');
+        const stage = form.find('input[name="progres"]').val();
+
+        Swal.fire({
+            title: `Ubah progres ke "${stage}"?`,
+            icon: 'question',
+            showDenyButton: false,
+            showCancelButton: true,
+            confirmButtonColor: '#111827',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Ya, Ubah!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) form.submit();
+        });
+    });
+
 });
 </script>
 @endsection
 
 @section('content')
-<!-- Loading Overlay -->
 <div class="loading-overlay">
     <div class="spinner-border text-dark" role="status">
         <span class="visually-hidden">Loading...</span>
     </div>
 </div>
 
-<div class="stat-cards">
-    <div class="stat-card">
-        <div class="stat-card-icon icon-pending">
-            <i class="ri-time-line"></i>
-        </div>
-        <div class="stat-card-body">
-            <div class="stat-value">{{ $progressStats['belum_diproses'] ?? 0 }}</div>
-            <div class="stat-label">Belum Diproses</div>
-        </div>
+<div class="tagihan-page-shell">
+  <div class="tagihan-page-header">
+    <div>
+      <div class="tagihan-title-row">
+        <span class="tagihan-title-icon"><i class="ri-group-line"></i></span>
+        <h4 class="fw-bold text-dark m-0">Data Pelanggan</h4>
+        <span class="tagihan-count-badge">
+          <i class="ri-database-2-line"></i>
+          {{ $pelanggan->total() }} Pelanggan
+        </span>
+      </div>
+      <p class="text-muted m-0" style="font-size: 0.92rem;">Kelola semua data pelanggan Anda secara efisien.</p>
     </div>
-    <div class="stat-card">
-        <div class="stat-card-icon icon-tarik">
-            <i class="ri-plug-line"></i>
-        </div>
-        <div class="stat-card-body">
-            <div class="stat-value">{{ $progressStats['tarik_kabel'] ?? 0 }}</div>
-            <div class="stat-label">Tarik Kabel</div>
-        </div>
+    <div class="tagihan-header-actions">
+      <a href="{{ route('marketing.add-pelanggan') }}" class="btn btn-primary" style="background:#111827; border-color:#111827;">
+        <i class="ri-add-line me-1"></i> Tambah Pelanggan
+      </a>
     </div>
-    <div class="stat-card">
-        <div class="stat-card-icon icon-aktivasi">
-            <i class="ri-flashlight-line"></i>
-        </div>
-        <div class="stat-card-body">
-            <div class="stat-value">{{ $progressStats['aktivasi'] ?? 0 }}</div>
-            <div class="stat-label">Aktivasi</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-card-icon icon-registrasi">
-            <i class="ri-id-card-line"></i>
-        </div>
-        <div class="stat-card-body">
-            <div class="stat-value">{{ $progressStats['registrasi'] ?? 0 }}</div>
-            <div class="stat-label">Registrasi</div>
-        </div>
+  </div>
+
+<style>
+/* Tab style - sama dengan ticket.blade.php */
+.pelanggan-tabs {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.pelanggan-tabs::-webkit-scrollbar { display: none; }
+.pelanggan-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.8rem;
+    color: #71717a;
+    font-weight: 500;
+    font-size: 0.875rem;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.pelanggan-tab:hover { color: #18181b; }
+.pelanggan-tab.active {
+    color: #18181b;
+    border-bottom-color: #18181b;
+    font-weight: 600;
+}
+.badge-count {
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.bg-dark-count { background: #18181b; color: #fff; }
+.bg-success-light { background: #dcfce7; color: #166534; }
+.bg-warning-light { background: #fef9c3; color: #854d0e; }
+.bg-danger-light  { background: #fee2e2; color: #991b1b; }
+.bg-gray-light    { background: #f4f4f5; color: #3f3f46; }
+.bg-info-light    { background: #e0f2fe; color: #075985; }
+
+/* Toast notification */
+.pelanggan-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 380px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: #18181b;
+    color: #fff;
+    box-shadow: 0 14px 34px rgba(24,24,27,0.24);
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.25s ease;
+    pointer-events: none;
+}
+.pelanggan-toast.show { opacity: 1; transform: translateY(0); }
+.pelanggan-toast.is-error { background: #dc2626; }
+</style>
+
+{{-- Toast dari session --}}
+@if(session('success'))
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toast = document.createElement('div');
+    toast.className = 'pelanggan-toast';
+    toast.innerHTML = '<span class="material-symbols-rounded" style="color:#4ade80; font-size:1.2rem; line-height:1; flex-shrink:0;">check_circle</span><span>{{ addslashes(session("success")) }}</span>';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 50);
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3500);
+});
+</script>
+@endif
+@if(session('error'))
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toast = document.createElement('div');
+    toast.className = 'pelanggan-toast is-error';
+    toast.innerHTML = '<i class="ri-error-warning-fill" style="color:#fca5a5; font-size:1.2rem; flex-shrink:0;"></i><span>{{ addslashes(session("error")) }}</span>';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 50);
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 4000);
+});
+</script>
+@endif
+
+<div style="border-bottom: 1px solid #e4e4e7; margin-bottom: 1.25rem;">
+    <div class="pelanggan-tabs">
+        {{-- All --}}
+        <a href="{{ route('marketing.pelanggan', array_filter(['search' => request('search')])) }}"
+           class="pelanggan-tab {{ is_null($progresFilter) || $progresFilter === '' ? 'active' : '' }}">
+            All <span class="badge-count bg-dark-count">{{ $totalAll }}</span>
+        </a>
+        {{-- Per progres --}}
+        @php
+            $tabColors = [
+                'Belum Diproses' => 'bg-gray-light',
+                'Tarik Kabel'    => 'bg-warning-light',
+                'Aktivasi'       => 'bg-success-light',
+                'Registrasi'     => 'bg-info-light',
+            ];
+        @endphp
+        @foreach(\App\Models\Pelanggan::PROGRES_STAGES as $stage)
+        <a href="{{ route('marketing.pelanggan', array_filter(['progres' => $stage, 'search' => request('search')])) }}"
+           class="pelanggan-tab {{ $progresFilter === $stage ? 'active' : '' }}">
+            {{ $stage }}
+            <span class="badge-count {{ $tabColors[$stage] ?? 'bg-gray-light' }}">
+                {{ $progresStats[$stage] ?? 0 }}
+            </span>
+        </a>
+        @endforeach
     </div>
 </div>
 
-<div class="card-main">
-    <!-- Page Header -->
-    <div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-        <div>
-            <h4>Data Pelanggan</h4>
-            <p>Kelola semua data pelanggan Anda</p>
-        </div>
-        <div class="d-flex gap-2">
-            <a href="{{ route('marketing.pelanggan') }}" class="btn-shadcn btn-shadcn-icon" title="Refresh">
+    <div class="card-main">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-3" style="padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; background: #fff;">
+            <form method="GET" action="{{ route('marketing.pelanggan') }}" class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 420px;">
+                @if($progresFilter)
+                    <input type="hidden" name="progres" value="{{ $progresFilter }}">
+                @endif
+                <div class="search-container" style="flex: 1;">
+                    <i class="ri-search-line" style="color: #6b7280;"></i>
+                    <input type="text" id="search-pelanggan" name="search" placeholder="Cari pelanggan, ID, no WA, alamat..." value="{{ request('search') }}">
+                </div>
+            </form>
+            <a href="{{ route('marketing.pelanggan', array_filter(['progres' => $progresFilter])) }}" class="btn-action" title="Refresh">
                 <i class="ri-refresh-line"></i>
             </a>
-            <a href="{{ route('marketing.add-pelanggan') }}" class="btn-shadcn btn-shadcn-primary">
-                <i class="ri-add-line"></i> Tambah Pelanggan
-            </a>
         </div>
-    </div>
-
-    <!-- Table Content -->
-    <div class="card-body p-0">
-        <!-- Desktop Table -->
-        <div class="table-responsive d-none d-md-block">
-            <table class="table-clean">
-                <thead>
-                    <tr>
-                        <th style="width: 50px; text-align: center;">#</th>
-                        <th style="min-width: 180px;">Pelanggan</th>
-                        <th style="min-width: 140px;">Kontak</th>
-                        <th style="min-width: 280px;">Progres Pemasangan</th>
-                        <th style="min-width: 200px;">Alamat</th>
-                        <th style="min-width: 100px;">Status</th>
-                        <th style="min-width: 120px;">Tgl Gabung</th>
-                        <th style="min-width: 130px; text-align: right;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="pelangganTableBody">
-                    @forelse($pelanggan as $key => $p)
-                    <tr class="{{ (strtolower($p->status ?? '') !== 'approve' && (blank($p->progres) || $p->progres === \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES)) ? 'row-urgent' : '' }}" data-searchable="{{ strtolower($p->nama_lengkap . ' ' . $p->nomer_id . ' ' . $p->no_whatsapp . ' ' . $p->alamat_jalan . ' ' . $p->kecamatan . ' ' . ($p->status ?? '') . ' ' . ($p->progres ?? '')) }}"
-                        data-nomer-id="{{ $p->nomer_id }}"
-                        data-nama="{{ $p->nama_lengkap }}"
-                        data-whatsapp="{{ $p->no_whatsapp }}"
-                        data-alamat="{{ $p->alamat_jalan }}"
-                        data-rt="{{ $p->rt }}"
-                        data-rw="{{ $p->rw }}"
-                        data-kecamatan="{{ $p->kecamatan }}"
-                        data-kabupaten="{{ $p->kabupaten }}"
-                        data-tanggal-mulai="{{ $p->tanggal_mulai ? \Carbon\Carbon::parse($p->tanggal_mulai)->format('d M Y') : '' }}"
-                        data-foto-ktp="{{ $p->foto_ktp ? asset('storage/' . $p->foto_ktp) : '' }}"
-                        data-status="{{ $p->status }}"
-                        data-progres="{{ $p->progres }}"
-                        data-marketing-name="{{ optional($p->user)->name }}"
-                        data-marketing-email="{{ optional($p->user)->email }}"
-                        data-created-at="{{ $p->created_at }}"
-                        data-progress-note="{{ $p->progress_note }}"
-                        data-is-pending="{{ \Illuminate\Support\Str::startsWith(strtoupper(trim((string)($p->progress_note ?? ''))), '[PENDING]') ? 1 : 0 }}"
-                        data-deskripsi="{{ $p->deskripsi }}">
-
-                        <td style="text-align: center; color: var(--text-muted); font-size: 0.75rem;">{{ $pelanggan->firstItem() + $key }}</td>
-                        <td>
-                            <div class="cell-name">{{ $p->nama_lengkap }}</div>
-                            <div class="cell-sub">{{ $p->nomer_id }}</div>
-                            <div class="cell-sub">Dibuat oleh: {{ optional($p->user)->name ?? '-' }}</div>
-                        </td>
-                        <td>
-                            @if($p->no_whatsapp)
-                            <a href="https://wa.me/{{ $p->no_whatsapp }}" target="_blank" class="cell-wa">
-                                <i class="ri-whatsapp-line"></i> {{ $p->no_whatsapp }}
-                            </a>
-                            @else
-                            <span style="color: var(--text-muted);">-</span>
-                            @endif
-                        </td>
-                        <td class="desktop-progress-cell">
-                            @php
-                                $stages = ['Belum Diproses', 'Tarik Kabel', 'Aktivasi', 'Registrasi'];
-                                $isApproved = strtolower($p->status ?? '') === 'approve';
-                                $isPendingStage = \Illuminate\Support\Str::startsWith(
-                                    strtoupper(trim((string)($p->progress_note ?? ''))),
-                                    '[PENDING]'
-                                );
-                                $isOwner = true; // Allow all marketing users to update
-                            @endphp
-                            @php
-                                $currentProgress = blank($p->progres) ? \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES : $p->progres;
-                                $currentStage = array_search($currentProgress, $stages);
-                                $isUrgent = !$isApproved && $currentProgress === \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES;
-                            @endphp
-                            <div class="desktop-progress-card {{ $isUrgent ? 'is-urgent' : '' }}">
-                                <div class="desktop-progress-top">
-                                    <div class="desktop-progress-label">
-                                        <span>Tahap saat ini</span>
-                                        <strong>{{ $currentProgress }}</strong>
-                                    </div>
-                                    @if($isUrgent)
-                                    <span class="urgency-chip urgent">Urgent</span>
-                                    @endif
-                                    <div class="stepper-mini">
-                                        @foreach($stages as $index => $stage)
-                                            @php
-                                                $dotClass = '';
-                                                $dotValue = $index + 1;
-                                                if ($isApproved) {
-                                                    $dotClass = 'done';
-                                                    $dotValue = '✓';
-                                                } elseif ($currentStage !== false) {
-                                                    if ($index < $currentStage) {
-                                                        $dotClass = 'done';
-                                                        $dotValue = '✓';
-                                                    } elseif ($index === $currentStage) {
-                                                        $dotClass = $isPendingStage && $currentProgress !== \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES ? 'pending-current' : 'current';
-                                                    }
-                                                }
-                                            @endphp
-                                            <div class="step-dot {{ $dotClass }}" title="{{ $stage }}">{{ $dotValue }}</div>
-                                            @if(!$loop->last)
-                                                <div class="step-line {{ ($isApproved || ($currentStage !== false && $index < $currentStage)) ? 'done' : '' }}"></div>
-                                            @endif
-                                        @endforeach
+        
+        <!-- Table Content -->
+        <div class="card-body p-0">
+            <!-- Desktop Table -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px; text-align: center;">#</th>
+                            <th>Pelanggan</th>
+                            <th>Kontak</th>
+                            <th>Progres</th>
+                            <th>Alamat</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pelangganTableBody">
+                        @forelse($pelanggan as $key => $p)
+                        <tr data-searchable="{{ strtolower($p->nama_lengkap . ' ' . $p->nomer_id . ' ' . $p->no_whatsapp . ' ' . $p->alamat_jalan . ' ' . $p->kecamatan . ' ' . ($p->status ?? '') . ' ' . ($p->progres ?? '')) }}"
+                            data-nomer-id="{{ $p->nomer_id }}"
+                            data-nama="{{ $p->nama_lengkap }}"
+                            data-whatsapp="{{ $p->no_whatsapp }}"
+                            data-alamat="{{ $p->alamat_jalan }}"
+                            data-rt="{{ $p->rt }}"
+                            data-rw="{{ $p->rw }}"
+                            data-kecamatan="{{ $p->kecamatan }}"
+                            data-kabupaten="{{ $p->kabupaten }}"
+                            data-tanggal-mulai="{{ $p->tanggal_mulai ? \Carbon\Carbon::parse($p->tanggal_mulai)->format('d M Y') : '' }}"
+                            data-foto-ktp="{{ $p->foto_ktp ? asset('storage/' . $p->foto_ktp) : '' }}"
+                            data-status="{{ $p->status }}"
+                            data-progres="{{ $p->progres }}"
+                            data-marketing-name="{{ optional($p->user)->name }}"
+                            data-marketing-email="{{ optional($p->user)->email }}"
+                            data-created-at="{{ $p->created_at }}"
+                            data-progress-note="{{ $p->progress_note }}"
+                            data-is-pending="{{ \Illuminate\Support\Str::startsWith(strtoupper(trim((string)($p->progress_note ?? ''))), '[PENDING]') ? 1 : 0 }}"
+                            data-deskripsi="{{ $p->deskripsi }}">
+                            
+                            <td style="text-align: center; color: #6b7280; font-size: 0.8rem;">{{ $pelanggan->firstItem() + $key }}</td>
+                            <td>
+                                <div class="product-cell">
+                                    <div class="product-info">
+                                        <h6 class="mb-0">{{ $p->nama_lengkap }}</h6>
+                                        <span style="font-family: monospace;">{{ $p->nomer_id }}</span>
                                     </div>
                                 </div>
-                                @if($p->progress_note)
-                                <div class="quick-note-preview">
-                                    <span class="quick-note-preview-label">Catatan terakhir</span>
-                                    <p>{{ trim(preg_replace('/^\[PENDING\]\s*/i', '', preg_replace('/\*\(Diupdate oleh:.*?\)\*/s', '', $p->progress_note))) }}</p>
-                                </div>
-                                @endif
-                                @if($isOwner)
-                                <form action="{{ route('marketing.pelanggan.progres', $p->id) }}" method="POST" class="quick-progress-form">
-                                    @csrf
-                                    <input type="hidden" name="return_url" value="{{ request()->fullUrl() }}">
-                                    <div class="quick-progress-grid">
-                                        <div class="quick-progress-inline">
-                                            <select name="progres" class="progress-select" aria-label="Tahap progres {{ $p->nama_lengkap }}">
-                                                @foreach(\App\Models\Pelanggan::PROGRES_STAGES as $stage)
-                                                <option value="{{ $stage }}" {{ $currentProgress === $stage ? 'selected' : '' }}>{{ $stage }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <label style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.75rem;color:var(--text-secondary);font-weight:600;">
-                                            <input type="checkbox" name="is_pending" value="1" {{ $isPendingStage && $currentProgress !== \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES ? 'checked' : '' }}>
-                                            Tandai Pending (Kendala)
-                                        </label>
-                                        <textarea
-                                            name="progress_note"
-                                            class="quick-note-input"
-                                            rows="2"
-                                            maxlength="1000"
-                                            required
-                                            placeholder="Wajib isi alasan/keterangan update status">{{ old('progress_note', '') }}</textarea>
-                                        <button type="submit" class="btn-shadcn quick-save-btn">
-                                            <i class="ri-save-line"></i> Simpan
-                                        </button>
-                                    </div>
-                                </form>
-                                @else
-                                <div class="cell-sub">Readonly. Data ini diinput oleh user {{ optional($p->user)->name ?? '-' }}.</div>
-                                @endif
-                            </div>
-                        </td>
-                        <td>
-                            <div class="cell-address" title="{{ $p->alamat_jalan }}">{{ $p->alamat_jalan ?? '-' }}</div>
-                            @if($p->kecamatan)
-                            <div class="cell-address-sub">{{ $p->kecamatan }}</div>
-                            @endif
-                        </td>
-                        <td>
-                            @php
-                                $statusKey = strtolower($p->status ?? 'pending');
-                                $badgeClass = match($statusKey) {
-                                    'approve' => 'badge-approve',
-                                    'pending', 'proses' => 'badge-pending',
-                                    'reject' => 'badge-reject',
-                                    default => 'badge-default',
-                                };
-                                $currentProgress = blank($p->progres) ? \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES : $p->progres;
-                                $isPendingStage = \Illuminate\Support\Str::startsWith(
-                                    strtoupper(trim((string)($p->progress_note ?? ''))),
-                                    '[PENDING]'
-                                );
-                                $statusLabel = $statusKey === 'approve'
-                                    ? 'Approve'
-                                    : ($statusKey === 'reject'
-                                        ? 'Reject'
-                                        : (($isPendingStage && $currentProgress !== \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES) ? 'Pending' : ($currentProgress !== \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES ? 'Progres' : 'Belum Diproses')));
-                            @endphp
-                            <span class="badge-status {{ $badgeClass }}">{{ $statusLabel }}</span>
-                        </td>
-                        <td>
-                            <span class="cell-date">{{ $p->tanggal_mulai ? \Carbon\Carbon::parse($p->tanggal_mulai)->format('d M Y') : '-' }}</span>
-                        </td>
-                        <td>
-                            <div class="desktop-actions">
-                                <button class="btn-shadcn btn-shadcn-sm btn-shadcn-icon btn-detail" title="Detail">
-                                    <i class="ri-eye-line"></i>
-                                </button>
-                                @if($isOwner)
-                                <a href="{{ route('marketing.pelanggan.edit', $p->id) }}" class="btn-shadcn btn-shadcn-sm btn-shadcn-icon" title="Edit">
-                                    <i class="ri-edit-2-line"></i>
+                            </td>
+                            <td>
+                                @if($p->no_whatsapp)
+                                <a href="https://wa.me/{{ $p->no_whatsapp }}" target="_blank" class="text-decoration-none" style="color: #4b5563; font-size: 0.85rem; display: flex; align-items: center; gap: 4px;">
+                                    <i class="ri-whatsapp-line" style="color: #16a34a;"></i> {{ $p->no_whatsapp }}
                                 </a>
-                                <form action="{{ route('marketing.pelanggan.delete', $p->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="btn-shadcn btn-shadcn-sm btn-shadcn-icon btn-shadcn-danger btn-delete" title="Hapus">
-                                        <i class="ri-delete-bin-line"></i>
-                                    </button>
-                                </form>
+                                @else
+                                <span class="text-muted">-</span>
                                 @endif
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="8">
-                            <div class="empty-state">
-                                <i class="ri-inbox-line"></i>
-                                <p>Tidak ada data pelanggan ditemukan.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                    <tr class="no-results-row" id="noResultsRow">
-                        <td colspan="8">
-                            <div class="empty-state">
-                                <i class="ri-search-line"></i>
-                                <p>Tidak ada hasil yang cocok dengan pencarian.</p>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                            </td>
+                            <td>
+                                @php
+                                    $stages = ['Belum Diproses', 'Tarik Kabel', 'Aktivasi', 'Registrasi'];
+                                    $isApproved = strtolower($p->status ?? '') === 'approve';
+                                    $currentProgress = blank($p->progres) ? \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES : $p->progres;
+                                    $currentStage = array_search($currentProgress, $stages);
+                                    $isPendingStage = \Illuminate\Support\Str::startsWith(strtoupper(trim((string)($p->progress_note ?? ''))), '[PENDING]');
+                                @endphp
+                                <div class="stepper-mini mb-1">
+                                    @foreach($stages as $index => $stage)
+                                        @php
+                                            $dotClass = '';
+                                            if ($isApproved) {
+                                                $dotClass = 'done';
+                                            } elseif ($currentStage !== false) {
+                                                if ($index < $currentStage) {
+                                                    $dotClass = 'done';
+                                                } elseif ($index === $currentStage) {
+                                                    $dotClass = $isPendingStage && $currentProgress !== \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES ? 'pending-current' : 'current';
+                                                }
+                                            }
+                                        @endphp
+                                        <div class="step-dot {{ $dotClass }}" title="{{ $stage }}"></div>
+                                        @if(!$loop->last)
+                                            <div class="step-line {{ ($isApproved || ($currentStage !== false && $index < $currentStage)) ? 'done' : '' }}"></div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                                <span class="progress-label">
+                                    {{ $currentProgress }}
+                                    @if($isPendingStage && $currentProgress !== \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES)
+                                        <span class="text-danger ms-1">(Pending)</span>
+                                    @endif
+                                </span>
+                            </td>
+                            <td>
+                                <div class="alamat-main" title="{{ $p->alamat_jalan }}">{{ $p->alamat_jalan ?? '-' }}</div>
+                                @if($p->kecamatan)
+                                <div class="alamat-sub">{{ $p->kecamatan }}</div>
+                                @endif
+                            </td>
+                            <td>
+                                @php
+                                    $statusKey = strtolower($p->status ?? 'pending');
+                                    $badgeClass = match($statusKey) {
+                                        'approve' => 'badge-approve',
+                                        'pending', 'proses' => 'badge-pending',
+                                        'reject' => 'badge-reject',
+                                        default => 'badge-default',
+                                    };
+                                    $statusLabel = $statusKey === 'approve' ? 'Approve' : ($statusKey === 'reject' ? 'Reject' : (($isPendingStage && $currentProgress !== \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES) ? 'Pending' : ($currentProgress !== \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES ? 'Progres' : 'Belum Diproses')));
+                                @endphp
+                                <span class="badge-status {{ $badgeClass }}">{{ $statusLabel }}</span>
+                            </td>
+                            <td style="text-align: right;">
+                                <div class="table-actions">
+                                    <div class="dropdown">
+                                        <button type="button" class="btn-action btn-kebab" title="Aksi" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="ri-more-2-fill"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-end action-menu">
+                                            <button type="button" class="dropdown-item btn-detail">
+                                                <i class="ri-eye-line"></i> Detail
+                                            </button>
+                                            @if(!$isApproved)
+                                            <div class="action-section-title">Update Progres</div>
+                                            @foreach(\App\Models\Pelanggan::PROGRES_STAGES as $stage)
+                                            <form action="{{ route('marketing.pelanggan.progres', $p->id) }}" method="POST" class="quick-progres-form">
+                                                @csrf
+                                                <input type="hidden" name="progres" value="{{ $stage }}">
+                                                <input type="hidden" name="progress_note" value="{{ $p->progress_note ?? '' }}">
+                                                <input type="hidden" name="return_url" value="{{ url()->current() . '?' . http_build_query(request()->query()) }}">
+                                                <button type="submit" class="dropdown-item {{ $currentProgress === $stage ? 'fw-bold' : '' }}">
+                                                    <i class="{{ $currentProgress === $stage ? 'ri-checkbox-circle-fill text-success' : 'ri-refresh-line text-muted' }}"></i>
+                                                    {{ $stage }}
+                                                </button>
+                                            </form>
+                                            @endforeach
+                                            @endif
+                                            <a href="{{ route('marketing.pelanggan.edit', $p->id) }}" class="dropdown-item">
+                                                <i class="ri-edit-2-line"></i> Edit
+                                            </a>
+                                            <div class="action-danger-wrap">
+                                                <form action="{{ route('marketing.pelanggan.delete', $p->id) }}" method="POST">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="button" class="dropdown-item action-danger btn-delete">
+                                                        <i class="ri-delete-bin-line"></i> Delete
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="ri-inbox-line"></i>
+                                    <p>Tidak ada data pelanggan ditemukan.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                        <tr class="no-results-row" id="noResultsRow">
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="ri-search-line"></i>
+                                    <p>Tidak ada hasil yang cocok dengan pencarian.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
         <!-- Mobile View (Cards) -->
         <div class="d-md-none mobile-cards">
@@ -1749,11 +1015,11 @@ document.addEventListener("DOMContentLoaded", function() {
                                 $dotValue = $index + 1;
                                 if ($isApproved) {
                                     $dotClass = 'done';
-                                    $dotValue = '✓';
+                                    $dotValue = '?';
                                 } elseif ($currentStage !== false) {
                                     if ($index < $currentStage) {
                                         $dotClass = 'done';
-                                        $dotValue = '✓';
+                                        $dotValue = '?';
                                     } elseif ($index === $currentStage) {
                                         $dotClass = $isPendingStage && $currentStageLabel !== \App\Models\Pelanggan::PROGRES_BELUM_DIPROSES ? 'pending-current' : 'current';
                                     }
@@ -1803,7 +1069,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 maxlength="1000"
                                 required
                                 placeholder="Wajib isi alasan/keterangan update status">{{ old('progress_note', '') }}</textarea>
-                            <button type="submit" class="btn-shadcn quick-save-btn" style="width:100%;">
+                            <button type="submit" class="btn btn-dark btn-sm quick-save-btn" style="width:100%; border-radius: 8px; background: #111827;">
                                 <i class="ri-save-line"></i> Simpan
                             </button>
                             </div>
@@ -1815,17 +1081,17 @@ document.addEventListener("DOMContentLoaded", function() {
                 </details>
 
                 <div class="m-card-actions">
-                    <button class="btn-shadcn btn-shadcn-sm btn-detail">
+                    <button class="btn btn-outline-secondary btn-sm btn-detail" style="border-radius: 8px;">
                         <i class="ri-eye-line"></i> Detail
                     </button>
                     @if($isOwner)
-                    <a href="{{ route('marketing.pelanggan.edit', $p->id) }}" class="btn-shadcn btn-shadcn-sm">
+                    <a href="{{ route('marketing.pelanggan.edit', $p->id) }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
                         <i class="ri-edit-2-line"></i> Edit
                     </a>
                     <form action="{{ route('marketing.pelanggan.delete', $p->id) }}" method="POST">
                         @csrf
                         @method('DELETE')
-                        <button type="button" class="btn-shadcn btn-shadcn-sm btn-shadcn-danger btn-delete" style="width:100%;">
+                        <button type="button" class="btn btn-outline-danger btn-sm btn-delete" style="width:100%; border-radius: 8px;">
                             <i class="ri-delete-bin-line"></i> Hapus
                         </button>
                     </form>
@@ -1846,19 +1112,83 @@ document.addEventListener("DOMContentLoaded", function() {
 
 <!-- Modal Detail -->
 <div class="modal fade" id="detailModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0" style="box-shadow: var(--shadow); border-radius: var(--radius-lg);">
-            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 1rem 1.25rem;">
-                <h6 class="modal-title" style="font-weight: 700; font-size: 0.9375rem;">Detail Pelanggan</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" style="font-size: 0.625rem;"></button>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0" style="box-shadow: 0 4px 16px rgba(0,0,0,0.12); border-radius: 12px;">
+            <div class="modal-header" style="border-bottom: 1px solid #e5e7eb; padding: 1rem 1.25rem;">
+                <div>
+                    <h6 class="modal-title mb-0" style="font-weight: 700; font-size: 0.9375rem; color: #111827;">Detail Pelanggan</h6>
+                    <small id="detail-id" class="text-muted" style="font-family: monospace;"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" style="padding: 1.25rem;">
-                <!-- Content injected via JS -->
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3" style="background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
+                            <p class="text-muted mb-1" style="font-size:0.7rem; text-transform:uppercase; font-weight:600; letter-spacing:0.05em;">Nama Lengkap</p>
+                            <p class="mb-0 fw-semibold" id="detail-nama"></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3" style="background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
+                            <p class="text-muted mb-1" style="font-size:0.7rem; text-transform:uppercase; font-weight:600; letter-spacing:0.05em;">No. WhatsApp</p>
+                            <a id="detail-whatsapp-link" href="#" target="_blank" class="text-decoration-none d-flex align-items-center gap-1" style="color:#16a34a;">
+                                <i class="ri-whatsapp-line"></i>
+                                <span id="detail-whatsapp" class="fw-semibold"></span>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3" style="background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
+                            <p class="text-muted mb-1" style="font-size:0.7rem; text-transform:uppercase; font-weight:600; letter-spacing:0.05em;">Status</p>
+                            <p class="mb-0 fw-semibold" id="detail-status"></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3" style="background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
+                            <p class="text-muted mb-1" style="font-size:0.7rem; text-transform:uppercase; font-weight:600; letter-spacing:0.05em;">Progres</p>
+                            <p class="mb-0 fw-semibold" id="detail-progres"></p>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="p-3" style="background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
+                            <p class="text-muted mb-1" style="font-size:0.7rem; text-transform:uppercase; font-weight:600; letter-spacing:0.05em;">Alamat</p>
+                            <p class="mb-0" id="detail-alamat"></p>
+                            <small class="text-muted">RT/RW: <span id="detail-rt-rw"></span> | Kec. <span id="detail-kecamatan"></span> | Kab. <span id="detail-kabupaten"></span></small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3" style="background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
+                            <p class="text-muted mb-1" style="font-size:0.7rem; text-transform:uppercase; font-weight:600; letter-spacing:0.05em;">Tgl Gabung</p>
+                            <p class="mb-0" id="detail-tanggal-mulai"></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3" style="background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
+                            <p class="text-muted mb-1" style="font-size:0.7rem; text-transform:uppercase; font-weight:600; letter-spacing:0.05em;">Marketing</p>
+                            <p class="mb-0" id="detail-marketing"></p>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="p-3" style="background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
+                            <p class="text-muted mb-1" style="font-size:0.7rem; text-transform:uppercase; font-weight:600; letter-spacing:0.05em;">Catatan Progres</p>
+                            <p class="mb-0 fst-italic text-secondary" id="detail-note" style="font-size:0.875rem;"></p>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="p-3" style="background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
+                            <p class="text-muted mb-2" style="font-size:0.7rem; text-transform:uppercase; font-weight:600; letter-spacing:0.05em;">Foto KTP</p>
+                            <img id="detail-foto-ktp" src="" alt="Foto KTP" class="img-fluid d-none" style="max-height:200px; border-radius:8px; border:1px solid #e5e7eb;">
+                            <p id="detail-no-foto" class="text-muted mb-0 d-none" style="font-size:0.85rem;">Foto KTP tidak tersedia.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-footer" style="border-top: 1px solid var(--border-color); padding: 0.75rem 1.25rem; background: var(--secondary-color);">
-                <button type="button" class="btn-shadcn" data-bs-dismiss="modal">Tutup</button>
+            <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 0.75rem 1.25rem; background: #f8fafc;">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">Tutup</button>
             </div>
         </div>
     </div>
 </div>
+
 @endsection

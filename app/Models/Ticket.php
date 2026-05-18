@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 class Ticket extends Model
 {
     protected $fillable = [
+        'ticket_type',
+        'title',
         'pelanggan_id',
         'phone',
         'location_link',
@@ -22,10 +24,15 @@ class Ticket extends Model
         'priority',
         'technician_group_id',
         'user_id',
+        'assignment_date',
         'status',
         'created_by',
         'progress_started_at',
         'finished_at',
+    ];
+
+    protected $casts = [
+        'assignment_date' => 'date',
     ];
 
     // UUID settings

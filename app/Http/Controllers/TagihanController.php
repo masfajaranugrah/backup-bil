@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\BayarExport;
 use App\Exports\TagihanExport;
+use App\Exports\TagihanBelumLunasMonthlyExport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +25,8 @@ class TagihanController extends Controller
     private function eligibleBroadcastCustomersQuery(int $month, int $year)
     {
         return Pelanggan::query()
-            ->where('status', 'approve')
+            // Hard filter: hanya pelanggan dengan status approve (toleran spasi/case)
+            ->whereRaw('LOWER(TRIM(status)) = ?', ['approve'])
             ->whereNotNull('paket_id')
             ->whereDoesntHave('tagihans', function ($q) use ($month, $year) {
                 $q->whereMonth('tanggal_mulai', $month)
@@ -32,7 +34,7 @@ class TagihanController extends Controller
             });
     }
 
- /**
+    /**
      * Update paket tagihan (untuk mengubah nominal jika tidak sesuai)
      * dan tanggal mulai/berakhir
      */
@@ -325,7 +327,7 @@ class TagihanController extends Controller
                             if ($service->connect($router)) {
                                 $username = $tagihan->pelanggan->nomer_id; // Asumsi nomer_id = PPPoE user
                                 $profile = $tagihan->paket->mikrotik_profile;
-                                
+
                                 if ($username && $profile) {
                                     // Restore profile asli
                                     $service->restoreCustomer($username, $profile);
@@ -377,55 +379,60 @@ class TagihanController extends Controller
     public function index(Request $request)
     {
         // Ambil semua pelanggan & paket untuk dropdown modal
-        $pelanggan = Pelanggan::where('status', 'approve')
-            ->whereDoesntHave('tagihans', function ($q) {
-                $q->where('status_pembayaran', 'belum bayar');
-            })
-            ->get();
+        // ? MENGHAPUS QUERY $pelanggan YANG MENGAMBIL SEMUA DATA
+        // Karena di view tagihan.blade.php sudah menggunakan AJAX select2, query ini hanya membuang memori dan waktu.
 
         $paket = Paket::all();
 
-        // ? BUILD QUERY - HANYA STATUS "BELUM BAYAR"
+        // ? BUILD QUERY OPTIMIZATION - MENGGUNAKAN JOIN (LEBIH CEPAT DARI WHEREHAS)
         $query = Tagihan::with(['pelanggan', 'paket'])
-            ->where('status_pembayaran', 'belum bayar');
+            ->select('tagihans.*') // Wajib select tagihans.* agar id tagihan tidak tertimpa id pelanggan
+            ->join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+            ->whereIn('tagihans.status_pembayaran', ['belum bayar', 'proses_verifikasi']);
 
-        // ? SEARCH FILTER - HANYA DI STATUS "BELUM BAYAR"
+        // ? SEARCH FILTER - OPTIMALKAN DENGAN PELANGGANS. PREFIX
         if ($request->filled('search')) {
             $search = trim($request->search);
 
-            $query->whereHas('pelanggan', function ($q) use ($search) {
-                $q->where('nama_lengkap', 'like', "%{$search}%")
-                    ->orWhere('nomer_id', 'like', "%{$search}%")          // Cari di No. ID
-                    ->orWhere('no_whatsapp', 'like', "%{$search}%")       // Cari di WhatsApp
-                    ->orWhere('no_telp', 'like', "%{$search}%")           // Cari di Telepon
-                    ->orWhere('alamat_jalan', 'like', "%{$search}%")      // Cari di Alamat
-                    ->orWhere('rt', 'like', "%{$search}%")                // Cari di RT
-                    ->orWhere('rw', 'like', "%{$search}%")                // Cari di RW
-                    ->orWhere('desa', 'like', "%{$search}%")              // Cari di Desa
-                    ->orWhere('kecamatan', 'like', "%{$search}%")         // Cari di Kecamatan
-                    ->orWhere('kabupaten', 'like', "%{$search}%")         // Cari di Kabupaten
-                    ->orWhere('kode_pos', 'like', "%{$search}%");         // Cari di Kode Pos
+            $query->where(function ($q) use ($search) {
+                $q->where('pelanggans.nama_lengkap', 'like', "%{$search}%")
+                    ->orWhere('pelanggans.nomer_id', 'like', "%{$search}%")
+                    ->orWhere('pelanggans.no_whatsapp', 'like', "%{$search}%")
+                    ->orWhere('pelanggans.no_telp', 'like', "%{$search}%")
+                    ->orWhere('pelanggans.alamat_jalan', 'like', "%{$search}%")
+                    ->orWhere('pelanggans.rt', 'like', "%{$search}%")
+                    ->orWhere('pelanggans.rw', 'like', "%{$search}%")
+                    ->orWhere('pelanggans.desa', 'like', "%{$search}%")
+                    ->orWhere('pelanggans.kecamatan', 'like', "%{$search}%")
+                    ->orWhere('pelanggans.kabupaten', 'like', "%{$search}%")
+                    ->orWhere('pelanggans.kode_pos', 'like', "%{$search}%");
             });
         }
 
-        // ? FILTER BULAN & TAHUN - Filter berdasarkan periode (format: Y-m)
+        // ? FILTER BULAN & TAHUN
         if ($request->filled('periode')) {
             $periode = $request->periode; // format: 2026-01
             $parts = explode('-', $periode);
             if (count($parts) === 2) {
                 $tahun = (int) $parts[0];
                 $bulan = (int) $parts[1];
-                $query->whereYear('tanggal_mulai', $tahun)
-                      ->whereMonth('tanggal_mulai', $bulan);
+                $query->whereYear('tagihans.tanggal_mulai', $tahun)
+                    ->whereMonth('tagihans.tanggal_mulai', $bulan);
             }
         }
 
-        // ? FILTER KABUPATEN & KECAMATAN DIHAPUS
+        // FILTER BIAYA PAKET
+        if ($request->filled('harga_paket')) {
+            $hargaPaket = (int) preg_replace('/[^\d]/', '', (string) $request->input('harga_paket'));
+            $query->whereHas('paket', function ($q) use ($hargaPaket) {
+                $q->where('harga', $hargaPaket);
+            });
+        }
 
         // ? PAGINATION
         $tagihans = $query
-            ->orderBy('created_at', 'desc')
-            ->paginate(40)
+            ->orderBy('tagihans.created_at', 'desc')
+            ->paginate(40, ['tagihans.*'])
             ->withQueryString()
             ->through(function ($item) {
                 $pelanggan = $item->pelanggan;
@@ -471,7 +478,7 @@ class TagihanController extends Controller
         // Gunakan total tagihan lunas (bukan distinct pelanggan) agar angka konsisten dengan daftar
         $customerLunas = Tagihan::where('status_pembayaran', 'lunas')->count();
         $lunas = $customerLunas; // Jumlah tagihan lunas
-        $belumLunas = Tagihan::where('status_pembayaran', 'belum bayar')->count();
+        $belumLunas = Tagihan::whereIn('status_pembayaran', ['belum bayar', 'proses_verifikasi'])->count();
         $totalPaket = $paket->count();
 
         // Rekening list untuk dropdown verifikasi
@@ -479,15 +486,15 @@ class TagihanController extends Controller
 
         // ? RETURN VIEW HTML (tanpa kabupatenList & kecamatanList)
         return view('content.apps.Tagihan.tagihan', [
-            'tagihans'      => $tagihans,
-            'pelanggan'     => $pelanggan,
-            'paket'         => $paket,
+            'tagihans' => $tagihans,
+            'pelanggan' => [], // Kirim array kosong karena tidak dipakai lagi di view
+            'paket' => $paket,
             'totalCustomer' => $totalCustomer,
             'customerLunas' => $customerLunas,
-            'lunas'         => $lunas,
-            'belumLunas'    => $belumLunas,
-            'totalPaket'    => $totalPaket,
-            'rekeningList'  => $rekeningList,
+            'lunas' => $lunas,
+            'belumLunas' => $belumLunas,
+            'totalPaket' => $totalPaket,
+            'rekeningList' => $rekeningList,
         ]);
     }
 
@@ -500,7 +507,7 @@ class TagihanController extends Controller
         $paket = Paket::all();
 
         // Query builder dengan search
-        $query = Tagihan::with(['pelanggan', 'paket'])
+        $query = Tagihan::with(['pelanggan', 'paket', 'rekening:id,nama_bank'])
             ->where('status_pembayaran', 'proses_verifikasi');
 
         // Tambahkan filter search jika ada parameter
@@ -618,7 +625,7 @@ class TagihanController extends Controller
                         try {
                             if ($service->connect($router)) {
                                 $username = $tagihan->pelanggan->nomer_id;
-                                
+
                                 if ($username) {
                                     // Set profile ke 'isolir' (pastikan profile ini ada di Mikrotik)
                                     $service->isolateCustomer($username, 'isolir');
@@ -658,22 +665,22 @@ class TagihanController extends Controller
 
 
 
-public function lunas(Request $request)
+    public function lunas(Request $request)
     {
         // Eager load hanya kolom yang diperlukan
         $query = Tagihan::with([
-            'pelanggan:id,nama_lengkap,nomer_id,no_whatsapp,alamat_jalan,rt,rw,desa,kecamatan,kabupaten,provinsi,kode_pos', 
-            'paket:id,nama_paket,harga,kecepatan,masa_pembayaran', 
+            'pelanggan:id,nama_lengkap,nomer_id,no_whatsapp,alamat_jalan,rt,rw,desa,kecamatan,kabupaten,provinsi,kode_pos',
+            'paket:id,nama_paket,harga,kecepatan,masa_pembayaran',
             'rekening:id,nama_bank'
         ])->where('status_pembayaran', 'lunas');
 
         // Filter search
         if ($search = $request->input('search')) {
-            $query->where(function($q) use ($search) {
-                $q->whereHas('pelanggan', function($subQ) use ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('pelanggan', function ($subQ) use ($search) {
                     $subQ->where('nama_lengkap', 'LIKE', "%{$search}%")
-                         ->orWhere('nomer_id', 'LIKE', "%{$search}%")
-                         ->orWhere('no_whatsapp', 'LIKE', "%{$search}%");
+                        ->orWhere('nomer_id', 'LIKE', "%{$search}%")
+                        ->orWhere('no_whatsapp', 'LIKE', "%{$search}%");
                 });
             });
         }
@@ -682,9 +689,17 @@ public function lunas(Request $request)
         if ($bulan = $request->input('bulan')) {
             $query->whereMonth('tanggal_mulai', $bulan);
         }
-        
+
         if ($tahun = $request->input('tahun')) {
             $query->whereYear('tanggal_mulai', $tahun);
+        }
+
+        // Filter tanggal range (berdasarkan tanggal_pembayaran / tanggal dia bayar)
+        if ($tanggalDari = $request->input('tanggal_dari')) {
+            $query->whereDate('tanggal_pembayaran', '>=', $tanggalDari);
+        }
+        if ($tanggalSampai = $request->input('tanggal_sampai')) {
+            $query->whereDate('tanggal_pembayaran', '<=', $tanggalSampai);
         }
 
         // Filter Bank
@@ -701,7 +716,7 @@ public function lunas(Request $request)
         $bankTotalsQuery = Tagihan::leftJoin('rekenings', 'rekenings.id', '=', 'tagihans.type_pembayaran')
             ->leftJoin('pakets', 'pakets.id', '=', 'tagihans.paket_id')
             ->where('tagihans.status_pembayaran', 'lunas');
-        
+
         // Apply same filters untuk bankTotals
         if ($bulan = $request->input('bulan')) {
             $bankTotalsQuery->whereMonth('tagihans.tanggal_mulai', $bulan);
@@ -709,10 +724,16 @@ public function lunas(Request $request)
         if ($tahun = $request->input('tahun')) {
             $bankTotalsQuery->whereYear('tagihans.tanggal_mulai', $tahun);
         }
+        if ($tanggalDari = $request->input('tanggal_dari')) {
+            $bankTotalsQuery->whereDate('tagihans.tanggal_pembayaran', '>=', $tanggalDari);
+        }
+        if ($tanggalSampai = $request->input('tanggal_sampai')) {
+            $bankTotalsQuery->whereDate('tagihans.tanggal_pembayaran', '<=', $tanggalSampai);
+        }
         if ($bankId = $request->input('bank')) {
             $bankTotalsQuery->where('tagihans.type_pembayaran', $bankId);
         }
-        
+
         $bankTotals = $bankTotalsQuery
             ->selectRaw('COALESCE(rekenings.nama_bank, tagihans.type_pembayaran, "Lainnya") as nama_bank, SUM(COALESCE(tagihans.harga, pakets.harga, 0)) as total')
             ->groupByRaw('COALESCE(rekenings.nama_bank, tagihans.type_pembayaran, "Lainnya")')
@@ -734,9 +755,19 @@ public function lunas(Request $request)
     public function searchPelanggan(Request $request)
     {
         $term = $request->q;
+        $filterNoTagihan = (int) $request->input('filter_no_tagihan', 0) === 1;
 
         $query = Pelanggan::with('paket')
-            ->where('status', 'approve');
+            ->whereRaw('LOWER(TRIM(status)) = ?', ['approve']);
+
+        if ($filterNoTagihan) {
+            $currentMonth = now()->month;
+            $currentYear = now()->year;
+            $query->whereDoesntHave('tagihans', function ($q) use ($currentMonth, $currentYear) {
+                $q->whereMonth('tanggal_mulai', $currentMonth)
+                    ->whereYear('tanggal_mulai', $currentYear);
+            });
+        }
 
         if ($term) {
             $query->where(function ($q) use ($term) {
@@ -835,10 +866,31 @@ public function lunas(Request $request)
         // Update field lainnya
         $tagihan->update([
             'paket_id' => $request->paket_id,
+            'harga' => $paket->harga,
             'tanggal_mulai' => $tanggalMulai->format('Y-m-d'),
             'tanggal_berakhir' => $tanggalBerakhir->format('Y-m-d'),
             'catatan' => $request->catatan,
         ]);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Tagihan berhasil diperbarui!',
+                'data' => [
+                    'id' => $tagihan->id,
+                    'paket_id' => $paket->id,
+                    'paket_nama' => $paket->nama_paket,
+                    'kecepatan' => $paket->kecepatan,
+                    'harga' => $paket->harga,
+                    'harga_formatted' => 'Rp ' . number_format($paket->harga, 0, ',', '.'),
+                    'tanggal_mulai' => $tanggalMulai->format('Y-m-d'),
+                    'tanggal_berakhir' => $tanggalBerakhir->format('Y-m-d'),
+                    'tanggal_mulai_formatted' => $tanggalMulai->translatedFormat('d M Y'),
+                    'tanggal_berakhir_formatted' => $tanggalBerakhir->translatedFormat('d M Y'),
+                    'catatan' => $request->catatan ?? '-',
+                ],
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Tagihan berhasil diperbarui!');
     }
@@ -853,6 +905,11 @@ public function lunas(Request $request)
             'tanggal_berakhir' => 'nullable|date',
             'catatan' => 'nullable|string',
         ]);
+
+        $pelanggan = Pelanggan::findOrFail($request->pelanggan_id);
+        if (strtolower(trim((string) $pelanggan->status)) !== 'approve') {
+            return redirect()->back()->with('error', 'Tagihan hanya bisa dibuat untuk pelanggan dengan status approve.');
+        }
 
         $paket = Paket::findOrFail($request->paket_id);
         $tanggalMulai = \Carbon\Carbon::parse($request->tanggal_mulai);
@@ -869,8 +926,6 @@ public function lunas(Request $request)
             'status_pembayaran' => 'belum bayar',
             'catatan' => $request->catatan,
         ]);
-
-        $pelanggan = Pelanggan::find($request->pelanggan_id);
 
         // Kirim push notification via queue agar bisa retry saat kena rate limit
         if ($pelanggan && $pelanggan->webpushr_sid) {
@@ -984,7 +1039,7 @@ public function lunas(Request $request)
     }
 
     // Hapus tagihan hanya jika status lunas
-  public function destroyLunas($id)
+    public function destroyLunas($id)
     {
         $tagihan = Tagihan::findOrFail($id);
         if ($tagihan->status_pembayaran !== 'lunas') {
@@ -999,7 +1054,7 @@ public function lunas(Request $request)
                 if (str_starts_with($buktiPath, 'storage/')) {
                     $buktiPath = substr($buktiPath, 8); // Remove 'storage/' prefix
                 }
-                
+
                 if (Storage::disk('public')->exists($buktiPath)) {
                     Storage::disk('public')->delete($buktiPath);
                 }
@@ -1012,7 +1067,7 @@ public function lunas(Request $request)
                 if (str_starts_with($kwitansiPath, 'storage/')) {
                     $kwitansiPath = substr($kwitansiPath, 8); // Remove 'storage/' prefix
                 }
-                
+
                 if (Storage::disk('public')->exists($kwitansiPath)) {
                     Storage::disk('public')->delete($kwitansiPath);
                 }
@@ -1040,9 +1095,23 @@ public function lunas(Request $request)
             $currentMonth = now()->month;
             $currentYear = now()->year;
 
-            $count = $this->eligibleBroadcastCustomersQuery($currentMonth, $currentYear)->count();
+            $eligibleCount = $this->eligibleBroadcastCustomersQuery($currentMonth, $currentYear)->count();
+            $pendingStatusCount = Pelanggan::query()
+                ->whereRaw("LOWER(TRIM(status)) IN ('pending', 'proses')")
+                ->count();
+            $inProgressCount = Pelanggan::query()
+                ->whereRaw("LOWER(TRIM(status)) = 'approve'")
+                ->whereNotNull('progres')
+                ->whereRaw('LOWER(TRIM(progres)) != ?', [strtolower(trim(Pelanggan::PROGRES_REGISTRASI))])
+                ->count();
 
-            return response()->json(['count' => $count]);
+            return response()->json([
+                'count' => $eligibleCount,
+                'eligible_count' => $eligibleCount,
+                'pending_status_count' => $pendingStatusCount,
+                'in_progress_count' => $inProgressCount,
+                'blocked_total' => $pendingStatusCount + $inProgressCount,
+            ]);
         } catch (\Exception $e) {
             Log::error('Error getting broadcast count', ['error' => $e->getMessage()]);
             return response()->json(['count' => 0, 'error' => $e->getMessage()], 500);
@@ -1113,6 +1182,12 @@ public function lunas(Request $request)
         DB::beginTransaction();
         try {
             foreach ($pelanggan as $p) {
+                // Defensive guard jika status berubah saat proses berjalan
+                if (strtolower(trim((string) $p->status)) !== 'approve') {
+                    $failedCount++;
+                    continue;
+                }
+
                 if (!$p->paket_id || !$p->paket) {
                     $failedCount++;
                     continue;
@@ -1217,7 +1292,7 @@ public function lunas(Request $request)
         $filename = 'Tagihan_Belum_Lunas_' . ($periode ? $periode . '_' : '') . now()->format('Y-m-d_His') . '.xlsx';
 
         return Excel::download(
-            new TagihanExport('belum bayar', null, null, $search, $periode),
+            new TagihanBelumLunasMonthlyExport($search, $periode),
             $filename
         );
     }
@@ -1386,4 +1461,52 @@ public function lunas(Request $request)
 
 
 
+    public function exportMaster(Request $request)
+    {
+        $tahun = $request->input('tahun', date('Y'));
+        $filename = 'Master_Tagihan_Tahun_' . $tahun . '_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\MasterTagihanExport($tahun),
+            $filename
+        );
+    }
+
+    public function exportBulanLalu(Request $request)
+    {
+        $bulan = $request->input('bulan', date('n'));
+        $tahun = $request->input('tahun', date('Y'));
+
+        $targetDate = \Carbon\Carbon::createFromDate($tahun, $bulan, 1)->subMonth();
+        $filename = 'Laporan_Tagihan_' . $targetDate->translatedFormat('F_Y') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\TagihanBulanLaluExport($bulan, $tahun),
+            $filename
+        );
+    }
+
+    public function exportSemuaLunas(Request $request)
+    {
+        $tahun = date('Y');
+
+        // Ambil tagihan yang lunas tahun ini dan belum diexport
+        $tagihans = \App\Models\Tagihan::where('status_pembayaran', 'lunas')
+            ->whereYear('tanggal_mulai', $tahun)
+            ->where('is_exported', false)
+            ->get();
+
+        if ($tagihans->isNotEmpty()) {
+            $ids = $tagihans->pluck('id')->toArray();
+            // Update jadi exported
+            \App\Models\Tagihan::whereIn('id', $ids)->update(['is_exported' => true]);
+        }
+
+        $filename = 'Semua_Lunas_Master_' . $tahun . '_' . now()->format('Ymd_His') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\SemuaLunasExport($tahun),
+            $filename
+        );
+    }
 }

@@ -246,7 +246,13 @@ $menuData = $menuData ?? [];
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Restore menu state dari localStorage
-  const openMenus = JSON.parse(localStorage.getItem('openMenus') || '[]');
+  let openMenus = JSON.parse(localStorage.getItem('openMenus') || '[]');
+
+  @if(in_array($currentUserRole, ['admin', 'administrator']) && request()->routeIs('dashboard.welcome'))
+      // Jika login sebagai admin/administrator dan berada di Dashboard, tutup semua menu dropdown
+      openMenus = [];
+      localStorage.setItem('openMenus', JSON.stringify([]));
+  @endif
 
   openMenus.forEach(function(menuId) {
     const menuItem = document.querySelector('[data-menu-id="' + menuId + '"]');
