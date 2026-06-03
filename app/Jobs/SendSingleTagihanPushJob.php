@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\Tagihan;
+use App\Services\CustomerPushService;
+use App\Support\WilayahContext;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -23,9 +25,13 @@ class SendSingleTagihanPushJob implements ShouldQueue
 
     public function handle(): void
     {
-        $tagihan = Tagihan::with('pelanggan')
+        $tagihan = Tagihan::with(['pelanggan', 'paket'])
             ->where('id', $this->tagihanId)
-            ->where('status_pembayaran', 'belum bayar')
+            ->whereRaw("LOWER(TRIM(COALESCE(status_pembayaran, ''))) = ?", ['belum bayar'])
+            ->whereHas('pelanggan', function ($query): void {
+                WilayahContext::scopePelanggan($query)
+                    ->where('status', 'approve');
+            })
             ->first();
 
         if (!$tagihan) {
@@ -36,20 +42,33 @@ class SendSingleTagihanPushJob implements ShouldQueue
         }
 
         $pelanggan = $tagihan->pelanggan;
-        if (!$pelanggan || empty($pelanggan->webpushr_sid)) {
-            Log::info('SendSingleTagihanPushJob skipped: sid empty', [
+        if (!$pelanggan || (empty($pelanggan->fcm_token) && empty($pelanggan->webpushr_sid))) {
+            Log::info('SendSingleTagihanPushJob skipped: push token empty', [
                 'tagihan_id' => $tagihan->id,
                 'pelanggan_id' => $pelanggan?->id,
             ]);
             return;
         }
 
-        $result = $this->sendWebpushrNotification([
-            'title' => 'Pemberitahuan untuk Anda',
-            'message' => "Halo {$pelanggan->nama_lengkap}, kami baru saja menerbitkan tagihan untuk Anda. Silakan cek detailnya.",
-            'target_url' => url('/dashboard/customer/tagihan'),
-            'sid' => $pelanggan->webpushr_sid,
-        ]);
+        $amount = (int) ($tagihan->harga ?? $tagihan->paket?->harga ?? 0);
+        $formattedAmount = 'Rp ' . number_format($amount, 0, ',', '.');
+
+        $title = 'Tagihan Baru';
+        $message = "Halo {$pelanggan->nama_lengkap}, tagihan Anda sebesar {$formattedAmount} telah diterbitkan. Silakan cek detailnya.";
+        $targetUrl = WilayahContext::customerAppUrl('/dashboard/customer/tagihan');
+
+        if (trim((string) ($pelanggan->fcm_token ?? '')) !== '') {
+            SendFcmPushJob::dispatch((string) $pelanggan->id, $title, $message, $targetUrl);
+
+            Log::info('SendSingleTagihanPushJob queued FCM job', [
+                'tagihan_id' => $tagihan->id,
+                'pelanggan_id' => $pelanggan->id,
+                'queue' => config('queue.fcm_queue', 'fcm'),
+            ]);
+            return;
+        }
+
+        $result = $this->sendWebpushrNotification($pelanggan, $title, $message, $targetUrl);
 
         if ($result['success']) {
             Log::info('SendSingleTagihanPushJob success', [
@@ -89,66 +108,8 @@ class SendSingleTagihanPushJob implements ShouldQueue
         return $schedule[$index];
     }
 
-    /**
-     * @param array{title:string,message:string,target_url:string,sid:string} $data
-     * @return array{success:bool,rate_limited?:bool,http_code?:int,error?:string,response?:array<string,mixed>|null}
-     */
-    private function sendWebpushrNotification(array $data): array
+    private function sendWebpushrNotification($pelanggan, string $title, string $message, string $targetUrl): array
     {
-        try {
-            $ch = curl_init('https://api.webpushr.com/v1/notification/send/sid');
-
-            $payload = [
-                'title' => $data['title'],
-                'message' => $data['message'],
-                'target_url' => $data['target_url'],
-                'sid' => $data['sid'],
-            ];
-
-            $headers = [
-                'Content-Type: application/json',
-                'webpushrKey: ' . env('WEBPUSHR_KEY', '2ee12b373a17d9ba5f44683cb42d4279'),
-                'webpushrAuthToken: ' . env('WEBPUSHR_TOKEN', '116294'),
-            ];
-
-            curl_setopt_array($ch, [
-                CURLOPT_HTTPHEADER => $headers,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode($payload),
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_TIMEOUT => 15,
-                CURLOPT_CONNECTTIMEOUT => 5,
-            ]);
-
-            $responseRaw = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
-            curl_close($ch);
-
-            $response = is_string($responseRaw) ? json_decode($responseRaw, true) : null;
-            $type = strtolower((string) ($response['type'] ?? ''));
-            $description = strtolower((string) ($response['description'] ?? ''));
-
-            $isRateLimited = $httpCode === 429
-                || $type === 'rate_limit'
-                || str_contains($description, 'too many requests')
-                || str_contains($description, 'rate limit');
-
-            if ($httpCode === 200 && !empty($responseRaw) && !$isRateLimited) {
-                return ['success' => true, 'http_code' => $httpCode, 'response' => $response];
-            }
-
-            return [
-                'success' => false,
-                'rate_limited' => $isRateLimited,
-                'http_code' => $httpCode,
-                'error' => $curlError ?: null,
-                'response' => $response,
-            ];
-        } catch (\Throwable $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
+        return app(CustomerPushService::class)->sendWebpushrToPelanggan($pelanggan, $title, $message, $targetUrl);
     }
 }

@@ -14,23 +14,39 @@ class KasRegistrasiController extends Controller
         $query = KasRegistrasi::query();
 
         // Filter search
-        if ($search = $request->input('search')) {
+        $search = $request->input('search', '');
+        if ($search) {
             $query->where('keterangan', 'LIKE', "%{$search}%");
         }
 
-        // Filter periode (bulan & tahun)
+        // Filter jenis (pemasukan / pengeluaran / semua)
+        $filterJenis = $request->input('filter_jenis', '');
+        if ($filterJenis === 'pemasukan') {
+            $query->where('pemasukan', '>', 0);
+        } elseif ($filterJenis === 'pengeluaran') {
+            $query->where('pengeluaran', '>', 0);
+        }
+
+        // Filter periode (bulan & tahun) – skip kalau show_all=1
+        $showAll     = $request->boolean('show_all', false);
         $filterMonth = $request->input('filter_month', Carbon::now()->month);
         $filterYear  = $request->input('filter_year', Carbon::now()->year);
 
-        $query->whereMonth('tanggal', $filterMonth)
-              ->whereYear('tanggal', $filterYear);
+        if (!$showAll) {
+            $query->whereMonth('tanggal', $filterMonth)
+                  ->whereYear('tanggal', $filterYear);
+        }
 
         $items = $query->orderBy('tanggal', 'asc')->orderBy('id', 'asc')->get();
 
         // Hitung running saldo
-        $saldoAwal = KasRegistrasi::whereDate('tanggal', '<', Carbon::createFromDate($filterYear, $filterMonth, 1)->startOfMonth())
-            ->selectRaw('SUM(pemasukan) - SUM(pengeluaran) as saldo')
-            ->value('saldo') ?? 0;
+        if ($showAll) {
+            $saldoAwal = 0;
+        } else {
+            $saldoAwal = KasRegistrasi::whereDate('tanggal', '<', Carbon::createFromDate($filterYear, $filterMonth, 1)->startOfMonth())
+                ->selectRaw('SUM(pemasukan) - SUM(pengeluaran) as saldo')
+                ->value('saldo') ?? 0;
+        }
 
         $runningBalance = $saldoAwal;
         $itemsWithSaldo = $items->map(function ($item) use (&$runningBalance) {
@@ -39,11 +55,11 @@ class KasRegistrasiController extends Controller
             return $item;
         });
 
-        // Manual Pagination (40 per page)
-        $page = $request->input('page', 1);
-        $perPage = 40;
-        $offset = ($page - 1) * $perPage;
-        
+        // Manual Pagination (50 per page)
+        $page    = $request->input('page', 1);
+        $perPage = 50;
+        $offset  = ($page - 1) * $perPage;
+
         $paginatedItems = new LengthAwarePaginator(
             $itemsWithSaldo->slice($offset, $perPage)->values(),
             $itemsWithSaldo->count(),
@@ -52,11 +68,13 @@ class KasRegistrasiController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        $totalPemasukan = $items->sum('pemasukan');
+        $totalPemasukan   = $items->sum('pemasukan');
         $totalPengeluaran = $items->sum('pengeluaran');
-        $saldoAkhir = $saldoAwal + $totalPemasukan - $totalPengeluaran;
+        $saldoAkhir       = $saldoAwal + $totalPemasukan - $totalPengeluaran;
 
-        $monthLabel = Carbon::createFromDate($filterYear, $filterMonth, 1)->locale('id')->isoFormat('MMMM YYYY');
+        $monthLabel = $showAll
+            ? 'Semua Periode'
+            : Carbon::createFromDate($filterYear, $filterMonth, 1)->locale('id')->isoFormat('MMMM YYYY');
 
         return view('content.apps.KasRegistrasi.index', compact(
             'paginatedItems',
@@ -66,6 +84,9 @@ class KasRegistrasiController extends Controller
             'saldoAkhir',
             'filterMonth',
             'filterYear',
+            'filterJenis',
+            'showAll',
+            'search',
             'monthLabel',
         ));
     }

@@ -80,46 +80,173 @@ body { background: #f5f5f9; }
 
 /* ======= TABLE ======= */
 .table-wrapper {
-  border: 1px solid var(--gray-border);
-  border-radius: 12px;
+  border: 1px solid #e9edf3;
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+  background: #fff;
 }
-.table-kas {
+.modern-table {
   margin-bottom: 0;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   width: 100%;
 }
-.table-kas thead th {
+.modern-table th {
   background: #f8fafc;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   letter-spacing: 0.5px;
-  color: #18181b;
-  padding: 0.9rem 1rem;
-  border-bottom: 1px solid #e4e4e7;
+  color: #64748b;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5eaf0;
   white-space: nowrap;
 }
-.table-kas tbody tr { border-bottom: 1px solid #f0f0f0; transition: var(--transition); }
-.table-kas tbody tr:last-child { border-bottom: none; }
-.table-kas tbody tr:hover { background: #fafafa; }
-.table-kas tbody td { padding: 0.9rem 1rem; vertical-align: middle; font-size: 0.875rem; color: #18181b; }
-.table-kas tfoot td {
-  padding: 0.9rem 1rem;
+.modern-table td {
+  padding: 1.05rem 1.25rem;
+  vertical-align: middle;
+  border-bottom: 1px dashed #e5eaf0;
+  transition: background 0.2s;
+  font-size: 0.875rem;
+  color: #18181b;
+}
+.modern-table tr:hover td { background: #fcfcfd; }
+.modern-table tr.row-selected td { background: #edf4fd !important; }
+.modern-table.is-dense th { padding: 0.7rem 1rem; }
+.modern-table.is-dense td { padding: 0.65rem 1rem; }
+.modern-table tfoot td {
+  padding: 0.95rem 1.25rem;
   font-weight: 700;
-  border-top: 1px solid #e4e4e7;
+  border-top: 1px solid #e5eaf0;
+  border-bottom: 0;
   background: #f8fafc;
 }
-.col-no { width: 60px; text-align: center; }
+.selection-toolbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: #e7f0fb;
+  border-bottom: 1px solid #d6e4f3;
+  padding: 0.85rem 1.25rem;
+}
+.selection-toolbar.active { display: flex; }
+.selection-toolbar .selected-text {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 1rem;
+}
+.selection-toolbar .clear-btn {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.selection-toolbar .clear-btn:hover {
+  background: #dbe8f6;
+  color: #1e293b;
+}
+.custom-check {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+}
+.custom-check:checked {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+.custom-check:checked::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.col-select { width: 54px; text-align: center; }
 .col-keterangan { min-width: 200px; }
 .col-amount { width: 160px; text-align: right; }
 .col-saldo { width: 180px; text-align: right; font-weight: 600; }
 .col-actions { width: 100px; text-align: center; }
+.action-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.action-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
 .amount-pemasukan { color: #16a34a; font-weight: 600; }
 .amount-pengeluaran { color: #dc2626; font-weight: 600; }
 .saldo-positive { color: #16a34a; }
 .saldo-negative { color: #dc2626; }
+
+.pagination-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #eef2f7;
+  background: #fff;
+}
+.dense-toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #334155;
+}
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0f172a;
+}
+.pagination-footer .pagination,
+.pagination-footer .mui-pagination {
+  margin: 0;
+  gap: 0.5rem;
+}
+.pagination-footer .page-link {
+  border-radius: 999px !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.pagination-footer nav[role="navigation"] > div:first-child,
+.pagination-footer nav[role="navigation"] > div > p,
+.pagination-footer nav[role="navigation"] .hidden,
+.pagination-footer nav[role="navigation"] > div.flex-1 {
+  display: none !important;
+}
 
 /* ======= SUMMARY CARDS ======= */
 .summary-card {
@@ -202,6 +329,7 @@ body { background: #f5f5f9; }
 @section('page-script')
 <script>
 const STORE_URL  = "{{ route('kas-registrasi.store') }}";
+const BULK_DELETE_URL = "{{ route('kas-registrasi.bulkDestroy') }}";
 const CSRF_TOKEN = "{{ csrf_token() }}";
 
 // ======= TOGGLE JENIS =======
@@ -239,6 +367,106 @@ document.addEventListener('DOMContentLoaded', function() {
       altInput: true,
       altFormat: "d F Y",
     });
+
+    const selectAll = document.getElementById('selectAllKas');
+    const selectionToolbar = document.getElementById('selectionToolbar');
+    const selectedCount = document.getElementById('selectedCount');
+    const bulkDeleteBtn = document.getElementById('btnBulkDeleteKas');
+    const denseToggle = document.getElementById('densePaddingToggle');
+    const tableEl = document.querySelector('.modern-table');
+
+    function getCheckedKas() {
+        return Array.from(document.querySelectorAll('.kas-checkbox:checked'));
+    }
+
+    function updateBulkState() {
+        const all = Array.from(document.querySelectorAll('.kas-checkbox'));
+        const checked = getCheckedKas();
+        const count = checked.length;
+
+        if (selectAll) {
+            selectAll.checked = all.length > 0 && count === all.length;
+            selectAll.indeterminate = count > 0 && count < all.length;
+        }
+
+        document.querySelectorAll('.kas-row').forEach(row => row.classList.remove('row-selected'));
+        checked.forEach(input => input.closest('.kas-row')?.classList.add('row-selected'));
+
+        if (selectedCount) selectedCount.textContent = count + ' dipilih';
+        if (selectionToolbar) selectionToolbar.classList.toggle('active', count > 0);
+        if (bulkDeleteBtn) bulkDeleteBtn.disabled = count === 0;
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            document.querySelectorAll('.kas-checkbox').forEach(input => {
+                input.checked = selectAll.checked;
+            });
+            updateBulkState();
+        });
+    }
+
+    document.querySelectorAll('.kas-checkbox').forEach(input => {
+        input.addEventListener('change', updateBulkState);
+    });
+
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', function() {
+            const ids = getCheckedKas().map(input => input.value);
+            if (ids.length === 0) return;
+
+            Swal.fire({
+                title: 'Hapus Data Terpilih?',
+                html: `Yakin ingin menghapus <strong>${ids.length}</strong> data kas registrasi?<br><span style="color:#6b7280;font-size:0.875rem;">Data yang dihapus tidak dapat dikembalikan.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: 'btn btn-danger me-2',
+                    cancelButton: 'btn btn-outline-secondary'
+                }
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                bulkDeleteBtn.disabled = true;
+                fetch(BULK_DELETE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': CSRF_TOKEN,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ ids })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Gagal!', text: 'Terjadi kesalahan.', confirmButtonColor: '#18181b' });
+                    }
+                })
+                .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Koneksi bermasalah.', confirmButtonColor: '#18181b' }))
+                .finally(() => {
+                    bulkDeleteBtn.disabled = false;
+                });
+            });
+        });
+    }
+
+    if (denseToggle && tableEl) {
+        const savedDense = localStorage.getItem('kas_registrasi_dense_padding') === '1';
+        denseToggle.checked = savedDense;
+        tableEl.classList.toggle('is-dense', savedDense);
+
+        denseToggle.addEventListener('change', function() {
+            const isDense = denseToggle.checked;
+            tableEl.classList.toggle('is-dense', isDense);
+            localStorage.setItem('kas_registrasi_dense_padding', isDense ? '1' : '0');
+        });
+    }
 
     window.openEdit = function(id) {
         fetch(`/dashboard/admin/kas-registrasi/${id}`, {
@@ -429,11 +657,17 @@ function deleteItem(id) {
 
     {{-- ======= TABLE CARD ======= --}}
     <div class="table-wrapper">
+      <div class="selection-toolbar" id="selectionToolbar">
+        <span class="selected-text" id="selectedCount">0 dipilih</span>
+        <button type="button" class="clear-btn" id="btnBulkDeleteKas" title="Hapus data dipilih" disabled>
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </div>
       <div class="table-responsive">
-        <table class="table-kas">
+        <table class="modern-table">
           <thead>
             <tr>
-              <th class="col-no">NO</th>
+              <th class="col-select"><input type="checkbox" class="custom-check" id="selectAllKas" aria-label="Pilih semua kas registrasi"></th>
               <th class="col-keterangan">KETERANGAN</th>
               <th class="col-amount" style="text-align:right;">PEMASUKAN</th>
               <th class="col-amount" style="text-align:right;">PENGELUARAN</th>
@@ -443,8 +677,10 @@ function deleteItem(id) {
           </thead>
           <tbody>
             @forelse($paginatedItems as $i => $item)
-            <tr>
-              <td class="col-no text-center text-muted" style="font-size:0.8rem;">{{ $paginatedItems->firstItem() + $i }}</td>
+            <tr class="kas-row">
+              <td class="col-select">
+                <input type="checkbox" class="custom-check kas-checkbox" value="{{ $item->id }}" aria-label="Pilih kas registrasi {{ $item->keterangan }}">
+              </td>
               <td class="col-keterangan">
                 <div class="fw-bold" style="color:#18181b; font-size:0.9rem;">{{ $item->keterangan }}</div>
                 @if($item->catatan)
@@ -475,11 +711,8 @@ function deleteItem(id) {
               </td>
               <td class="col-actions text-center">
                 <div class="d-flex gap-2 justify-content-center">
-                  <button class="btn btn-icon btn-outline-secondary" title="Edit" onclick="openEdit({{ $item->id }})">
+                  <button class="action-btn" title="Edit" onclick="openEdit({{ $item->id }})">
                     <i class="ri-edit-line" style="font-size:0.95rem;"></i>
-                  </button>
-                  <button class="btn btn-icon btn-danger" title="Hapus" onclick="deleteItem({{ $item->id }})">
-                    <i class="ri-delete-bin-line" style="font-size:0.95rem;"></i>
                   </button>
                 </div>
               </td>
@@ -522,11 +755,28 @@ function deleteItem(id) {
           @endif
         </table>
       </div>
-    </div>
-    
-    {{-- Pagination Links --}}
-    <div class="mt-4 d-flex justify-content-end border-top pt-3" style="border-color: var(--gray-border) !important;">
-      {{ $paginatedItems->links('vendor.pagination.custom-always') }}
+
+      <div class="pagination-footer">
+        <label class="dense-toggle-wrap mb-0">
+          <input type="checkbox" id="densePaddingToggle">
+          <span>Dense padding</span>
+        </label>
+        <div>
+          @if($paginatedItems->hasPages())
+            {{ $paginatedItems->onEachSide(1)->links('pagination.mui') }}
+          @else
+            <nav aria-label="Pagination">
+              <ul class="pagination mui-pagination mb-0">
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                <li class="page-item disabled"><span class="page-link">&lsaquo;</span></li>
+                <li class="page-item active"><span class="page-link">1</span></li>
+                <li class="page-item disabled"><span class="page-link">&rsaquo;</span></li>
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+              </ul>
+            </nav>
+          @endif
+        </div>
+      </div>
     </div>
   </div>
 

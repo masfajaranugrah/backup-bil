@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use App\Jobs\SendIklanJob;
 
@@ -19,7 +21,7 @@ class IklanController extends Controller
     {
         $iklans = Iklan::with('creator')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(10);
 
         return view('content.apps.Iklan.iklan', compact('iklans'));
     }
@@ -66,11 +68,36 @@ public function store(Request $request)
         $iklan = Iklan::create($iklanData);
         Log::info('Iklan created successfully', ['iklan_id' => $iklan->id]);
 
-        // ? Kirim push notification setelah iklan dibuat (via Queue / OneSignal)
+        $initialTotal = $this->resolvePushTargetTotal();
+        Cache::put('iklan_push_progress:' . $iklan->id, [
+            'status' => 'queued',
+            'total' => $initialTotal,
+            'processed' => 0,
+            'sent' => 0,
+            'failed' => 0,
+        ], now()->addHours(6));
+
+        // Kirim push notification setelah iklan dibuat via queue.
+        if (!$this->queueReadyForLargeBroadcast()) {
+            Cache::put('iklan_push_progress:' . $iklan->id, [
+                'status' => 'failed',
+                'total' => $initialTotal,
+                'processed' => 0,
+                'sent' => 0,
+                'failed' => $initialTotal,
+                'finished_at' => now()->toDateTimeString(),
+            ], now()->addHours(6));
+
+            return redirect()->route('iklan.index')
+                ->with('error', 'Iklan berhasil dibuat, tetapi notifikasi tidak dikirim karena queue belum aman untuk broadcast besar.')
+                ->with('iklan_progress_id', $iklan->id);
+        }
+
         SendIklanJob::dispatch($iklan->id);
 
         return redirect()->route('iklan.index')
-            ->with('success', 'Iklan berhasil dibuat dan notifikasi sedang dikirim!');
+            ->with('success', 'Iklan berhasil dibuat dan notifikasi sedang dikirim!')
+            ->with('iklan_progress_id', $iklan->id);
 
     } catch (\Illuminate\Validation\ValidationException $e) {
         Log::error('Validation error', ['errors' => $e->errors()]);
@@ -155,16 +182,16 @@ private function sendWebpushrNotification($data)
 
         $headers = [
             'Content-Type: application/json',
-            'webpushrKey: ' . env('WEBPUSHR_KEY', '2ee12b373a17d9ba5f44683cb42d4279'),
-            'webpushrAuthToken: ' . env('WEBPUSHR_TOKEN', '116294'),
+            'webpushrKey: ' . env('WEBPUSHR_KEY', ''),
+            'webpushrAuthToken: ' . env('WEBPUSHR_TOKEN', ''),
         ];
 
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
 
@@ -187,6 +214,13 @@ private function sendWebpushrNotification($data)
 }
 
 
+public function edit($id)
+{
+    $iklan = Iklan::findOrFail($id);
+
+    return view('content.apps.Iklan.edit-iklan', compact('iklan'));
+}
+
 public function update(Request $request, $id)
 {
     try {
@@ -195,7 +229,7 @@ public function update(Request $request, $id)
         // ? Validasi dengan type
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'message' => 'required|string|max:1000',
+            'message' => 'required|string|min:10|max:1000',
             'type' => 'required|in:informasi,maintenance,iklan', // ? Tambah validasi type
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
@@ -210,7 +244,7 @@ public function update(Request $request, $id)
         $iklan->update($validated);
 
         return redirect()->route('iklan.index')
-            ->with('success', 'Iklan berhasil diupdate!');
+            ->with('success', 'Iklan berhasil diupdate tanpa mengirim notifikasi ulang.');
 
     } catch (\Exception $e) {
         Log::error('Error updating iklan', ['message' => $e->getMessage()]);
@@ -236,13 +270,32 @@ public function update(Request $request, $id)
             // Tandai status sebagai queued (opsional, abaikan jika kolom tidak ada)
             $iklan->update(['status' => 'queued']);
 
+            if (!$this->queueReadyForLargeBroadcast()) {
+                return response()->json([
+                    'success' => false,
+                    'queued' => false,
+                    'message' => 'Queue belum aman untuk kirim iklan. Gunakan database/redis queue dan jalankan queue worker.',
+                    'iklan_id' => $iklan->id,
+                ], 422);
+            }
+
             // Dorong ke queue agar berjalan di background
+            $initialTotal = $this->resolvePushTargetTotal();
+            Cache::put('iklan_push_progress:' . $iklan->id, [
+                'status' => 'queued',
+                'total' => $initialTotal,
+                'processed' => 0,
+                'sent' => 0,
+                'failed' => 0,
+            ], now()->addHours(6));
+
             SendIklanJob::dispatch($iklan->id);
 
             return response()->json([
                 'success' => true,
                 'queued' => true,
-                'message' => 'Iklan sedang dikirim di background melalui queue'
+                'message' => 'Iklan sedang dikirim di background melalui queue',
+                'iklan_id' => $iklan->id,
             ]);
 
         } catch (\Exception $e) {
@@ -254,6 +307,69 @@ public function update(Request $request, $id)
                 'message' => 'Gagal mengirim iklan: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function progress($id)
+    {
+        $iklan = Iklan::find($id);
+
+        if (!$iklan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Iklan tidak ditemukan',
+            ], 404);
+        }
+
+        $progress = Cache::get('iklan_push_progress:' . $id);
+
+        if (!is_array($progress)) {
+            $estimatedTotal = $this->resolvePushTargetTotal();
+
+            return response()->json([
+                'success' => true,
+                'status' => $iklan->sent_at ? 'completed' : 'queued',
+                'total' => $iklan->sent_at ? (int) ($iklan->total_sent ?? 0) : $estimatedTotal,
+                'processed' => (int) ($iklan->total_sent ?? 0),
+                'sent' => (int) ($iklan->total_sent ?? 0),
+                'failed' => 0,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => $progress['status'] ?? 'processing',
+            'total' => (int) ($progress['total'] ?? 0),
+            'processed' => (int) ($progress['processed'] ?? 0),
+            'sent' => (int) ($progress['sent'] ?? 0),
+            'failed' => (int) ($progress['failed'] ?? 0),
+            'finished_at' => $progress['finished_at'] ?? null,
+        ]);
+    }
+
+    private function resolvePushTargetTotal(): int
+    {
+        $fcmTargets = Pelanggan::query()
+            ->whereRaw("TRIM(COALESCE(fcm_token, '')) != ''")
+            ->count();
+
+        $webpushFallbackTargets = Pelanggan::query()
+            ->whereRaw("TRIM(COALESCE(fcm_token, '')) = ''")
+            ->whereRaw("TRIM(COALESCE(webpushr_sid, '')) != ''")
+            ->count();
+
+        return $fcmTargets + $webpushFallbackTargets;
+    }
+
+    private function queueReadyForLargeBroadcast(): bool
+    {
+        $queueConnection = (string) config('queue.default', 'database');
+        $jobsTable = (string) config('queue.connections.database.table', 'jobs');
+
+        if ($queueConnection === 'sync') {
+            return false;
+        }
+
+        return !($queueConnection === 'database' && !Schema::hasTable($jobsTable));
     }
 
     public function destroy($id)

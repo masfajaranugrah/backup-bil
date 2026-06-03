@@ -4,6 +4,7 @@
 
 @section('vendor-style')
 @vite([
+  'resources/css/app.css',
   'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
@@ -242,7 +243,7 @@
   align-items: center;
   justify-content: center;
   z-index: 9999;
-}
+} 
 
 .spinner-border-custom {
   width: 3rem;
@@ -342,33 +343,92 @@
   margin-right: 12px;
 }
 
-/* ========== PAGINATION STYLES ========== */
-.pagination .page-item .page-link {
-  border-radius: 50% !important;
-  width: 40px;
-  height: 40px;
-  padding: 0;
+/* ========================================= */
+/* PAGINATION STYLES */
+/* ========================================= */
+.table-modern.is-dense th {
+  padding: 0.7rem 1rem !important;
+}
+
+.table-modern.is-dense td {
+  padding: 0.65rem 1rem !important;
+}
+
+.dense-toggle-wrap {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid #e4e4e7;
-  color: #18181b;
+  gap: 0.5rem;
   font-weight: 600;
-  background-color: #fff;
-  margin: 0 4px;
-  transition: all 0.3s ease;
+  color: #334155;
 }
 
-.pagination .page-item .page-link:hover {
-  background-color: #f4f4f5;
-  border-color: #18181b;
-  color: #18181b;
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0f172a;
 }
 
-.pagination .page-item.active .page-link {
-  background-color: #18181b !important;
-  border-color: #18181b !important;
-  color: #fafafa !important;
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+.pagination-wrapper .pagination {
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+}
+
+.pagination-wrapper .page-link {
+  min-width: 40px;
+  height: 40px;
+  border-radius: 999px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.pagination-wrapper .mui-pagination {
+  align-items: center;
+  gap: 0.85rem;
+  display: flex;
+}
+
+.pagination-wrapper .mui-pagination .page-link {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: #1f2937 !important;
+  box-shadow: none !important;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.pagination-wrapper .mui-pagination .page-item.active .page-link {
+  background: #1f2933 !important;
+  color: #ffffff !important;
+}
+
+.pagination-wrapper .mui-pagination .page-link:hover {
+  background: rgba(31, 41, 51, 0.06) !important;
+  color: #111827 !important;
+}
+
+.pagination-wrapper .mui-pagination .page-item.disabled .page-link {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+}
+
+.pagination-wrapper .mui-pagination .pagination-ellipsis .page-link {
+  color: #64748b !important;
+  letter-spacing: 0.08em;
 }
 
 /* ========== ANIMATIONS ========== */
@@ -470,8 +530,10 @@ $(document).on('click', '.btn-delete', function(e) {
         reverseButtons: true,  // Cancel di kiri, Confirm di kanan
         buttonsStyling: false,
         customClass: {
-            confirmButton: 'btn btn-danger me-2',
-            cancelButton: 'btn btn-secondary'
+            container: 'swal-tailwind-backdrop',
+            popup: 'swal-tailwind-popup',
+            confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+            cancelButton: 'swal-tailwind-cancel'
         },
         allowOutsideClick: false,
         allowEscapeKey: false
@@ -498,6 +560,20 @@ $(document).on('click', '.btn-delete', function(e) {
         }
     });
 });
+
+const denseToggle = document.getElementById('densePaddingToggle');
+const tableEl = document.querySelector('.table-modern');
+if (denseToggle && tableEl) {
+    const savedDense = localStorage.getItem('team_dense_padding') === '1';
+    denseToggle.checked = savedDense;
+    tableEl.classList.toggle('is-dense', savedDense);
+
+    denseToggle.addEventListener('change', function() {
+        const isDense = denseToggle.checked;
+        tableEl.classList.toggle('is-dense', isDense);
+        localStorage.setItem('team_dense_padding', isDense ? '1' : '0');
+    });
+}
 
 });
 </script>
@@ -585,35 +661,21 @@ $(document).on('click', '.btn-delete', function(e) {
                     @endforeach
                 </tbody>
             </table>
+        </div>
 
-            {{-- Custom Pagination --}}
+        <!-- Pagination Footer -->
+        <div class="d-flex justify-content-between align-items-center px-4 py-3" style="border-top: 1px solid #f1f5f9; background: #ffffff;">
+          <div class="d-flex align-items-center gap-4">
+            <label class="dense-toggle-wrap mb-0">
+              <input type="checkbox" id="densePaddingToggle">
+              <span>Dense padding</span>
+            </label>
+          </div>
+          <div class="pagination-wrapper border-top-0 p-0 bg-transparent m-0">
             @if($users instanceof \Illuminate\Pagination\LengthAwarePaginator && $users->total() > 0)
-            <div class="pagination-wrapper mt-4 p-3 d-flex justify-content-between align-items-center">
-                <div class="pagination-info text-muted small">
-                    Menampilkan <strong>{{ $users->firstItem() ?? 0 }}</strong> - <strong>{{ $users->lastItem() ?? 0 }}</strong> 
-                    dari <strong>{{ $users->total() }}</strong> users
-                </div>
-                <div>
-                    @if($users->hasPages())
-                        {{ $users->appends(request()->query())->onEachSide(1)->links('pagination::bootstrap-5') }}
-                    @else
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination mb-0 justify-content-end">
-                                <li class="page-item disabled">
-                                    <span class="page-link"><i class="ri-arrow-left-s-line"></i></span>
-                                </li>
-                                <li class="page-item active">
-                                    <span class="page-link">1</span>
-                                </li>
-                                <li class="page-item disabled">
-                                    <span class="page-link"><i class="ri-arrow-right-s-line"></i></span>
-                                </li>
-                            </ul>
-                        </nav>
-                    @endif
-                </div>
-            </div>
+              {{ $users->appends(request()->query())->links('vendor.pagination.tagihan-compact') }}
             @endif
+          </div>
         </div>
     </div>
 </div>

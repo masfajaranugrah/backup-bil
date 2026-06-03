@@ -142,8 +142,26 @@
 
 .dataTables_wrapper .dataTables_filter { display: none; }
 .dataTables_wrapper .dataTables_length { display: none; }
-.dataTables_wrapper .dataTables_info { padding-top: 1rem; font-size: 0.875rem; }
-.dataTables_wrapper .dataTables_paginate { padding-top: 1rem; }
+.dataTables_wrapper .dataTables_info { display: none !important; }
+.dataTables_wrapper .dataTables_paginate {
+  padding-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dataTables_wrapper .row:last-child {
+  align-items: center;
+}
+
+.dataTables_wrapper .row:last-child > div:first-child {
+  display: flex;
+  align-items: center;
+}
+
+.dataTables_wrapper .dataTables_paginate .pagination {
+  gap: 0.45rem;
+  margin: 0;
+}
 
 .loading-overlay {
   position: fixed;
@@ -168,22 +186,78 @@
 .badge.bg-danger { background: #18181b !important; color: #fafafa !important; }
 .badge.bg-primary { background: #18181b !important; color: #fafafa !important; }
 
+.btn-export-neutral {
+  background: #18181b !important;
+  border: 1px solid #18181b !important;
+  color: #fafafa !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+.btn-export-neutral:hover {
+  background: #27272a !important;
+  border-color: #27272a !important;
+  color: #fafafa !important;
+}
+
+.ledger-table-tools {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-top: 1rem;
+}
+
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  margin: 0;
+  accent-color: #18181b;
+  cursor: pointer;
+}
+
+.table-modern.is-dense thead th,
+.table-modern.is-dense tbody td {
+  padding-top: 0.62rem;
+  padding-bottom: 0.62rem;
+}
+
 /* Pagination */
 .pagination .page-item .page-link {
   border-radius: 50% !important;
-  width: 40px;
-  height: 40px;
-  padding: 0;
+  width: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  flex: 0 0 34px !important;
+  padding: 0 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e4e4e7;
-  color: #18181b;
-  font-weight: 600;
-  background-color: #fff;
+  border: 0 !important;
+  color: #1f2937;
+  font-weight: 700;
+  background-color: transparent;
+  box-shadow: none !important;
+  line-height: 1 !important;
 }
-.pagination .page-item .page-link:hover { background-color: #f4f4f5; border-color: #18181b; }
+.pagination .page-item .page-link:hover { background-color: rgba(31, 41, 51, 0.06) !important; color: #111827; }
 .pagination .page-item.active .page-link { background-color: #18181b !important; border-color: #18181b !important; color: #fafafa !important; }
+.pagination .page-item.disabled .page-link { background-color: transparent !important; color: #cbd5e1 !important; }
 </style>
 @endsection
 
@@ -271,7 +345,7 @@
             @endif
             
             <!-- Tombol Export -->
-            <a href="{{ route('pembukuan.masuk.export', ['bulan' => request('bulan', date('m')), 'tahun' => request('tahun', date('Y'))]) }}" class="btn btn-sm btn-success" title="Export Excel">
+            <a href="{{ route('pembukuan.masuk.export', ['bulan' => request('bulan', date('m')), 'tahun' => request('tahun', date('Y'))]) }}" class="btn btn-sm btn-export-neutral" title="Export Excel">
                 <i class="ri-file-excel-2-line"></i> Export
             </a>
         </div>
@@ -309,6 +383,24 @@
                             <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 fw-bold">
                                 <i class="ri-add-line me-1"></i>Rp {{ number_format($item['total_masuk'],0,',','.') }}
                             </span>
+                            @if(!empty($item['debug_rincian']))
+                            <div class="mt-2 px-3 py-2 rounded-3" style="background:#f8fafc;border:1px dashed #cbd5e1;line-height:1.5;max-width:360px;">
+                                <div class="small text-muted">Total pelanggan bayar bulan {{ $item['debug_rincian']['bulan'] ?? '-' }} pembayaran cash</div>
+                                <div class="fw-bold text-dark">Rp {{ number_format($item['debug_rincian']['cash'] ?? 0,0,',','.') }}</div>
+                                @if(!empty($item['debug_rincian']['cash_customers']))
+                                <div class="mt-2 small text-muted">Rincian pelanggan:</div>
+                                <ol class="small mb-0 ps-3" style="line-height:1.55;">
+                                    @foreach($item['debug_rincian']['cash_customers'] as $customer)
+                                        <li>
+                                            <span class="text-dark fw-semibold">{{ $customer['nama'] }}</span>
+                                            <span class="text-muted">({{ $customer['nomer_id'] }})</span>
+                                            - Rp {{ number_format($customer['nominal'] ?? 0,0,',','.') }}
+                                        </li>
+                                    @endforeach
+                                </ol>
+                                @endif
+                            </div>
+                            @endif
                             @else
                             <span class="text-muted">-</span>
                             @endif
@@ -351,6 +443,12 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+        <div class="ledger-table-tools" id="ledgerTableTools">
+            <label class="dense-toggle-wrap">
+                <input type="checkbox" id="densePaddingTogglePembukuan">
+                <span>Dense padding</span>
+            </label>
         </div>
         @else
         <!-- JIKA TIDAK ADA DATA: Tampilkan Empty State (TANPA DataTables) -->
@@ -407,18 +505,33 @@
         const filterTahun = document.getElementById('filterTahun');
         const btnResetFilter = document.getElementById('btnResetFilter');
         const loadingOverlay = document.getElementById('loadingOverlay');
+        const denseToggle = document.getElementById('densePaddingTogglePembukuan');
+        const ledgerTable = document.getElementById('ledgerTable');
+        const ledgerTableTools = document.getElementById('ledgerTableTools');
         const hasData = {{ count($ledgerData) > 0 ? 'true' : 'false' }};
+
+        if (denseToggle && ledgerTable) {
+            const savedDense = localStorage.getItem('pembukuan_masuk_dense_padding') === '1';
+            denseToggle.checked = savedDense;
+            ledgerTable.classList.toggle('is-dense', savedDense);
+
+            denseToggle.addEventListener('change', function() {
+                ledgerTable.classList.toggle('is-dense', this.checked);
+                localStorage.setItem('pembukuan_masuk_dense_padding', this.checked ? '1' : '0');
+            });
+        }
         
         // HANYA Initialize DataTables JIKA ADA DATA
         if (hasData && typeof jQuery !== 'undefined' && typeof jQuery.fn.DataTable !== 'undefined') {
             try {
                 jQuery('#ledgerTable').DataTable({
                     paging: true,
+                    pagingType: 'full_numbers',
                     pageLength: 50,
                     lengthMenu: [25, 50, 100],
                     searching: false,
                     ordering: true,
-                    info: true,
+                    info: false,
                     responsive: false,
                     order: [[0, 'asc']],
                     columnDefs: [
@@ -427,8 +540,10 @@
                     ],
                     language: {
                         paginate: {
+                            first: '<i class="ri-skip-left-line"></i>',
                             previous: '<i class="ri-arrow-left-s-line"></i>',
-                            next: '<i class="ri-arrow-right-s-line"></i>'
+                            next: '<i class="ri-arrow-right-s-line"></i>',
+                            last: '<i class="ri-skip-right-line"></i>'
                         },
                         info: "Menampilkan _START_ - _END_ dari _TOTAL_ baris",
                         infoEmpty: "Tidak ada data",
@@ -440,14 +555,25 @@
                         if (totalRow) {
                             document.querySelector('#ledgerTable tbody').appendChild(totalRow);
                         }
+                        moveDenseToolsToFooter();
                     }
                 });
+                moveDenseToolsToFooter();
                 console.log('DataTable initialized successfully');
             } catch (e) {
                 console.error('DataTable initialization failed:', e);
             }
         } else {
             console.log('Skipping DataTables initialization - No data or libraries not available');
+        }
+
+        function moveDenseToolsToFooter() {
+            if (!ledgerTableTools) return;
+            const footerLeft = document.querySelector('#ledgerTable_wrapper .row:last-child > div:first-child');
+            if (footerLeft && !footerLeft.contains(ledgerTableTools)) {
+                footerLeft.innerHTML = '';
+                footerLeft.appendChild(ledgerTableTools);
+            }
         }
         
         // Filter handlers

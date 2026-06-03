@@ -57,7 +57,7 @@
 @section('content')
 <div class="app">
   <div class="topbar">
-    <a class="back" href="{{ route('karyawan.home') }}">←</a>
+    <a class="back" href="{{ route('karyawan.home') }}">?</a>
     <div class="title">Absensi</div>
     <div style="width:24px;"></div>
   </div>

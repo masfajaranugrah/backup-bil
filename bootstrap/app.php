@@ -21,6 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
             require __DIR__.'/../routes/channels.php';
         },
     )
+    ->withCommands([
+        App\Console\Commands\AppBackupCommand::class,
+        App\Console\Commands\EncryptExistingKtpData::class,
+        App\Console\Commands\TelegramRunCommand::class,
+        App\Console\Commands\TestTelegramNotification::class,
+    ])
     ->withMiddleware(function (Middleware $middleware) {
         // ? Middleware global (dijalankan di semua web routes)
         $middleware->web([
@@ -44,7 +50,18 @@ return Application::configure(basePath: dirname(__DIR__))
         // ? Exclude broadcasting auth dari CSRF verification (penting untuk WebSocket)
         $middleware->validateCsrfTokens(except: [
             'broadcasting/auth',
+            'pelanggan/*/update-fcm-token',
         ]);
+
+        $middleware->redirectGuestsTo(function (\Illuminate\Http\Request $request) {
+            if ($request->is('karyawan') || $request->is('karyawan/*')) {
+                return route('login.karyawan');
+            }
+            if ($request->is('pelanggan/jernihnet/*')) {
+                return route('users.member');
+            }
+            return route('login');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

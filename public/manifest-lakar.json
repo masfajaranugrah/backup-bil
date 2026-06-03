@@ -1,0 +1,19 @@
+{
+  "id": "/karyawan/lakar",
+  "name": "Lakar",
+  "short_name": "Lakar",
+  "start_url": "/karyawan/home?source=pwa-lakar",
+  "scope": "/karyawan/",
+  "background_color": "#F4F7FF",
+  "description": "Aplikasi PWA Karyawan Lakar",
+  "display": "standalone",
+  "theme_color": "#0D6EFD",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Tagihan;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -17,13 +17,15 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
-class BayarExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize, WithEvents
+class BayarExport implements FromQuery, WithHeadings, WithMapping, WithStyles, ShouldAutoSize, WithEvents
 {
     protected $search;
     protected $status;
     protected $bulan;
     protected $tahun;
     protected $bank;
+    protected $tanggalDari;
+    protected $tanggalSampai;
     protected $totalsByBank = [];
     protected $totalAll = 0;
 
@@ -32,7 +34,9 @@ class BayarExport implements FromCollection, WithHeadings, WithMapping, WithStyl
         $status = null,
         $bulan = null,
         $tahun = null,
-        $bank = null
+        $bank = null,
+        $tanggalDari = null,
+        $tanggalSampai = null
     )
     {
         $this->search = $search;
@@ -40,14 +44,16 @@ class BayarExport implements FromCollection, WithHeadings, WithMapping, WithStyl
         $this->bulan = $bulan;
         $this->tahun = $tahun;
         $this->bank = $bank;
+        $this->tanggalDari = $tanggalDari;
+        $this->tanggalSampai = $tanggalSampai;
 
         $this->buildTotals();
     }
 
     /**
-     * Data export
+     * Query builder untuk data export
      */
-    public function collection()
+    public function query()
     {
         $query = Tagihan::with(['pelanggan', 'paket', 'rekening'])
             ->leftJoin('rekenings', 'rekenings.id', '=', 'tagihans.type_pembayaran')
@@ -57,61 +63,38 @@ class BayarExport implements FromCollection, WithHeadings, WithMapping, WithStyl
             $query->where('status_pembayaran', $this->status);
         }
 
+        if ($this->search) {
+            $term = trim((string) $this->search);
+            $query->whereHas('pelanggan', function ($q) use ($term) {
+                $q->where('nama_lengkap', 'LIKE', "%{$term}%")
+                    ->orWhere('nomer_id', 'LIKE', "%{$term}%")
+                    ->orWhere('no_whatsapp', 'LIKE', "%{$term}%");
+            });
+        }
+
         if ($this->bulan) {
-            $query->whereMonth('tagihans.tanggal_mulai', $this->bulan);
+            $query->whereMonth('tanggal_pembayaran', $this->bulan);
         }
 
         if ($this->tahun) {
-            $query->whereYear('tagihans.tanggal_mulai', $this->tahun);
+            $query->whereYear('tanggal_pembayaran', $this->tahun);
         }
 
-        if ($this->bank) {
+        if ($this->tanggalDari) {
+            $query->whereDate('tanggal_pembayaran', '>=', $this->tanggalDari);
+        }
+
+        if ($this->tanggalSampai) {
+            $query->whereDate('tanggal_pembayaran', '<=', $this->tanggalSampai);
+        }
+
+        if (!empty($this->bank)) {
             $query->where('tagihans.type_pembayaran', $this->bank);
         }
 
-        if ($this->search) {
-            $search = $this->search;
-            $query->whereHas('pelanggan', function($q) use ($search) {
-                $q->where('nama_lengkap', 'LIKE', "%{$search}%")
-                  ->orWhere('nomer_id', 'LIKE', "%{$search}%")
-                  ->orWhere('no_whatsapp', 'LIKE', "%{$search}%");
-            });
-        }
-
-        $tagihans = $query->orderBy('tagihans.tanggal_mulai', 'asc')->get();
-
-        // Group by pelanggan_id
-        $grouped = $tagihans->groupBy('pelanggan_id')->map(function ($group) {
-            $first = $group->first();
-            
-            // Collect all paid months
-            $months = $group->map(function ($t) {
-                return $t->tanggal_mulai ? \Carbon\Carbon::parse($t->tanggal_mulai)->locale('id')->translatedFormat('M') : '-';
-            })->unique()->implode(', ');
-            
-            // Total payment for these months
-            $totalBayar = $group->sum(function ($t) {
-                return (float) ($t->paket->harga ?? $t->harga ?? 0);
-            });
-
-            // Catatan combined
-            $catatan = $group->map(function($t) { return $t->catatan; })->filter()->implode(' | ');
-
-            return (object) [
-                'nomer_id' => $first->pelanggan->nomer_id ?? '-',
-                'nama_lengkap' => $first->pelanggan->nama_lengkap ?? '-',
-                'no_whatsapp' => $first->pelanggan->no_whatsapp ?? '-',
-                'nama_paket' => $first->paket->nama_paket ?? '-',
-                'total_harga' => $totalBayar,
-                'kecepatan' => ($first->paket->kecepatan ?? '-') . ' Mbps',
-                'bulan_lunas' => $months,
-                'status_pembayaran' => strtoupper($first->status_pembayaran ?? 'LUNAS'),
-                'type_pembayaran' => $group->map(function($t) { return $t->rekening->nama_bank ?? '-'; })->unique()->implode(', '),
-                'catatan' => $catatan ?: '-',
-            ];
-        })->values();
-
-        return $grouped;
+        return $query
+            ->orderByRaw('COALESCE(rekenings.nama_bank, "Tanpa Bank") ASC')
+            ->orderBy('tagihans.created_at', 'desc');
     }
 
     /**
@@ -125,10 +108,13 @@ class BayarExport implements FromCollection, WithHeadings, WithMapping, WithStyl
             'NAMA LENGKAP',
             'NO. WHATSAPP',
             'NAMA PAKET',
-            'TOTAL BAYAR',
+            'HARGA PAKET',
             'KECEPATAN',
-            'BULAN LUNAS',
+            'TANGGAL MULAI',
+            'JATUH TEMPO',
             'STATUS PEMBAYARAN',
+            'TANGGAL BAYAR (VERIFIKASI)',
+            'JENIS TAGIHAN',
             'TYPE PEMBAYARAN',
             'CATATAN'
         ];
@@ -138,26 +124,58 @@ class BayarExport implements FromCollection, WithHeadings, WithMapping, WithStyl
      * Mapping data ke Excel
      * ?? HARGA DIKIRIM SEBAGAI ANGKA (BISA DI SUM)
      */
-    public function map($row): array
+    public function map($tagihan): array
     {
         static $no = 0;
         $no++;
 
+        // Tentukan bulan tagihan (prioritas tanggal_mulai -> tanggal_berakhir -> sekarang)
+        $billingMonth = $tagihan->tanggal_mulai
+            ? \Carbon\Carbon::parse($tagihan->tanggal_mulai)->startOfMonth()
+            : ($tagihan->tanggal_berakhir
+                ? \Carbon\Carbon::parse($tagihan->tanggal_berakhir)->startOfMonth()
+                : now()->startOfMonth());
+
+        $cutoff = $tagihan->tanggal_berakhir
+            ? \Carbon\Carbon::parse($tagihan->tanggal_berakhir)->endOfDay()
+            : $billingMonth->copy()->day(7)->endOfDay();
+
+        $paymentDate = $tagihan->tanggal_pembayaran
+            ? \Carbon\Carbon::parse($tagihan->tanggal_pembayaran)->endOfDay()
+            : ($tagihan->tanggal_upload_pembayaran
+                ? \Carbon\Carbon::parse($tagihan->tanggal_upload_pembayaran)->endOfDay()
+                : now());
+
+        $isOutstanding = $paymentDate->greaterThan($cutoff);
+        $bulanLabel = $billingMonth->locale('id')->translatedFormat('F Y');
+        $jenisTagihan = $isOutstanding
+            ? 'Outstanding ' . $bulanLabel
+            : 'Pembayaran ' . $bulanLabel;
+
         return [
             $no,
-            $row->nomer_id,
-            $row->nama_lengkap,
-            $row->no_whatsapp,
-            $row->nama_paket,
-            
-            // ANGKA MURNI (INI KUNCI SUPAYA SUM BISA)
-            (float) $row->total_harga,
-            
-            $row->kecepatan,
-            $row->bulan_lunas,
-            $row->status_pembayaran,
-            $row->type_pembayaran,
-            $row->catatan
+            $tagihan->pelanggan->nomer_id ?? '-',
+            $tagihan->pelanggan->nama_lengkap ?? '-',
+            $tagihan->pelanggan->no_whatsapp ?? '-',
+            $tagihan->paket->nama_paket ?? '-',
+
+            // ?? ANGKA MURNI (INI KUNCI SUPAYA SUM BISA)
+            (float) ($tagihan->paket->harga ?? 0),
+
+            ($tagihan->paket->kecepatan ?? '-') . ' Mbps',
+            $tagihan->tanggal_mulai
+                ? \Carbon\Carbon::parse($tagihan->tanggal_mulai)->format('d/m/Y')
+                : '-',
+            $tagihan->tanggal_berakhir
+                ? \Carbon\Carbon::parse($tagihan->tanggal_berakhir)->format('d/m/Y')
+                : '-',
+            strtoupper($tagihan->status_pembayaran ?? 'BELUM BAYAR'),
+            $tagihan->tanggal_pembayaran
+                ? \Carbon\Carbon::parse($tagihan->tanggal_pembayaran)->format('d/m/Y H:i:s')
+                : '-',
+            $jenisTagihan,
+            $tagihan->rekening->nama_bank ?? '-',
+            $tagihan->catatan ?? '-'
         ];
     }
 
@@ -252,25 +270,38 @@ class BayarExport implements FromCollection, WithHeadings, WithMapping, WithStyl
             $query->where('tagihans.status_pembayaran', $this->status);
         }
 
+        if ($this->search) {
+            $term = trim((string) $this->search);
+            $query->whereExists(function ($q) use ($term) {
+                $q->selectRaw('1')
+                    ->from('pelanggans')
+                    ->whereColumn('pelanggans.id', 'tagihans.pelanggan_id')
+                    ->where(function ($sub) use ($term) {
+                        $sub->where('pelanggans.nama_lengkap', 'LIKE', "%{$term}%")
+                            ->orWhere('pelanggans.nomer_id', 'LIKE', "%{$term}%")
+                            ->orWhere('pelanggans.no_whatsapp', 'LIKE', "%{$term}%");
+                    });
+            });
+        }
+
         if ($this->bulan) {
-            $query->whereMonth('tagihans.tanggal_mulai', $this->bulan);
+            $query->whereMonth('tagihans.tanggal_pembayaran', $this->bulan);
         }
 
         if ($this->tahun) {
-            $query->whereYear('tagihans.tanggal_mulai', $this->tahun);
+            $query->whereYear('tagihans.tanggal_pembayaran', $this->tahun);
         }
 
-        if ($this->bank) {
+        if ($this->tanggalDari) {
+            $query->whereDate('tagihans.tanggal_pembayaran', '>=', $this->tanggalDari);
+        }
+
+        if ($this->tanggalSampai) {
+            $query->whereDate('tagihans.tanggal_pembayaran', '<=', $this->tanggalSampai);
+        }
+
+        if (!empty($this->bank)) {
             $query->where('tagihans.type_pembayaran', $this->bank);
-        }
-
-        if ($this->search) {
-            $search = $this->search;
-            $query->whereHas('pelanggan', function($q) use ($search) {
-                $q->where('nama_lengkap', 'LIKE', "%{$search}%")
-                  ->orWhere('nomer_id', 'LIKE', "%{$search}%")
-                  ->orWhere('no_whatsapp', 'LIKE', "%{$search}%");
-            });
         }
 
         $this->totalsByBank = $query->groupBy('bank')->pluck('total', 'bank')->toArray();

@@ -1,15 +1,9 @@
-var staticCacheName = 'pwa-v' + new Date().getTime();
+var staticCacheName = 'jmk-pwa-v2';
 var filesToCache = [
   '/offline',
-  '/css/app.css',
-  '/js/app.js',
-  '/images/icons/icon-72x72.png',
-  '/images/icons/icon-96x96.png',
-  '/images/icons/icon-128x128.png',
-  '/images/icons/icon-144x144.png',
-  '/images/icons/icon-152x152.png',
+  '/manifest.json',
+  '/logo.png',
   '/images/icons/icon-192x192.png',
-  '/images/icons/icon-384x384.png',
   '/images/icons/icon-512x512.png'
 ];
 
@@ -18,7 +12,9 @@ self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(staticCacheName).then(cache => {
-      return cache.addAll(filesToCache);
+      return Promise.all(
+        filesToCache.map(url => cache.add(url).catch(() => null))
+      );
     })
   );
 });
@@ -48,6 +44,21 @@ self.addEventListener('fetch', event => {
 
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
+  if (url.origin !== self.location.origin) return;
+
+  // Jangan cache endpoint dinamis atau file besar agar PWA tidak terasa berat/stale.
+  if (
+    url.pathname.startsWith('/storage/') ||
+    url.pathname.startsWith('/customer/media-proxy') ||
+    url.pathname.startsWith('/kwitansi/') ||
+    url.pathname.includes('/json') ||
+    url.pathname.includes('/broadcast') ||
+    url.pathname.includes('/chat/') ||
+    url.pathname.includes('/admin-chat/')
+  ) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
 
   // Network first untuk HTML pages (agar selalu dapat update terbaru)
   if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
@@ -63,15 +74,20 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache first untuk static assets
+  // Stale-while-revalidate untuk static assets supaya cepat tapi tetap update.
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        return response || fetch(event.request);
+    caches.open(staticCacheName).then(cache => {
+      return caches.match(event.request).then(cachedResponse => {
+        var fetchPromise = fetch(event.request).then(networkResponse => {
+          if (networkResponse && networkResponse.ok) {
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        }).catch(() => cachedResponse);
+
+        return cachedResponse || fetchPromise;
       })
-      .catch(() => {
-        return caches.match('/offline');
-      })
+    }).catch(() => caches.match('/offline'))
   );
 });
 
@@ -83,7 +99,7 @@ self.addEventListener('message', event => {
 });
 
 self.addEventListener('push', event => {
-  const data = event.data.json();
+  const data = event.data ? event.data.json() : {};
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
@@ -97,4 +113,3 @@ self.addEventListener('push', event => {
     navigator.setAppBadge(data.count).catch(console.error);
   }
 });
-

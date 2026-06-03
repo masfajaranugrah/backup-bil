@@ -31,7 +31,7 @@
   box-shadow: var(--card-shadow);
   background: white;
   transition: var(--transition);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .card:hover {
@@ -77,7 +77,7 @@
 .table-modern {
   margin-bottom: 0;
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;
   border-collapse: separate;
   border-spacing: 0;
 }
@@ -108,6 +108,12 @@
   vertical-align: middle;
   border-bottom: 1px solid #e4e4e7;
   color: #18181b;
+}
+
+.table-modern thead th:first-child,
+.table-modern tbody td:first-child {
+  width: 56px;
+  text-align: center;
 }
 
 /* ========== BUTTONS - ALL BLACK ========== */
@@ -250,29 +256,104 @@
   border-width: 0.3rem;
 }
 
-/* ========== DROPDOWN ========== */
-.dropdown-menu {
-  border: 1px solid #e4e4e7;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  padding: 0.5rem;
-}
-
-.dropdown-item {
+/* ========== ACTION MENU (TAGIHAN STYLE) ========== */
+.action-btn {
+  background: transparent;
+  border: 0;
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 6px;
-  padding: 0.5rem 1rem;
-  transition: all 0.2s;
-  font-size: 0.875rem;
-  color: #18181b;
 }
 
-.dropdown-item:hover {
-  background: #f4f4f5;
-  transform: translateX(4px);
+.action-btn:hover,
+.action-btn[aria-expanded="true"] {
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
-.dropdown-item i {
-  width: 20px;
+.tagihan-action-menu {
+  position: absolute !important;
+  top: 50% !important;
+  right: calc(100% + 14px) !important;
+  left: auto !important;
+  transform: translateY(-50%) !important;
+  width: 230px;
+  min-width: 230px;
+  padding: 10px;
+  border: 1px solid #d7e2ee !important;
+  border-radius: 22px !important;
+  background: linear-gradient(110deg, #fff4f2 0%, #edf7ff 100%) !important;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.14) !important;
+  z-index: 20000;
+}
+
+.tagihan-action-menu.fixed-action-menu {
+  position: fixed !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+}
+
+.tagihan-action-menu::after {
+  content: '';
+  display: none;
+  position: absolute;
+  right: var(--action-menu-arrow-right, -9px);
+  top: var(--action-menu-arrow-top, 50%);
+  width: 18px;
+  height: 18px;
+  border-top: 1px solid #d7e2ee;
+  border-right: 1px solid #d7e2ee;
+  background: #f2f8ff;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.tagihan-action-menu.show::after {
+  display: block;
+}
+
+.tagihan-action-menu .dropdown-item {
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tagihan-action-menu .dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.78);
+  color: #1e293b;
+}
+
+.tagihan-action-menu .dropdown-item i {
+  color: inherit;
+}
+
+.tagihan-action-menu .dropdown-item.text-danger,
+.tagihan-action-menu .dropdown-item.text-danger:hover {
+  color: #ff3b30 !important;
+}
+
+.datatables-users .dropdown {
+  position: relative;
+}
+
+.card-datatable,
+.table-responsive {
+  overflow: visible !important;
+}
+
+.table-modern tbody td:last-child,
+.table-modern thead th:last-child {
+  overflow: visible !important;
+  position: relative;
 }
 
 /* ========== MODAL STYLES ========== */
@@ -342,33 +423,160 @@
   margin-right: 12px;
 }
 
-/* ========== PAGINATION STYLES ========== */
-.pagination .page-item .page-link {
-  border-radius: 50% !important;
-  width: 40px;
-  height: 40px;
-  padding: 0;
+/* ========================================= */
+/* PAGINATION STYLES */
+/* ========================================= */
+.table-modern.is-dense th {
+  padding: 0.7rem 1rem !important;
+}
+
+.table-modern.is-dense td {
+  padding: 0.65rem 1rem !important;
+}
+
+.dense-toggle-wrap {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid #e4e4e7;
-  color: #18181b;
+  gap: 0.5rem;
   font-weight: 600;
-  background-color: #fff;
-  margin: 0 4px;
-  transition: all 0.3s ease;
+  color: #334155;
 }
 
-.pagination .page-item .page-link:hover {
-  background-color: #f4f4f5;
-  border-color: #18181b;
-  color: #18181b;
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0f172a;
 }
 
-.pagination .page-item.active .page-link {
-  background-color: #18181b !important;
-  border-color: #18181b !important;
-  color: #fafafa !important;
+.custom-check {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  display: block;
+  margin: 0 auto;
+}
+
+.custom-check:checked {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+
+.custom-check:checked::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.selection-toolbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: #eaf1fb;
+  border: 1px solid #d7e2ee;
+  color: #0f172a;
+  padding: 0.8rem 1.1rem;
+}
+
+.selection-toolbar .selected-text {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.selection-toolbar .toolbar-delete-btn {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.selection-toolbar .toolbar-delete-btn:hover {
+  background: rgba(100, 116, 139, 0.12);
+}
+
+.selection-toolbar.active {
+  display: flex;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+.pagination-wrapper .pagination {
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+}
+
+.pagination-wrapper .page-link {
+  min-width: 32px;
+  height: 32px;
+  border-radius: 999px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.pagination-wrapper .mui-pagination {
+  align-items: center;
+  gap: 0.85rem;
+  display: flex;
+}
+
+.pagination-wrapper .mui-pagination .page-link {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: #1f2937 !important;
+  box-shadow: none !important;
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.pagination-wrapper .mui-pagination .page-item.active .page-link {
+  background: #1f2933 !important;
+  color: #ffffff !important;
+}
+
+.pagination-wrapper .mui-pagination .page-link:hover {
+  background: rgba(31, 41, 51, 0.06) !important;
+  color: #111827 !important;
+}
+
+.pagination-wrapper .mui-pagination .page-item.disabled .page-link {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+}
+
+.pagination-wrapper .mui-pagination .pagination-ellipsis .page-link {
+  color: #64748b !important;
+  letter-spacing: 0.08em;
 }
 
 /* ========== ANIMATIONS ========== */
@@ -379,6 +587,21 @@
 
 .card {
   animation: fadeIn 0.3s ease-out;
+}
+
+@media (max-width: 768px) {
+  .tagihan-action-menu {
+    top: calc(100% + 10px) !important;
+    right: 0 !important;
+    left: auto !important;
+    transform: none !important;
+    width: 210px;
+    min-width: 210px;
+  }
+
+  .tagihan-action-menu::after {
+    display: none;
+  }
 }
 </style>
 @endsection
@@ -499,6 +722,118 @@ $(document).on('click', '.btn-delete', function(e) {
     });
 });
 
+function updateSelectionState() {
+    const $all = $('.row-checkbox');
+    const $checked = $('.row-checkbox:checked');
+    const count = $checked.length;
+    $('#selectAllUsers').prop('checked', $all.length > 0 && count === $all.length);
+    $('#selectAllUsers').prop('indeterminate', count > 0 && count < $all.length);
+    $('#selectedCount').text(count + ' dipilih');
+    $('#selectionToolbar').toggleClass('active', count > 0);
+}
+
+$('#selectAllUsers').on('change', function() {
+    $('.row-checkbox').prop('checked', this.checked);
+    updateSelectionState();
+});
+
+$(document).on('change', '.row-checkbox', updateSelectionState);
+
+$('#btnBulkDelete').on('click', async function() {
+    const checked = $('.row-checkbox:checked').toArray();
+    if (!checked.length) return;
+
+    const result = await Swal.fire({
+        title: 'Konfirmasi Penghapusan',
+        text: `Hapus ${checked.length} akun terpilih?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Hapus',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    });
+
+    if (!result.isConfirmed) return;
+    showLoading();
+
+    for (const cb of checked) {
+        const $row = $(cb).closest('tr');
+        const $form = $row.find('form.delete-form');
+        if (!$form.length) continue;
+        try {
+          await $.post($form.attr('action'), {
+              _token: $('meta[name="csrf-token"]').attr('content'),
+              _method: 'DELETE'
+          });
+        } catch (e) {}
+    }
+
+    hideLoading();
+    location.reload();
+});
+
+const denseToggle = document.getElementById('densePaddingToggle');
+const tableEl = document.querySelector('.table-modern');
+if (denseToggle && tableEl) {
+    const savedDense = localStorage.getItem('team_dense_padding') === '1';
+    denseToggle.checked = savedDense;
+    tableEl.classList.toggle('is-dense', savedDense);
+
+    denseToggle.addEventListener('change', function() {
+        const isDense = denseToggle.checked;
+        tableEl.classList.toggle('is-dense', isDense);
+        localStorage.setItem('team_dense_padding', isDense ? '1' : '0');
+    });
+}
+
+document.querySelectorAll('.datatables-users .dropdown').forEach(dropdown => {
+    const button = dropdown.querySelector('[data-bs-toggle="dropdown"]');
+    const menu = dropdown.querySelector('.tagihan-action-menu');
+    if (!button || !menu) return;
+
+    dropdown.addEventListener('shown.bs.dropdown', () => {
+        const buttonRect = button.getBoundingClientRect();
+        const menuWidth = menu.offsetWidth || 230;
+        const menuHeight = menu.offsetHeight || 250;
+        const gap = 12;
+        const padding = window.innerWidth < 768 ? 8 : 14;
+        let top = buttonRect.top + (buttonRect.height / 2) - (menuHeight / 2);
+        let left = buttonRect.left - menuWidth - gap;
+
+        if (top + menuHeight > window.innerHeight - padding) {
+            top = window.innerHeight - menuHeight - padding;
+        }
+        if (top < padding) {
+            top = padding;
+        }
+        if (left < padding) {
+            left = padding;
+        }
+
+        const arrowTop = buttonRect.top + (buttonRect.height / 2) - top;
+        const arrowRight = Math.max(-9, left + menuWidth - buttonRect.left - 9);
+        menu.classList.add('fixed-action-menu');
+        menu.style.setProperty('top', `${top}px`, 'important');
+        menu.style.setProperty('left', `${left}px`, 'important');
+        menu.style.setProperty('right', 'auto', 'important');
+        menu.style.setProperty('bottom', 'auto', 'important');
+        menu.style.setProperty('transform', 'none', 'important');
+        menu.style.setProperty('--action-menu-arrow-top', `${arrowTop}px`);
+        menu.style.setProperty('--action-menu-arrow-right', `${arrowRight}px`);
+    });
+
+    dropdown.addEventListener('hidden.bs.dropdown', () => {
+        menu.classList.remove('fixed-action-menu');
+        menu.style.removeProperty('top');
+        menu.style.removeProperty('left');
+        menu.style.removeProperty('right');
+        menu.style.removeProperty('bottom');
+        menu.style.removeProperty('transform');
+        menu.style.removeProperty('--action-menu-arrow-top');
+        menu.style.removeProperty('--action-menu-arrow-right');
+    });
+});
+
 });
 </script>
 @endsection
@@ -532,14 +867,20 @@ $(document).on('click', '.btn-delete', function(e) {
     
     <div class="card-body p-0">
         <div class="card-datatable table-responsive p-3">
+            <div class="selection-toolbar rounded-3 mb-3" id="selectionToolbar">
+                <span class="selected-text" id="selectedCount">0 dipilih</span>
+                <button type="button" class="toolbar-delete-btn" id="btnBulkDelete" title="Hapus Terpilih">
+                    <i class="ri-delete-bin-line fs-5"></i>
+                </button>
+            </div>
             <table class="datatables-users table table-modern table-hover">
                 <thead>
                     <tr>
- 
-                        <th><i class="ri-user-3-line me-1"></i>Nama</th>
-                        <th><i class="ri-mail-line me-1"></i>Email</th>
-                        <th><i class="ri-shield-user-line me-1"></i>Role</th>
-                        <th class="text-center"><i class="ri-settings-3-line me-1"></i>Aksi</th>
+                        <th><input type="checkbox" class="custom-check" id="selectAllUsers"></th>
+                        <th>Nama</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -547,6 +888,9 @@ $(document).on('click', '.btn-delete', function(e) {
                     <tr>
                     
                         
+                        <td>
+                            <input type="checkbox" class="custom-check row-checkbox" value="{{ $user->id }}">
+                        </td>
                         <td>
                             <div class="d-flex align-items-center">
                                                           <div>
@@ -567,53 +911,54 @@ $(document).on('click', '.btn-delete', function(e) {
                         </td>
                         
                         <td>
-                            <div class="d-flex gap-2 justify-content-center">
-                                <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-outline-primary" title="Edit User">
-                                    <i class="ri-edit-2-line"></i>
-                                </a>
-                                
-                                <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-delete" title="Hapus User">
-                                        <i class="ri-delete-bin-line"></i>
+                            <div class="d-flex justify-content-center">
+                                <div class="dropdown">
+                                    <button class="action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="ri-more-2-fill"></i>
                                     </button>
-                                </form>
+                                    <ul class="dropdown-menu dropdown-menu-end tagihan-action-menu">
+                                        <li>
+                                            <a class="dropdown-item btn-detail" href="javascript:void(0);">
+                                                <i class="ri-eye-line"></i> Detail
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('users.edit', $user->id) }}">
+                                                <i class="ri-edit-2-line"></i> Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="delete-form m-0 p-0">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" class="dropdown-item text-danger btn-delete w-100 border-0 bg-transparent text-start">
+                                                    <i class="ri-delete-bin-line"></i> Hapus
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
+        </div>
 
-            {{-- Custom Pagination --}}
+        <!-- Pagination Footer -->
+        <div class="d-flex justify-content-between align-items-center px-4 py-3" style="border-top: 1px solid #f1f5f9; background: #ffffff;">
+          <div class="d-flex align-items-center gap-4">
+            <label class="dense-toggle-wrap mb-0">
+              <input type="checkbox" id="densePaddingToggle">
+              <span>Dense padding</span>
+            </label>
+          </div>
+          <div class="pagination-wrapper border-top-0 p-0 bg-transparent m-0">
             @if($users instanceof \Illuminate\Pagination\LengthAwarePaginator && $users->total() > 0)
-            <div class="pagination-wrapper mt-4 p-3 d-flex justify-content-between align-items-center">
-                <div class="pagination-info text-muted small">
-                    Menampilkan <strong>{{ $users->firstItem() ?? 0 }}</strong> - <strong>{{ $users->lastItem() ?? 0 }}</strong> 
-                    dari <strong>{{ $users->total() }}</strong> users
-                </div>
-                <div>
-                    @if($users->hasPages())
-                        {{ $users->appends(request()->query())->onEachSide(1)->links('pagination::bootstrap-5') }}
-                    @else
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination mb-0 justify-content-end">
-                                <li class="page-item disabled">
-                                    <span class="page-link"><i class="ri-arrow-left-s-line"></i></span>
-                                </li>
-                                <li class="page-item active">
-                                    <span class="page-link">1</span>
-                                </li>
-                                <li class="page-item disabled">
-                                    <span class="page-link"><i class="ri-arrow-right-s-line"></i></span>
-                                </li>
-                            </ul>
-                        </nav>
-                    @endif
-                </div>
-            </div>
+              {{ $users->appends(request()->query())->onEachSide(1)->links('pagination.mui') }}
             @endif
+          </div>
         </div>
     </div>
 </div>

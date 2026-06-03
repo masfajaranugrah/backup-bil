@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 
 @section('vendor-style')
 @vite([
+  'resources/css/app.css',
   'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
@@ -15,6 +16,25 @@ use Illuminate\Support\Str;
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'
 ])
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0');
+
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1.25rem;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-flex;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
 /* ========================================= */
 /* SHADCN UI STYLE - BLACK & WHITE */
 /* ========================================= */
@@ -43,7 +63,7 @@ body {
   box-shadow: var(--card-shadow);
   background: white;
   transition: var(--transition);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .card:hover {
@@ -198,45 +218,49 @@ body {
   justify-content: center !important;
 }
 
-/* ========== TABLE STYLES ========== */
-.table-modern {
-  margin-bottom: 0;
-  border-radius: 8px;
-  overflow: hidden;
-  border-collapse: separate;
-  border-spacing: 0;
+/* ========== TABLE STYLES (MUI Style aligned with Tagihan) ========== */
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.table-modern thead th {
-  background: #f8fafc;
-  font-weight: 600;
+.modern-table thead th {
+  text-align: left;
+  padding: 1.1rem 0.95rem !important;
+  font-size: 0.82rem;
   text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
-  color: #18181b;
-  padding: 1rem;
-  border: none;
+  letter-spacing: 0;
+  color: #667085;
+  font-weight: 800;
+  border-bottom: 1px solid #e2e8f0 !important;
+  background: #f8fafc;
   white-space: nowrap;
 }
 
-.table-modern tbody tr {
-  transition: var(--transition);
-  border-bottom: 1px solid #e4e4e7;
+.modern-table tbody tr {
+  transition: background 0.2s;
 }
 
-.table-modern tbody tr:hover {
-  background-color: #f4f4f5 !important;
+.modern-table tbody tr:hover td {
+  background: #fcfcfd !important;
 }
 
-.table-modern tbody td {
-  padding: 1rem;
+.modern-table tbody td {
+  padding: 0.85rem 0.95rem;
   vertical-align: middle;
-  border-bottom: 1px solid #e4e4e7;
+  border-bottom: 1px dashed #d8e1ec;
   color: #18181b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.table-modern thead th:first-child,
-.table-modern tbody td:first-child {
+.modern-table tr.row-selected td {
+  background: #edf4fd !important;
+}
+
+.modern-table thead th:first-child,
+.modern-table tbody td:first-child {
   text-align: center;
   width: 60px;
 }
@@ -265,39 +289,51 @@ body {
 }
 
 /* ========================================= */
-/* PAGINATION STYLES */
+/* PAGINATION STYLES (COMPACTED / DI KECILKAN) */
+/* ========================================= */
+.modern-table.is-dense th {
+  padding: 0.7rem 1rem !important;
+}
+
+.modern-table.is-dense td {
+  padding: 0.65rem 1rem !important;
+}
+
+.dense-toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0f172a;
+}
+
+/* ========================================= */
+/* EXACT PAGINATION STYLES (MATCH OUTSTANDING) */
 /* ========================================= */
 .pagination-wrapper {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-top: 1px solid #f0f0f0;
+  padding: 1.5rem 1.75rem;
   background: #fafafa;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  border-top: 1px solid #e4e4e7;
 }
 
-.pagination-info {
-  color: #71717a;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-/* Hide default Laravel pagination summary */
-.pagination-wrapper nav .text-muted {
-  display: none !important;
-}
-
-.pagination {
+.pagination-wrapper .pagination {
   margin: 0;
   gap: 0.5rem;
-  justify-content: flex-end;
 }
 
-.pagination .page-item .page-link {
+.pagination-wrapper .page-item .page-link {
   border-radius: 50% !important;
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   display: flex;
   align-items: center;
@@ -306,88 +342,262 @@ body {
   color: #18181b;
   font-weight: 600;
   background-color: #fff;
-  margin: 0 4px;
+  margin: 0 2px;
   transition: all 0.3s ease;
 }
 
-.pagination .page-item .page-link:hover {
-  background-color: #f4f4f5;
+.pagination-wrapper .page-item .page-link:hover {
+  background-color: #18181b;
   border-color: #18181b;
-  color: #18181b;
+  color: #fafafa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(24, 24, 27, 0.2);
 }
 
-.pagination .page-item.active .page-link {
+.pagination-wrapper .page-item.active .page-link {
   background-color: #18181b !important;
   border-color: #18181b !important;
   color: #fafafa !important;
-  box-shadow: none;
+  box-shadow: 0 4px 12px rgba(24, 24, 27, 0.4);
 }
 
-.pagination .page-item.disabled .page-link {
+.pagination-wrapper .page-item.disabled .page-link {
   background-color: #f4f4f5;
   border-color: #e4e4e7;
   color: #a1a1aa;
   cursor: not-allowed;
 }
 
-/* DataTables pagination styles */
-.dataTables_wrapper .dataTables_info {
-  float: left !important;
-  padding-top: 1.25rem;
-  padding-bottom: 1rem;
-  color: #71717a;
-  font-size: 0.875rem;
+.pagination-wrapper .mui-pagination {
+  gap: 0.5rem;
 }
 
-.dataTables_wrapper .dataTables_paginate {
-  float: right !important;
-  text-align: right !important;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+.pagination-wrapper .mui-pagination .page-link.page-nav-icon {
+  width: 30px;
+  height: 30px;
 }
 
-.dataTables_wrapper .dataTables_paginate .pagination {
-  justify-content: flex-end !important;
+/* Hide DataTables sort arrows on table headers */
+.modern-table thead th.sorting::before,
+.modern-table thead th.sorting::after,
+.modern-table thead th.sorting_asc::before,
+.modern-table thead th.sorting_asc::after,
+.modern-table thead th.sorting_desc::before,
+.modern-table thead th.sorting_desc::after {
+  display: none !important;
+  content: none !important;
+}
+
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #111827;
+}
+
+@media (max-width: 768px) {
+  .pagination-wrapper {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+}
+
+/* Custom Checkbox */
+.custom-check {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+.custom-check:checked {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+.custom-check:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 7px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Selection Toolbar */
+.selection-toolbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: #e7f0fb;
+  border-bottom: 1px solid #d6e4f3;
+  padding: 0.85rem 1.25rem;
+}
+.selection-toolbar.active {
+  display: flex;
+}
+.selection-toolbar .selected-text {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 1rem;
+}
+.selection-toolbar .clear-btn {
+  border: 0;
+  background: transparent;
+  color: #ff4528;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.selection-toolbar .clear-btn:hover {
+  background: rgba(255, 69, 40, 0.08);
+}
+
+/* Product Cell */
+.product-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.product-info h6 {
+  margin: 0 0 0.15rem 0;
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+.product-info span {
+  font-size: 0.78rem;
+  color: #64748b;
+  display: block;
+}
+
+/* Action Button (Titik 3) */
+.action-btn {
+  background: transparent;
+  border: 0;
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: none;
+}
+.action-btn:hover, .action-btn[aria-expanded="true"] {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.action-btn i {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.tagihan-action-menu {
+  position: absolute !important;
+  top: 50% !important;
+  right: calc(100% + 12px) !important;
+  left: auto !important;
+  transform: translateY(-50%) !important;
+  width: 230px !important;
+  min-width: 230px !important;
+  max-width: calc(100vw - 32px) !important;
+  height: auto !important;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 18px !important;
+  background: linear-gradient(115deg, #fff4f1 0%, #ffffff 50%, #f1fbff 100%) !important;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16) !important;
   margin: 0 !important;
+  z-index: 20000;
 }
 
-.dataTables_wrapper .dataTables_paginate .page-item .page-link {
-  border-radius: 50% !important;
-  width: 40px !important;
-  height: 40px !important;
-  padding: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin: 0 4px !important;
-  border: 1px solid #e4e4e7 !important;
-  color: #18181b !important;
-  background: #fff !important;
-  background-color: #fff !important;
-  font-weight: 600 !important;
-  transition: all 0.3s ease !important;
+.tagihan-action-menu::after {
+  content: '';
+  display: none;
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  background: #f7fdff;
+  border-right: 1px solid #e2e8f0;
+  border-top: 1px solid #e2e8f0;
+  transform: translateY(-50%) rotate(45deg);
 }
 
-.dataTables_wrapper .dataTables_paginate .page-item .page-link:hover {
-  background: #f4f4f5 !important;
-  background-color: #f4f4f5 !important;
-  border-color: #18181b !important;
-  color: #18181b !important;
+.tagihan-action-menu.show::after {
+  display: block;
 }
 
-.dataTables_wrapper .dataTables_paginate .page-item.active .page-link {
-  background: #18181b !important;
-  background-color: #18181b !important;
-  border-color: #18181b !important;
-  color: #fafafa !important;
+.tagihan-action-menu .dropdown-item {
+  position: relative;
+  z-index: 1;
+  border-radius: 10px;
+  padding: 0.55rem 0.6rem;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
 }
 
-.dataTables_wrapper .dataTables_paginate .page-item.disabled .page-link {
-  background: #f4f4f5 !important;
-  background-color: #f4f4f5 !important;
-  border-color: #e4e4e7 !important;
-  color: #a1a1aa !important;
-  cursor: not-allowed !important;
+.tagihan-action-menu .dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.72);
+  color: #111827;
+}
+
+.tagihan-action-menu .dropdown-item i {
+  font-size: 1.25rem;
+  color: inherit !important;
+}
+
+.tagihan-action-menu .dropdown-item.danger-action {
+  color: #ff4528 !important;
+}
+
+.tagihan-action-menu .dropdown-item.danger-action:hover {
+  background: rgba(255, 69, 40, 0.08) !important;
+}
+
+.modern-table .dropdown {
+  position: relative !important;
+}
+
+.card-datatable {
+  overflow: visible !important;
+}
+
+.table-responsive {
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+}
+
+.modern-table tbody td:last-child,
+.modern-table thead th:last-child {
+  overflow: visible !important;
+  position: relative;
 }
 
 .dataTables_wrapper::after {
@@ -479,6 +689,142 @@ body {
   align-items: center;
   justify-content: flex-end;
   min-height: 4.5rem;
+}
+
+.outstanding-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  transform: translateY(20px);
+  background: #061533;
+  color: #fff;
+  border-radius: 34px;
+  padding: 0.9rem 1.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1rem;
+  z-index: 2100;
+  opacity: 0;
+  transition: all 0.25s ease;
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.25);
+}
+
+.outstanding-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.swal-outstanding-delete {
+  width: min(92vw, 640px) !important;
+  border-radius: 16px !important;
+  padding: 1.4rem 1.2rem 1.15rem !important;
+}
+
+.swal-outstanding-title {
+  color: #666d80 !important;
+  font-weight: 700 !important;
+  font-size: clamp(1.35rem, 2.4vw, 2.35rem) !important;
+  line-height: 1.1 !important;
+  margin-top: 0.2rem !important;
+}
+
+.swal2-html-container.swal-outstanding-html {
+  color: #555b6a !important;
+  font-size: clamp(1rem, 1.55vw, 1.35rem) !important;
+  line-height: 1.35 !important;
+  margin-top: 0.2rem !important;
+  margin-bottom: 1.05rem !important;
+}
+
+.swal-outstanding-confirm,
+.swal-outstanding-cancel {
+  border-radius: 12px !important;
+  min-width: 118px;
+  min-height: 48px;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  padding: 0.55rem 1.1rem !important;
+}
+
+.swal-outstanding-confirm {
+  background: #0b0f1c !important;
+  border: 3px solid #ffffff !important;
+  box-shadow: 0 0 0 2px #151827 !important;
+}
+
+.swal-outstanding-cancel {
+  background: #0b0f1c !important;
+}
+
+.swal2-icon.swal2-warning {
+  border-color: #f4b74a !important;
+  color: #f4b022 !important;
+}
+
+/* ========== KARYAWAN DELETE MODAL ========== */
+.swal-karyawan-popup {
+  border-radius: 20px !important;
+  padding: 2rem 1.5rem 1.5rem !important;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.18) !important;
+  border: none !important;
+  width: min(90vw, 420px) !important;
+}
+
+.swal-karyawan-popup .swal2-title {
+  font-size: 1.4rem !important;
+  font-weight: 700 !important;
+  color: #18181b !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.swal-karyawan-popup .swal2-html-container {
+  color: #52525b !important;
+  font-size: 0.95rem !important;
+  line-height: 1.6 !important;
+}
+
+.swal-karyawan-icon {
+  margin: 0 auto 1rem !important;
+  width: 4rem !important;
+  height: 4rem !important;
+  border-color: #fbbf24 !important;
+}
+
+.swal-karyawan-confirm {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 0.65rem 1.5rem !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 15px rgba(239,68,68,0.35) !important;
+  transition: all 0.2s !important;
+  margin: 0 0.4rem !important;
+}
+
+.swal-karyawan-confirm:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  box-shadow: 0 6px 20px rgba(239,68,68,0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.swal-karyawan-cancel {
+  background: #f4f4f5 !important;
+  color: #52525b !important;
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 12px !important;
+  padding: 0.65rem 1.5rem !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  transition: all 0.2s !important;
+  margin: 0 0.4rem !important;
+}
+
+.swal-karyawan-cancel:hover {
+  background: #e4e4e7 !important;
+  color: #18181b !important;
 }
 
 .employee-avatar {
@@ -589,6 +935,141 @@ body {
   box-shadow: 0 2px 8px rgba(24, 24, 27, 0.3);
 }
 
+.employee-detail-modal {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100vh;
+  margin: 0;
+}
+
+.employee-detail-content {
+  border-radius: 0 !important;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow: hidden !important;
+}
+
+.employee-detail-shell {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(300px, 36%) 1fr;
+  background: #fff;
+  overflow: hidden;
+}
+
+.employee-detail-sidebar {
+  background: linear-gradient(180deg, #f1f2f5 0%, #fafafa 100%);
+  border-right: 1px solid #dfe3ea;
+  padding: 2rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+}
+
+.employee-detail-main {
+  padding: 1.9rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+#detailModal .modal-body {
+  max-height: none !important;
+  height: 100%;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+#detailModal .modal-dialog {
+  max-width: 100vw !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#detailModal {
+  padding: 0 !important;
+}
+
+.employee-modal-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: #f8fafc;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  z-index: 10;
+}
+
+.employee-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.employee-info-card {
+  min-height: 92px;
+  border-radius: 12px;
+  border: 1px solid #d7dce5;
+  border-left-width: 4px;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.employee-info-card.black {
+  border-left-color: #18181b;
+}
+
+.employee-info-card.red {
+  border-left-color: #ef4444;
+}
+
+.employee-document-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+  padding: 1.25rem;
+  flex: 1;
+  min-height: 250px;
+}
+
+.employee-document-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  min-height: 205px;
+}
+
+.employee-document-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+}
+
+.employee-document-item + .employee-document-item {
+  border-left: 1px solid #e5e7eb;
+}
+
+.employee-empty-doc {
+  width: 100%;
+  min-height: 150px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #71717a;
+}
+
 /* ========== TEXT COLORS ========== */
 .text-primary {
   color: #18181b !important;
@@ -616,17 +1097,170 @@ body {
   .detail-value {
     font-size: 0.8rem;
   }
+
+  .employee-detail-modal {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    margin: 0;
+  }
+
+  .employee-detail-content {
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
+  }
+
+  .employee-detail-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .employee-detail-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid #dfe3ea;
+  }
+
+  .employee-info-grid,
+  .employee-document-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .employee-document-item + .employee-document-item {
+    border-left: 0;
+    border-top: 1px solid #e5e7eb;
+  }
 }
 
 @media (max-width: 576px) {
-  .table-modern {
+  .modern-table {
     font-size: 0.85rem;
   }
 
-  .table-modern thead th,
-  .table-modern tbody td {
+  .modern-table thead th,
+  .modern-table tbody td {
     padding: 0.75rem 0.5rem;
   }
+
+  .outstanding-toast {
+    right: 12px;
+    bottom: 12px;
+    max-width: calc(100vw - 24px);
+    font-size: 0.92rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* ========== DELETE CONFIRMATION MODAL ========== */
+.delete-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(24, 24, 27, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 99998;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.delete-confirm-overlay.is-open {
+  display: flex;
+  opacity: 1;
+}
+
+.delete-confirm-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: min(420px, calc(100vw - 32px));
+  padding: 2rem;
+  text-align: center;
+  transform: scale(0.95) translateY(10px);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.delete-confirm-overlay.is-open .delete-confirm-card {
+  transform: scale(1) translateY(0);
+}
+
+.delete-confirm-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fef2f2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.delete-confirm-icon .material-symbols-rounded {
+  font-size: 1.75rem;
+  color: #ef4444;
+}
+
+.delete-confirm-card h4 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #18181b;
+  margin-bottom: 0.5rem;
+}
+
+.delete-confirm-card p {
+  font-size: 0.9rem;
+  color: #71717a;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.delete-confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.delete-confirm-actions .btn-cancel-delete {
+  flex: 1;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid #e4e4e7;
+  background: #fff;
+  color: #18181b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.delete-confirm-actions .btn-cancel-delete:hover {
+  background: #f4f4f5;
+  border-color: #a1a1aa;
+}
+
+.delete-confirm-actions .btn-exec-delete {
+  flex: 1;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid #dc2626;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.delete-confirm-actions .btn-exec-delete:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
 }
 
 /* ========== ANIMATIONS ========== */
@@ -661,6 +1295,47 @@ document.addEventListener("DOMContentLoaded", function() {
     function hideLoading() {
         $('.loading-overlay').fadeOut(300);
     }
+
+    function showOutstandingToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        const isError = type === 'error';
+        toast.style.cssText = [
+            'position:fixed',
+            'right:24px',
+            'bottom:28px',
+            'transform:translateY(10px)',
+            'z-index:99999',
+            'display:flex',
+            'align-items:center',
+            'gap:12px',
+            'max-width:min(520px,calc(100vw - 32px))',
+            'min-width:min(360px,calc(100vw - 32px))',
+            'padding:14px 20px',
+            'border-radius:18px',
+            `background:${isError ? '#dc2626' : '#111827'}`,
+            'color:#fff',
+            'box-shadow:0 16px 42px rgba(15,23,42,.32)',
+            'font-size:1rem',
+            'font-weight:500',
+            'opacity:0',
+            'transition:all .2s ease'
+        ].join(';');
+        toast.innerHTML = `<span class="material-symbols-rounded" style="font-size:1.15rem;line-height:1;color:${isError ? '#fecaca' : '#86efac'}">check_circle</span><span>${message}</span>`;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        });
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+            setTimeout(() => toast.remove(), 220);
+        }, 3200);
+    }
+
+    @if(session('success'))
+      showOutstandingToast(@json(session('success')));
+    @endif
 
     // Inisialisasi DataTable
     const dtUserTable = $('.datatables-users').DataTable({
@@ -707,122 +1382,85 @@ document.addEventListener("DOMContentLoaded", function() {
         const ktpUrl = hasFotoKtp ? `/dashboard/admin/employees/image/${employeeId}/foto_ktp` : '';
 
         const html = `
-            <div class="employee-header-info">
-                <div class="employee-avatar mx-auto overflow-hidden" style="width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e4e4e7; font-size: 2rem; margin-bottom: 1rem;">
-                    ${hasFoto ? `<img src="${photoUrl}" alt="Foto" style="width:100%; height:100%; object-fit:cover;">` : initial}
-                </div>
-                <div class="employee-name">${fullName}</div>
-                <div class="employee-position">
-                    <i class="ri-briefcase-line me-2"></i>${position}
-                </div>
-            </div>
+            <div class="employee-detail-shell">
+                <!-- Left Sidebar -->
+                <div class="employee-detail-sidebar">
+                    <div class="employee-avatar mx-auto shadow-sm" style="width: 110px; height: 110px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #18181b; color: white; font-size: 3rem; margin-bottom: 1.25rem; border: 4px solid white; overflow: hidden;">
+                        ${hasFoto ? `<img src="${photoUrl}" alt="Foto" style="width:100%; height:100%; object-fit:cover;">` : initial}
+                    </div>
+                    <h4 class="fw-bold mb-1 text-dark text-center">${fullName}</h4>
+                    <p class="text-muted small mb-3 text-center">${nik}</p>
+                    
+                    <span class="badge bg-danger mb-4 px-3 py-2" style="font-size:0.8rem;">
+                        <i class="ri-briefcase-line me-1"></i> ${position}
+                    </span>
 
-            <div class="row">
-                <div class="col-md-7">
-                    <div class="detail-section">
-                        <h6><i class="ri-user-3-line"></i>Informasi Pribadi</h6>
-                        <div class="detail-item">
-                            <span class="detail-label">
-                                <i class="ri-id-card-line"></i>NIK
-                            </span>
-                            <span class="detail-value"><strong>${nik}</strong></span>
+                    <div class="w-100 mt-2">
+                        <div class="bg-white rounded p-3 mb-3 shadow-sm border border-light">
+                            <small class="text-muted d-block fw-bold" style="font-size:0.7rem;">NO. HP / WHATSAPP</small>
+                            <a href="tel:${phone}" class="text-dark fw-bold text-decoration-none d-flex align-items-center mt-1">
+                                <i class="ri-whatsapp-line me-2 text-success" style="font-size:1.2rem;"></i> ${phone}
+                            </a>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">
-                                <i class="ri-user-line"></i>Nama Lengkap
-                            </span>
-                            <span class="detail-value">${fullName}</span>
+                        <div class="bg-white rounded p-3 mb-3 shadow-sm border border-light">
+                            <small class="text-muted d-block fw-bold" style="font-size:0.7rem;">ALAMAT</small>
+                            <div class="d-flex align-items-start mt-1">
+                                <i class="ri-map-pin-line me-2 text-muted mt-1"></i>
+                                <span class="text-dark fw-medium" style="font-size:0.85rem;">${address}</span>
+                            </div>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">
-                                <i class="ri-map-pin-2-line"></i>Tempat Lahir
-                            </span>
-                            <span class="detail-value">${birthPlace}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">
-                                <i class="ri-calendar-line"></i>Tanggal Lahir
-                            </span>
-                            <span class="detail-value">${birthDate}</span>
+                        <div class="bg-white rounded p-3 shadow-sm border border-light">
+                            <small class="text-muted d-block fw-bold" style="font-size:0.7rem;">TANGGAL MASUK</small>
+                            <div class="d-flex align-items-center mt-1">
+                                <i class="ri-calendar-check-line me-2 text-primary"></i>
+                                <span class="text-dark fw-medium">${joinDate}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-5">
-                    <div class="detail-section">
-                        <h6><i class="ri-file-list-3-line"></i>Dokumen (Enkripsi)</h6>
-                        <div class="mb-3 text-center">
-                            <p class="small text-muted mb-1">Foto Karyawan</p>
-                            ${hasFoto ? 
-                                `<img src="${photoUrl}" class="img-fluid rounded border" style="max-height: 120px; cursor: pointer;" onclick="window.open('${photoUrl}', '_blank')">` : 
-                                `<div class="bg-light rounded border py-3 small text-muted">Tidak ada foto</div>`}
+
+                <!-- Right Content -->
+                <div class="employee-detail-main">
+                    <button type="button" class="btn-close employee-modal-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    
+                    <div class="mb-4 pe-5">
+                        <h3 class="fw-bold text-dark mb-1">Informasi Karyawan</h3>
+                        <p class="text-muted small">Rincian data pribadi dan perbankan karyawan.</p>
+                    </div>
+
+                    <div class="employee-info-grid">
+                        <div class="employee-info-card black">
+                                <small class="text-muted fw-bold d-block mb-1" style="font-size:0.75rem;">TEMPAT, TANGGAL LAHIR</small>
+                                <strong class="text-dark" style="font-size:0.95rem;">${birthPlace}, ${birthDate}</strong>
                         </div>
-                        <div class="text-center">
-                            <p class="small text-muted mb-1">Foto KTP</p>
-                            ${hasFotoKtp ? 
-                                `<img src="${ktpUrl}" class="img-fluid rounded border" style="max-height: 120px; cursor: pointer;" onclick="window.open('${ktpUrl}', '_blank')">` : 
-                                `<div class="bg-light rounded border py-3 small text-muted">Tidak ada KTP</div>`}
+                        <div class="employee-info-card red">
+                                <small class="text-muted fw-bold d-block mb-1" style="font-size:0.75rem;">REKENING BANK</small>
+                                <strong class="text-dark d-block" style="font-size:0.95rem;">${bank}</strong>
+                                <span class="text-muted small">${accountNumber} a/n ${accountName}</span>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="detail-section">
-                <h6><i class="ri-phone-line"></i>Kontak & Alamat</h6>
-                <div class="detail-item">
-                    <span class="detail-label">
-                        <i class="ri-smartphone-line"></i>Nomor HP
-                    </span>
-                    <span class="detail-value">
-                        <a href="tel:${phone}" class="text-primary text-decoration-none">
-                            <strong>${phone}</strong>
-                        </a>
-                    </span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">
-                        <i class="ri-map-pin-line"></i>Alamat Lengkap
-                    </span>
-                    <span class="detail-value">${address}</span>
-                </div>
-            </div>
+                    <h6 class="fw-bold mb-3 d-flex align-items-center text-dark">
+                        <i class="ri-folder-user-line me-2"></i> Dokumen Pegawai
+                    </h6>
+                    
+                    <div class="employee-document-box text-center">
+                        <div class="employee-document-grid">
+                            <div class="employee-document-item">
+                                <p class="small fw-bold text-muted mb-2">Foto Karyawan</p>
+                                ${hasFoto ? 
+                                    `<img src="${photoUrl}" class="img-fluid rounded shadow-sm" style="max-height: 140px; cursor: pointer; border: 2px solid white;" onclick="window.open('${photoUrl}', '_blank')">` : 
+                                    `<div class="employee-empty-doc"><div><i class="ri-image-line text-muted" style="font-size: 2rem;"></i><p class="small text-muted mt-2 mb-0">Belum ada foto</p></div></div>`}
+                            </div>
+                            <div class="employee-document-item">
+                                <p class="small fw-bold text-muted mb-2">Foto KTP</p>
+                                ${hasFotoKtp ? 
+                                    `<img src="${ktpUrl}" class="img-fluid rounded shadow-sm" style="max-height: 140px; cursor: pointer; border: 2px solid white;" onclick="window.open('${ktpUrl}', '_blank')">` : 
+                                    `<div class="employee-empty-doc"><div><i class="ri-bank-card-line text-muted" style="font-size: 2rem;"></i><p class="small text-muted mt-2 mb-0">Belum ada KTP</p></div></div>`}
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="detail-section">
-                <h6><i class="ri-briefcase-4-line"></i>Informasi Kepegawaian</h6>
-                <div class="detail-item">
-                    <span class="detail-label">
-                        <i class="ri-calendar-check-line"></i>Tanggal Masuk
-                    </span>
-                    <span class="detail-value">${joinDate}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">
-                        <i class="ri-award-line"></i>Jabatan
-                    </span>
-                    <span class="detail-value">
-                        <span class="badge bg-label-info">${position}</span>
-                    </span>
-                </div>
-            </div>
-
-            <div class="detail-section">
-                <h6><i class="ri-bank-card-2-line"></i>Informasi Rekening Bank</h6>
-                <div class="detail-item">
-                    <span class="detail-label">
-                        <i class="ri-bank-line"></i>Nama Bank
-                    </span>
-                    <span class="detail-value"><strong>${bank}</strong></span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">
-                        <i class="ri-bank-card-line"></i>Nomor Rekening
-                    </span>
-                    <span class="detail-value"><code style="background: #f4f4f5; padding: 4px 8px; border-radius: 4px; font-size: 0.875rem; color: #18181b;">${accountNumber}</code></span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">
-                        <i class="ri-user-3-line"></i>Atas Nama
-                    </span>
-                    <span class="detail-value">${accountName}</span>
                 </div>
             </div>
         `;
@@ -842,51 +1480,140 @@ document.addEventListener("DOMContentLoaded", function() {
         detailModal.show();
     });
 
-    // Event DELETE dengan konfirmasi modern - HANYA 2 BUTTON
-    $(document).on('click', '.btn-delete', function(e) {
+    // Event DELETE dengan SweetAlert
+    $(document).on('submit', '.delete-form', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        const form = $(this).closest('form');
+        const form = this;
+
+        // Get employee name from the row
+        const $row = $(this).closest('tr');
+        const nama = $row.data('nama') || 'karyawan ini';
 
         Swal.fire({
-            title: 'Konfirmasi Penghapusan',
-            text: 'Yakin ingin menghapus data karyawan ini? Data tidak dapat dikembalikan!',
+            title: 'Hapus Karyawan?',
+            html: `Yakin ingin menghapus data <strong>${nama}</strong>?<br><span style="color:#6b7280;font-size:0.875rem;">Data yang dihapus tidak dapat dikembalikan.</span>`,
             icon: 'warning',
             showCancelButton: true,
-            showDenyButton: false,
-            showCloseButton: false,
-            confirmButtonText: 'Ya, Hapus!',
+            confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
             cancelButtonText: 'Batal',
-            confirmButtonColor: '#18181b',
-            cancelButtonColor: '#71717a',
-            reverseButtons: false,
-            allowOutsideClick: false,
+            reverseButtons: true,
+            buttonsStyling: false,
             customClass: {
-                confirmButton: 'btn btn-danger me-2',
-                cancelButton: 'btn btn-secondary'
-            },
-            buttonsStyling: false
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup swal-karyawan-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger swal-karyawan-confirm',
+                cancelButton: 'swal-tailwind-cancel',
+                icon: 'swal-karyawan-icon'
+            }
         }).then((result) => {
             if (result.isConfirmed) {
-                const btn = $(form).find('.btn-delete');
-                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Menghapus...');
                 showLoading();
-
-                setTimeout(() => {
-                    hideLoading();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: 'Data karyawan berhasil dihapus.',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        form.submit();
-                    });
-                }, 1000);
+                setTimeout(() => form.submit(), 300);
             }
         });
     });
+
+    // ========== CHECKBOX SELECT ALL & BULK DELETE ==========
+    const $selectAll = $('#selectAllEmployees');
+    const $selectionToolbar = $('#selectionToolbar');
+    const $selectedCount = $('#selectedCount');
+    const $bulkBtn = $('#btnBulkDelete');
+
+    function updateBulkState() {
+        const $all = $('.employee-checkbox');
+        const $checked = $('.employee-checkbox:checked');
+        const count = $checked.length;
+        $selectAll.prop('checked', $all.length > 0 && count === $all.length);
+        $selectAll.prop('indeterminate', count > 0 && count < $all.length);
+
+        // Toggle row-selected class on rows
+        $('tr.employee-row').removeClass('row-selected');
+        $checked.closest('tr.employee-row').addClass('row-selected');
+
+        $selectedCount.text(count + ' dipilih');
+        if (count > 0) {
+            $selectionToolbar.addClass('active').fadeIn(200);
+        } else {
+            $selectionToolbar.removeClass('active').fadeOut(200);
+        }
+    }
+
+    $selectAll.on('change', function() {
+        $('.employee-checkbox').prop('checked', this.checked);
+        updateBulkState();
+    });
+
+    $(document).on('change', '.employee-checkbox', function() {
+        updateBulkState();
+    });
+
+    $bulkBtn.on('click', function() {
+        const ids = $('.employee-checkbox:checked').map(function() { return $(this).val(); }).get();
+        if (ids.length === 0) return;
+
+        Swal.fire({
+            title: 'Hapus Karyawan?',
+            html: `Yakin ingin menghapus <strong>${ids.length} karyawan</strong> terpilih?<br><span style="color:#6b7280;font-size:0.875rem;">Data yang dihapus tidak dapat dikembalikan.</span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            cancelButtonText: 'Batal',
+            confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
+            reverseButtons: true,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            buttonsStyling: false,
+            customClass: {
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup swal-karyawan-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger swal-karyawan-confirm',
+                cancelButton: 'swal-tailwind-cancel',
+                icon: 'swal-karyawan-icon'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showLoading();
+                $.ajax({
+                    url: '{{ route("employees.bulkDestroy") }}',
+                    type: 'POST',
+                    data: { ids: ids, _token: '{{ csrf_token() }}' },
+                    success: function(res) {
+                        hideLoading();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: res.message,
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    },
+                    error: function() {
+                        hideLoading();
+                        Swal.fire({ icon: 'error', title: 'Gagal!', text: 'Terjadi kesalahan saat menghapus data.' });
+                    }
+                });
+            }
+        });
+    });
+
+    // ========== DENSE PADDING TOGGLE ==========
+    const denseToggle = document.getElementById('densePaddingToggle');
+    const tableEl = document.querySelector('.modern-table');
+    if (denseToggle && tableEl) {
+        const savedDense = localStorage.getItem('karyawan_dense_padding') === '1';
+        denseToggle.checked = savedDense;
+        tableEl.classList.toggle('is-dense', savedDense);
+
+        denseToggle.addEventListener('change', function() {
+            const isDense = denseToggle.checked;
+            tableEl.classList.toggle('is-dense', isDense);
+            localStorage.setItem('karyawan_dense_padding', isDense ? '1' : '0');
+        });
+    }
+
+    // Removed dropdown manual positioning scripts
 });
 </script>
 @endsection
@@ -909,7 +1636,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 </h4>
                 <p class="mb-0 opacity-75 small">Kelola dan monitor data karyawan perusahaan</p>
             </div>
-            <div class="d-flex action-buttons mt-3 mt-md-0">
+            <div class="d-flex action-buttons mt-3 mt-md-0 align-items-center">
                 <a href="{{ route('karyawan.create') }}" class="btn btn-primary btn-add">
                     <i class="ri-user-add-line"></i>
                     Tambah Karyawan Baru
@@ -946,20 +1673,25 @@ document.addEventListener("DOMContentLoaded", function() {
     </div>
 
     <div class="card-body p-0">
-        <div class="card-datatable table-responsive p-3">
-            <table class="datatables-users table table-modern table-hover">
+        <div class="card-datatable table-responsive p-3" style="position: relative;">
+            <!-- Selection Toolbar -->
+            <div class="selection-toolbar rounded-3 mb-3" id="selectionToolbar" style="display: none;">
+                <span class="selected-text" id="selectedCount">0 dipilih</span>
+                <button type="button" class="clear-btn" id="btnBulkDelete" title="Hapus Terpilih">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            </div>
+
+            <table class="datatables-users table modern-table table-hover">
                 <thead>
                     <tr>
-                        <th><i class="ri-hashtag me-1"></i>No</th>
-                        <th><i class="ri-eye-line me-1"></i>Detail</th>
-                        <th><i class="ri-id-card-line me-1"></i>NIK</th>
-                        <th><i class="ri-user-3-line me-1"></i>Nama Lengkap</th>
-                        <th><i class="ri-map-pin-line me-1"></i>Alamat</th>
-                        <th><i class="ri-calendar-line me-1"></i>Tempat & Tanggal Lahir</th>
-                        <th><i class="ri-phone-line me-1"></i>No. HP</th>
-                        <th><i class="ri-calendar-check-line me-1"></i>Tanggal Masuk</th>
-                        <th><i class="ri-briefcase-line me-1"></i>Jabatan</th>
-                        <th class="text-center"><i class="ri-settings-3-line me-1"></i>Aksi</th>
+                        <th style="width: 50px; text-align: center;"><input type="checkbox" id="selectAllEmployees" class="custom-check"></th>
+                        <th>Nama Lengkap</th>
+                        <th>Alamat</th>
+                        <th>No. HP</th>
+                        <th>Tanggal Masuk</th>
+                        <th>Jabatan</th>
+                        <th class="text-center" style="width: 80px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -979,29 +1711,21 @@ document.addEventListener("DOMContentLoaded", function() {
                         data-id="{{ $employee->id }}"
                         data-has-foto="{{ $employee->foto ? 1 : 0 }}"
                         data-has-foto-ktp="{{ $employee->foto_ktp ? 1 : 0 }}"
+                        class="employee-row"
                     >
-                        <td class="text-muted fw-semibold">{{ $loop->iteration }}</td>
-                        <td>
-                            <button class="btn btn-sm btn-icon btn-outline-primary btn-detail" title="Lihat Detail">
-                                <i class="ri-eye-line"></i>
-                            </button>
+                        <td class="text-center">
+                            <input type="checkbox" class="employee-checkbox custom-check" value="{{ $employee->id }}">
                         </td>
-
                         <td>
-                            <span class="badge bg-label-dark">{{ $employee->nik }}</span>
-                        </td>
-
-                        <td>
-                            <span class="fw-semibold">{{ $employee->full_name }}</span>
+                            <div class="product-cell">
+                                <div class="product-info">
+                                    <h6>{{ $employee->full_name }}</h6>
+                                    <span>NIK: {{ $employee->nik }}</span>
+                                </div>
+                            </div>
                         </td>
 
                         <td>{{ Str::limit($employee->full_address, 30) }}</td>
-
-                        <td>
-                            {{ $employee->place_of_birth }},
-                            <br>
-                            {{ \Carbon\Carbon::parse($employee->date_of_birth)->format('d M Y') }}
-                        </td>
 
                         <td>{{ $employee->no_hp }}</td>
 
@@ -1012,20 +1736,31 @@ document.addEventListener("DOMContentLoaded", function() {
                         </td>
 
                         <td>
-                            <div class="d-flex gap-2 justify-content-center">
-                                <a href="{{ route('employees.edit', $employee->id) }}"
-                                   class="btn btn-sm btn-outline-primary"
-                                   title="Edit">
-                                    <i class="ri-edit-2-line"></i>
-                                </a>
-
-                                <form action="{{ route('employees.destroy', $employee->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-delete" title="Hapus">
-                                        <i class="ri-delete-bin-line"></i>
-                                    </button>
-                                </form>
+                            <div class="dropdown d-flex justify-content-center">
+                                <button class="action-btn" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
+                                    <i class="ri-more-2-fill"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end tagihan-action-menu">
+                                    <li>
+                                        <a class="dropdown-item btn-detail" href="javascript:void(0);">
+                                            <i class="ri-eye-line"></i> Detail
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('employees.edit', $employee->id) }}">
+                                            <i class="ri-edit-2-line"></i> Edit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <form action="{{ route('employees.destroy', $employee->id) }}" method="POST" class="delete-form m-0 p-0">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="dropdown-item danger-action w-100 border-0 bg-transparent text-start">
+                                                <i class="ri-delete-bin-line"></i> Delete
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
                             </div>
                         </td>
                     </tr>
@@ -1034,15 +1769,28 @@ document.addEventListener("DOMContentLoaded", function() {
             </table>
         </div>
 
-        @if($employees->hasPages())
+        <!-- Pagination Footer -->
+        @if($employees->count() > 0)
         <div class="pagination-wrapper">
-            <div class="pagination-info">
-                Menampilkan <strong>{{ $employees->firstItem() ?? 0 }}</strong> - <strong>{{ $employees->lastItem() ?? 0 }}</strong>
-                dari <strong>{{ $employees->total() }}</strong> karyawan
-            </div>
-            <div>
-                {{ $employees->appends(request()->query())->onEachSide(1)->links('pagination::bootstrap-5') }}
-            </div>
+          <label class="dense-toggle-wrap mb-0">
+            <input type="checkbox" id="densePaddingToggle">
+            <span>Dense padding</span>
+          </label>
+          <div>
+            @if($employees->total() > 40)
+              {{ $employees->appends(request()->query())->onEachSide(1)->links('pagination.mui') }}
+            @else
+              <nav aria-label="Pagination">
+                <ul class="pagination mui-pagination mb-0">
+                  <li class="page-item disabled"><span class="page-link"><i class="ri-arrow-left-double-line"></i></span></li>
+                  <li class="page-item disabled"><span class="page-link"><i class="ri-arrow-left-s-line"></i></span></li>
+                  <li class="page-item active"><span class="page-link">1</span></li>
+                  <li class="page-item disabled"><span class="page-link"><i class="ri-arrow-right-s-line"></i></span></li>
+                  <li class="page-item disabled"><span class="page-link"><i class="ri-arrow-right-double-line"></i></span></li>
+                </ul>
+              </nav>
+            @endif
+          </div>
         </div>
         @endif
     </div>
@@ -1050,21 +1798,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
 <!-- Detail Modal -->
 <div class="modal fade" id="detailModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header pb-4">
-                <h5 class="modal-title">
-                    <i class="ri-information-line me-2"></i>Detail Karyawan
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
+    <div class="modal-dialog modal-dialog-centered employee-detail-modal">
+        <div class="modal-content border-0 shadow-lg employee-detail-content">
+            <div class="modal-body p-0">
                 <!-- Custom content will be inserted via JavaScript -->
             </div>
-
-         
         </div>
     </div>
 </div>
+
 @endsection

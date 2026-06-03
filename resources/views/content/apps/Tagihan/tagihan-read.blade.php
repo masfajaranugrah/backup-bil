@@ -205,80 +205,115 @@
   font-size: 0.8rem;
 }
 
-/* Modern Pagination */
-.pagination-modern {
+/* PAGINATION STYLES */
+.pagination-wrapper {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: flex-end;
-  flex-wrap: nowrap;
-  gap: 0.45rem;
+  padding: 1.5rem;
+  border-top: 1px solid #f0f0f0;
+  background: transparent;
 }
 
-.pagination-pages {
+.dense-toggle-wrap {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
-  white-space: nowrap;
-  gap: 0.45rem;
-}
-
-.page-dot-btn {
-  min-width: 44px;
-  height: 44px;
-  border: none;
-  border-radius: 999px;
-  background: #f3f4f6;
-  color: #111827;
+  gap: 0.5rem;
   font-weight: 600;
-  font-size: 1.1rem;
-  line-height: 1;
+  color: #334155;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0f172a;
+}
+
+.matrix-table.is-dense th {
+  padding: 0.5rem 0.25rem !important;
+}
+
+.matrix-table.is-dense td {
+  padding: 0.4rem 0.25rem !important;
+}
+
+.pagination {
+  display: flex;
+  margin: 0;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  list-style: none;
+  padding-left: 0;
+}
+
+.pagination-wrapper .pagination {
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+}
+
+.pagination-wrapper .page-link {
+  min-width: 40px;
+  height: 40px;
+  border-radius: 999px !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.page-dot-btn:hover:not(:disabled):not(.active) {
-  background: #e5e7eb;
-}
-
-.page-dot-btn.active {
-  background: #0f111a;
-  color: #ffffff;
-  box-shadow: 0 6px 14px rgba(15, 17, 26, 0.2);
-}
-
-.page-dot-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.page-dot-btn.nav-btn {
-  font-size: 1.3rem;
-}
-
-.page-ellipsis {
-  min-width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background: #f3f4f6;
-  color: #6b7280;
   font-weight: 700;
-  font-size: 1rem;
-  display: inline-flex;
+  text-decoration: none;
+}
+
+.pagination-wrapper .mui-pagination {
   align-items: center;
-  justify-content: center;
+  gap: 0.85rem;
+}
+
+.pagination-wrapper .mui-pagination .page-link {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: #1f2937 !important;
+  box-shadow: none !important;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pagination-wrapper .mui-pagination .page-item.active .page-link {
+  background: #1f2933 !important;
+  color: #ffffff !important;
+}
+
+.pagination-wrapper .mui-pagination .page-link:hover {
+  background: rgba(31, 41, 51, 0.06) !important;
+  color: #111827 !important;
+}
+
+.pagination-wrapper .mui-pagination .page-item.disabled .page-link {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+  cursor: not-allowed !important;
+}
+
+.pagination-wrapper .mui-pagination .pagination-ellipsis .page-link {
+  color: #64748b !important;
+  letter-spacing: 0.08em;
+  cursor: default !important;
 }
 
 @media (max-width: 992px) {
-  .pagination-modern {
+  .pagination-wrapper .mui-pagination {
     transform: scale(0.85);
     transform-origin: right center;
   }
 }
 
 @media (max-width: 768px) {
-  .pagination-modern {
+  .pagination-wrapper .mui-pagination {
     transform: scale(0.72);
   }
 }
@@ -304,7 +339,7 @@
     <div class="stats-card">
       <div class="d-flex justify-content-between align-items-center">
         <div>
-          <p class="mb-1 text-muted" style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">Total Pelanggan Thn Ini</p>
+          <p class="mb-1 text-muted" style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">Total Pelanggan JMK-GK</p>
           <h2 class="mb-0 fw-bold" id="statTotal" style="font-size: 2rem;">0</h2>
         </div>
         <div class="stats-icon">
@@ -393,19 +428,17 @@
     </div>
     
     {{-- Pagination Controls --}}
-    <div class="d-flex justify-content-between align-items-center p-3 border-top flex-wrap gap-3" id="paginationControlsContainer" style="display: none !important;">
-      <div class="text-muted" style="font-size: 0.875rem;">
-        Menampilkan <span id="pageInfoStart" class="fw-semibold">0</span> - <span id="pageInfoEnd" class="fw-semibold">0</span> dari <span id="pageInfoTotal" class="fw-semibold">0</span> pelanggan
+    <div class="pagination-wrapper" id="paginationControlsContainer" style="display: none !important;">
+      <div class="d-flex align-items-center gap-4">
+        <label class="dense-toggle-wrap mb-0">
+          <input type="checkbox" id="densePaddingToggle">
+          <span>Dense padding</span>
+        </label>
       </div>
-      <div class="pagination-modern">
-        <button class="page-dot-btn nav-btn" id="btnPrevPage" disabled aria-label="Halaman sebelumnya">
-          <i class="ri-arrow-left-s-line"></i>
-        </button>
-        <div class="pagination-pages" id="paginationPages"></div>
-        <button class="page-dot-btn nav-btn" id="btnNextPage" disabled aria-label="Halaman selanjutnya">
-          <i class="ri-arrow-right-s-line"></i>
-        </button>
-      </div>
+      <nav role="navigation" aria-label="Pagination Navigation">
+        <ul class="pagination pagination-sm mb-0 mui-pagination" id="paginationList">
+        </ul>
+      </nav>
     </div>
   </div>
 </div>
@@ -488,36 +521,99 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function getVisiblePageItems(current, total) {
-    if (total <= 10) {
-      return Array.from({ length: total }, (_, i) => i + 1);
-    }
-
-    if (current <= 5) {
-      return [1, 2, 3, 4, 5, 6, 7, 8, 'ellipsis', total - 1, total];
-    }
-
-    if (current >= total - 4) {
-      return [1, 2, 'ellipsis', total - 7, total - 6, total - 5, total - 4, total - 3, total - 2, total - 1, total];
-    }
-
-    return [1, 2, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total - 1, total];
+    const rawPages = [1, current - 2, current - 1, current, current + 1, current + 2, total];
+    const filtered = rawPages.filter(page => page >= 1 && page <= total);
+    const unique = [...new Set(filtered)];
+    unique.sort((a, b) => a - b);
+    return unique;
   }
 
-  function renderPaginationPages() {
-    const pagesContainer = document.getElementById('paginationPages');
-    if (!pagesContainer) return;
+  function renderPagination() {
+    const listContainer = document.getElementById('paginationList');
+    if (!listContainer) return;
 
-    const items = getVisiblePageItems(currentPage, lastPage)
-      .filter((item, idx, arr) => item === 'ellipsis' || (Number.isInteger(item) && item >= 1 && item <= lastPage))
-      .filter((item, idx, arr) => !(item === 'ellipsis' && arr[idx - 1] === 'ellipsis'));
+    let html = '';
 
-    pagesContainer.innerHTML = items.map(item => {
-      if (item === 'ellipsis') {
-        return `<span class="page-ellipsis">...</span>`;
+    // 1. First Page Link («)
+    if (currentPage === 1) {
+      html += `
+        <li class="page-item disabled" aria-disabled="true">
+          <span class="page-link" aria-hidden="true">&laquo;</span>
+        </li>`;
+    } else {
+      html += `
+        <li class="page-item">
+          <a class="page-link" data-page="1" aria-label="First page">&laquo;</a>
+        </li>`;
+    }
+
+    // 2. Previous Page Link (‹)
+    if (currentPage === 1) {
+      html += `
+        <li class="page-item disabled" aria-disabled="true">
+          <span class="page-link" aria-hidden="true">&lsaquo;</span>
+        </li>`;
+    } else {
+      html += `
+        <li class="page-item">
+          <a class="page-link" data-page="${currentPage - 1}" rel="prev" aria-label="Previous page">&lsaquo;</a>
+        </li>`;
+    }
+
+    // 3. Page Numbers and Ellipses
+    const visiblePages = getVisiblePageItems(currentPage, lastPage);
+    let previousPage = null;
+
+    for (const page of visiblePages) {
+      if (previousPage !== null && page > previousPage + 1) {
+        html += `
+          <li class="page-item disabled pagination-ellipsis" aria-disabled="true">
+            <span class="page-link">&hellip;</span>
+          </li>`;
       }
-      const active = item === currentPage ? 'active' : '';
-      return `<button class="page-dot-btn ${active}" data-page="${item}" aria-label="Halaman ${item}">${item}</button>`;
-    }).join('');
+
+      if (page === currentPage) {
+        html += `
+          <li class="page-item active" aria-current="page">
+            <span class="page-link">${page}</span>
+          </li>`;
+      } else {
+        html += `
+          <li class="page-item">
+            <a class="page-link" data-page="${page}">${page}</a>
+          </li>`;
+      }
+
+      previousPage = page;
+    }
+
+    // 4. Next Page Link (›)
+    if (currentPage === lastPage) {
+      html += `
+        <li class="page-item disabled" aria-disabled="true">
+          <span class="page-link" aria-hidden="true">&rsaquo;</span>
+        </li>`;
+    } else {
+      html += `
+        <li class="page-item">
+          <a class="page-link" data-page="${currentPage + 1}" rel="next" aria-label="Next page">&rsaquo;</a>
+        </li>`;
+    }
+
+    // 5. Last Page Link (»)
+    if (currentPage === lastPage) {
+      html += `
+        <li class="page-item disabled" aria-disabled="true">
+          <span class="page-link" aria-hidden="true">&raquo;</span>
+        </li>`;
+    } else {
+      html += `
+        <li class="page-item">
+          <a class="page-link" data-page="${lastPage}" aria-label="Last page">&raquo;</a>
+        </li>`;
+    }
+
+    listContainer.innerHTML = html;
   }
 
   function updatePagination(pagination) {
@@ -534,18 +630,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     container.style.setProperty('display', 'flex', 'important');
     
-    // Info text (gunakan data server agar stabil)
-    const start = pagination.from || 0;
-    const end = pagination.to || 0;
-    
-    document.getElementById('pageInfoStart').textContent = start;
-    document.getElementById('pageInfoEnd').textContent = end;
-    document.getElementById('pageInfoTotal').textContent = pagination.total;
-    
-    // Buttons
-    document.getElementById('btnPrevPage').disabled = (currentPage <= 1);
-    document.getElementById('btnNextPage').disabled = (currentPage >= lastPage);
-    renderPaginationPages();
+    renderPagination();
   }
 
   function updateStats(stats) {
@@ -645,23 +730,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 500);
   });
   
-  // Pagination clicks
-  document.getElementById('btnPrevPage').addEventListener('click', () => {
-    if (currentPage > 1) fetchData(currentPage - 1);
-  });
-  
-  document.getElementById('btnNextPage').addEventListener('click', () => {
-    if (currentPage < lastPage) fetchData(currentPage + 1);
-  });
-
-  document.getElementById('paginationPages').addEventListener('click', (e) => {
-    const pageBtn = e.target.closest('[data-page]');
-    if (!pageBtn) return;
-    const targetPage = Number(pageBtn.getAttribute('data-page'));
+  // Pagination clicks (delegated)
+  document.getElementById('paginationList').addEventListener('click', (e) => {
+    const pageLink = e.target.closest('[data-page]');
+    if (!pageLink) return;
+    const targetPage = Number(pageLink.getAttribute('data-page'));
     if (!Number.isNaN(targetPage) && targetPage >= 1 && targetPage <= lastPage && targetPage !== currentPage) {
       fetchData(targetPage);
     }
   });
+
+  // Dense padding checkbox toggle
+  const denseToggle = document.getElementById('densePaddingToggle');
+  const tableEl = document.querySelector('.matrix-table');
+  if (denseToggle && tableEl) {
+      const savedDense = localStorage.getItem('tagihan_read_dense_padding') === '1';
+      denseToggle.checked = savedDense;
+      tableEl.classList.toggle('is-dense', savedDense);
+
+      denseToggle.addEventListener('change', function() {
+          const isDense = denseToggle.checked;
+          tableEl.classList.toggle('is-dense', isDense);
+          localStorage.setItem('tagihan_read_dense_padding', isDense ? '1' : '0');
+      });
+  }
 
   // Initial load
   fetchData(1);

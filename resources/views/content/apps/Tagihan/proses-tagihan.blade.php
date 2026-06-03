@@ -4,6 +4,7 @@
 
 @section('vendor-style')
 @vite([
+  'resources/css/app.css',
   'resources/assets/vendor/libs/select2/select2.scss',
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
   'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
@@ -1003,13 +1004,19 @@ p:has(span.font-medium) {
 /* Match daftar tagihan visual system */
 .container-fluid {
   font-family: 'Inter', sans-serif;
+  background: transparent;
 }
 
 .card {
-  border: 1px solid #e9edf3 !important;
-  border-radius: 14px !important;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04) !important;
+  border: 1px solid rgba(226, 232, 240, 0.92) !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
   overflow: hidden;
+}
+
+.card-body {
+  background: #ffffff;
 }
 
 .card:hover {
@@ -1017,26 +1024,69 @@ p:has(span.font-medium) {
 }
 
 .card-header {
-  background: #fff !important;
+  background:
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.10), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
   border-bottom: 1px solid #eef2f7 !important;
-  padding: 1.35rem 1.5rem !important;
+  padding: 1.45rem 1.6rem !important;
 }
 
 .card-header h5 {
-  font-size: 1.35rem;
+  font-size: 1.28rem;
   font-weight: 800;
   color: #18181b;
+  letter-spacing: 0;
+}
+
+.verification-title-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(245, 158, 11, 0.13);
+  color: #b45309;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.verification-summary-chip {
+  min-height: 42px;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.78);
+  color: #0f172a;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
+  font-size: 0.9rem;
+  font-weight: 800;
 }
 
 .search-wrapper {
-  padding-top: 0.65rem;
+  padding: 1rem 0 0;
+  margin-top: 1rem;
+  margin-bottom: 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid #eef2f7;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .search-wrapper .input-group {
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   background: #fff;
+  box-shadow: none;
+}
+
+.search-wrapper .input-group:focus-within {
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.16);
 }
 
 .search-wrapper .input-group-text,
@@ -1046,8 +1096,13 @@ p:has(span.font-medium) {
 }
 
 .search-wrapper .form-control {
-  min-height: 46px;
+  min-height: 48px;
   font-weight: 500;
+}
+
+.search-wrapper .btn {
+  min-height: 48px;
+  border-radius: 12px !important;
 }
 
 .table thead th {
@@ -1067,9 +1122,9 @@ p:has(span.font-medium) {
 }
 
 .verification-table thead th {
-  padding: 1rem 0.85rem !important;
+  padding: 0.95rem 0.9rem !important;
   background: #f8fafc !important;
-  color: #64748b !important;
+  color: #475569 !important;
   font-size: 0.82rem !important;
   font-weight: 800 !important;
   text-transform: none !important;
@@ -1078,8 +1133,9 @@ p:has(span.font-medium) {
 }
 
 .verification-table tbody td {
-  padding: 1.05rem 0.85rem !important;
+  padding: 1rem 0.9rem !important;
   border-bottom: 1px dashed #e5eaf0 !important;
+  background: rgba(255, 255, 255, 0.82);
 }
 
 .verification-table thead th:nth-child(1),
@@ -1106,8 +1162,90 @@ p:has(span.font-medium) {
 .verification-table tbody td:nth-child(7) { width: 48px; }
 
 .verification-table tbody tr:hover {
-  background: #fff !important;
+  background: #f8fafc !important;
   transform: none !important;
+}
+
+.verification-table tbody tr:hover td {
+  background: #f8fafc !important;
+}
+
+.verification-table.is-dense thead th {
+  padding-top: 0.6rem !important;
+  padding-bottom: 0.6rem !important;
+}
+
+.verification-table.is-dense tbody td {
+  padding-top: 0.6rem !important;
+  padding-bottom: 0.6rem !important;
+}
+
+.verification-table tbody tr.row-selected {
+  background: #eff6ff !important;
+}
+
+.verification-table tbody tr.row-selected td {
+  background: #eff6ff !important;
+}
+
+.verification-row-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  accent-color: #111827;
+  cursor: pointer;
+}
+
+.verification-selection-toolbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.5rem;
+  background: linear-gradient(90deg, #eff6ff 0%, #ffffff 100%);
+  border-bottom: 1px solid #dbe7f7;
+  color: #111827;
+}
+
+.verification-selection-toolbar.active {
+  display: flex;
+}
+
+.verification-selection-toolbar .selected-text {
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.verification-selection-toolbar .delete-selected-btn {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.45rem;
+}
+
+.verification-selection-toolbar .delete-selected-btn:hover {
+  background: rgba(15, 23, 42, 0.08);
+  color: #dc2626;
+}
+
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #111827;
 }
 
 .verification-check {
@@ -1153,7 +1291,7 @@ p:has(span.font-medium) {
 
 .verification-name {
   margin: 0;
-  color: #1f2937;
+  color: #0f172a;
   font-size: 0.98rem;
   font-weight: 800;
   line-height: 1.25;
@@ -1190,10 +1328,10 @@ p:has(span.font-medium) {
 
 .verification-stock-bar {
   width: min(112px, 100%);
-  height: 7px;
+  height: 8px;
   overflow: hidden;
   border-radius: 999px;
-  background: #f1f5f9;
+  background: #e2e8f0;
   margin-bottom: 0.5rem;
 }
 
@@ -1202,7 +1340,8 @@ p:has(span.font-medium) {
   width: 22%;
   height: 100%;
   border-radius: inherit;
-  background: #f59e0b;
+  background: linear-gradient(90deg, #f59e0b, #facc15);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.38);
 }
 
 .verification-price {
@@ -1216,8 +1355,8 @@ p:has(span.font-medium) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.48rem 0.8rem;
-  border-radius: 9px;
+  padding: 0.5rem 0.82rem;
+  border-radius: 999px;
   background: #f1f5f9;
   color: #475569;
   font-size: 0.82rem;
@@ -1228,15 +1367,16 @@ p:has(span.font-medium) {
 
 .verification-status-pill.is-process {
   background: #fff7ed;
-  color: #c2410c;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
 }
 
 .verification-action-btn {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border: 0;
-  border-radius: 10px;
-  background: transparent;
+  border-radius: 12px;
+  background: #f8fafc;
   color: #64748b;
   display: inline-flex;
   align-items: center;
@@ -1247,50 +1387,38 @@ p:has(span.font-medium) {
 
 .verification-action-btn:hover,
 .verification-action-btn:focus {
-  background: #f8fafc;
-  color: #111827;
+  background: #111827;
+  color: #ffffff;
 }
 
 .verification-action-menu {
   border: 1px solid #e5eaf0;
-  border-radius: 18px;
-  padding: 0.75rem;
+  border-radius: 14px;
+  padding: 0.55rem;
   min-width: 210px;
-  background: linear-gradient(90deg, #fff4f1 0%, #f5fcff 100%);
+  background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
-  margin-top: -65px !important;
-}
-
-.verification-action-menu::after {
-  content: '';
-  position: absolute;
-  top: 109px;
-  right: -10px;
-  width: 20px;
-  height: 20px;
-  background: #f5fcff;
-  border-top: 1px solid #e5eaf0;
-  border-right: 1px solid #e5eaf0;
-  transform: rotate(45deg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .verification-action-menu .dropdown-item {
   border-radius: 10px;
-  gap: 0.85rem;
-  padding: 0.72rem 0.9rem;
+  gap: 0.72rem;
+  padding: 0.68rem 0.78rem;
   color: #1f2937;
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
 .verification-action-menu .dropdown-item:hover {
-  background: rgba(255,255,255,0.65);
+  background: #f1f5f9;
 }
 
 .verification-action-menu .dropdown-item i {
-  width: 24px;
+  width: 22px;
   color: #1f2937;
-  font-size: 1.35rem;
+  font-size: 1.18rem;
 }
 
 .verification-action-menu .dropdown-item.danger-action {
@@ -1309,6 +1437,22 @@ p:has(span.font-medium) {
 
   .card-header {
     padding: 1rem !important;
+  }
+
+  .verification-title-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    flex: 0 0 38px;
+  }
+
+  .verification-summary-chip {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .search-wrapper {
+    padding: 0.85rem;
   }
 
   .search-wrapper .row {
@@ -1344,6 +1488,58 @@ p:has(span.font-medium) {
 @endsection
 
 @section('page-script')
+<style>
+/* ========== VERIFIKASI TAGIHAN DELETE MODAL ========== */
+.swal-tagihan-popup {
+  border-radius: 20px !important;
+  padding: 2rem 1.5rem 1.5rem !important;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.18) !important;
+  border: none !important;
+  width: min(90vw, 420px) !important;
+}
+.swal-tagihan-popup .swal2-title {
+  font-size: 1.3rem !important;
+  font-weight: 700 !important;
+  color: #18181b !important;
+}
+.swal-tagihan-popup .swal2-html-container {
+  color: #52525b !important;
+  font-size: 0.9rem !important;
+  line-height: 1.6 !important;
+}
+.swal-tagihan-confirm {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 0.65rem 1.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 15px rgba(239,68,68,0.35) !important;
+  transition: all 0.2s !important;
+  margin: 0 0.35rem !important;
+}
+.swal-tagihan-confirm:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  box-shadow: 0 6px 20px rgba(239,68,68,0.45) !important;
+  transform: translateY(-1px) !important;
+}
+.swal-tagihan-cancel {
+  background: #f4f4f5 !important;
+  color: #52525b !important;
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 12px !important;
+  padding: 0.65rem 1.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  transition: all 0.2s !important;
+  margin: 0 0.35rem !important;
+}
+.swal-tagihan-cancel:hover {
+  background: #e4e4e7 !important;
+  color: #18181b !important;
+}
+</style>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const buktiBaseUrl = "{{ asset('storage/bukti_pembayaran') }}";
@@ -1351,6 +1547,11 @@ document.addEventListener("DOMContentLoaded", function () {
     function buildBuktiUrl(raw) {
         const value = String(raw || '').trim();
         if (!value || value === '-') return '';
+
+        // Jika sudah full URL (http/https), pakai langsung (jangan rewrite domain)
+        if (/^https?:\/\//i.test(value)) {
+            return value;
+        }
 
         let path = value;
         try {
@@ -1365,6 +1566,18 @@ document.addEventListener("DOMContentLoaded", function () {
         return `${buktiBaseUrl}/${encodeURIComponent(fileName)}`;
     }
 
+    function escapeHtml(value) {
+        return String(value || '').replace(/[&<>'"]/g, function (char) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#039;',
+                '"': '&quot;'
+            }[char];
+        });
+    }
+
     // ========================================
     // HELPER FUNCTIONS
     // ========================================
@@ -1375,6 +1588,108 @@ document.addEventListener("DOMContentLoaded", function () {
     function hideLoading() {
         $('.loading-overlay').fadeOut(300);
     }
+
+    const denseToggleProses = document.getElementById('densePaddingToggleProses');
+    const prosesTable = document.querySelector('.verification-table');
+    if (denseToggleProses && prosesTable) {
+        const saved = localStorage.getItem('dense_proses_tagihan') === '1';
+        denseToggleProses.checked = saved;
+        prosesTable.classList.toggle('is-dense', saved);
+        denseToggleProses.addEventListener('change', function () {
+            const isDense = denseToggleProses.checked;
+            prosesTable.classList.toggle('is-dense', isDense);
+            localStorage.setItem('dense_proses_tagihan', isDense ? '1' : '0');
+        });
+    }
+
+    function updateVerificationSelection() {
+        const $all = $('.verification-checkbox');
+        const $checked = $('.verification-checkbox:checked');
+        const selectedCount = $checked.length;
+
+        $('#verificationSelectedCount').text(`${selectedCount} dipilih`);
+        $('#verificationSelectionToolbar').toggleClass('active', selectedCount > 0);
+        $('tr[data-tagihan-id]').removeClass('row-selected');
+        $checked.closest('tr[data-tagihan-id]').addClass('row-selected');
+
+        const $selectAll = $('#selectAllVerification');
+        $selectAll.prop('checked', $all.length > 0 && selectedCount === $all.length);
+        $selectAll.prop('indeterminate', selectedCount > 0 && selectedCount < $all.length);
+    }
+
+    $('#selectAllVerification').on('change', function () {
+        $('.verification-checkbox').prop('checked', this.checked);
+        updateVerificationSelection();
+    });
+
+    $(document).on('change', '.verification-checkbox', updateVerificationSelection);
+
+    $('#verificationBulkDeleteBtn').on('click', function () {
+        const $checked = $('.verification-checkbox:checked');
+        const totalSelected = $checked.length;
+
+        if (!totalSelected) {
+            showToast('Pilih tagihan terlebih dahulu.');
+            return;
+        }
+
+        Swal.fire({
+            title: 'Hapus Tagihan Dipilih?',
+            html: `<p class="mb-0">Yakin ingin menghapus <strong>${totalSelected}</strong> tagihan?<br><span style="color:#6b7280;font-size:0.875rem;">Data tidak dapat dikembalikan.</span></p>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            buttonsStyling: false,
+            customClass: {
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                cancelButton: 'swal-tailwind-cancel'
+            }
+        }).then(async (result) => {
+            if (!result.isConfirmed) return;
+
+            showLoading();
+            const requests = $checked.map(function () {
+                const $row = $(this).closest('tr[data-tagihan-id]');
+                const $form = $row.find('.delete-form').first();
+
+                return $.ajax({
+                    url: $form.attr('action'),
+                    method: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        _method: 'DELETE'
+                    },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                }).then(() => {
+                    $row.fadeOut(250, function () {
+                        $(this).remove();
+                        updateVerificationSelection();
+                    });
+                    return true;
+                }).catch(() => false);
+            }).get();
+
+            const results = await Promise.all(requests);
+            const successCount = results.filter(Boolean).length;
+            hideLoading();
+            updateVerificationSelection();
+
+            if (successCount > 0) {
+                showToast(`${successCount} data berhasil di delete.`);
+            }
+
+            if (successCount < totalSelected) {
+                Swal.fire('Sebagian gagal', `${totalSelected - successCount} tagihan gagal dihapus. Coba ulangi lagi.`, 'warning');
+            }
+        });
+    });
 
     function syncCheckedStateToTable() {
         $('tr[data-tagihan-id]').each(function () {
@@ -1442,6 +1757,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Build bukti section
         let buktiSection = '<span class="text-muted">Belum ada bukti pembayaran.</span>';
         if (buktiPembayaran) {
+            const isPdfBukti = /\.pdf(\?|#|$)/i.test(String(buktiPembayaran));
             buktiSection = `
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <span class="badge ${isChecked ? 'bg-success' : 'bg-secondary'} rounded-pill px-3 py-2 bukti-checked-badge" data-tagihan-id="${tagihanId}">
@@ -1456,13 +1772,17 @@ document.addEventListener("DOMContentLoaded", function () {
                         </button>
                     </div>
                 </div>
+                ${isPdfBukti ? '' : `
                 <div class="d-flex justify-content-end gap-2 mb-3">
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-inline-zoom-out" title="Zoom Out">-</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-inline-zoom-in" title="Zoom In">+</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-inline-zoom-reset" title="Reset">Reset</button>
-                </div>
-                <div class="bukti-inline-container border rounded-4 overflow-hidden shadow-sm" style="height: 430px; background:#f8fafc; position:relative; cursor:grab;">
-                    <img src="${buktiPembayaran}" alt="Bukti Pembayaran" class="bukti-inline-image" style="position:absolute; top:50%; left:50%; transform: translate(calc(-50% + 0px), calc(-50% + 0px)) scale(1); transform-origin:center center; max-width:none; user-select:none; -webkit-user-drag:none;">
+                </div>`}
+                <div class="bukti-inline-container border rounded-4 overflow-hidden shadow-sm" style="height: 430px; background:#f8fafc; position:relative; cursor:${isPdfBukti ? 'default' : 'grab'};">
+                    ${isPdfBukti
+                        ? `<iframe src="${buktiPembayaran}" title="Bukti Pembayaran PDF" style="width:100%;height:100%;border:0;background:#fff;"></iframe>`
+                        : `<img src="${buktiPembayaran}" alt="Bukti Pembayaran" class="bukti-inline-image" style="position:absolute; top:50%; left:50%; transform: translate(calc(-50% + 0px), calc(-50% + 0px)) scale(1); transform-origin:center center; max-width:none; user-select:none; -webkit-user-drag:none;">`
+                    }
                 </div>
                 <div class="mt-3 text-center">
                     <a href="${buktiPembayaran}" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-4">
@@ -1665,8 +1985,10 @@ document.addEventListener("DOMContentLoaded", function () {
             cancelButtonText: 'Batal',
             reverseButtons: true,
             customClass: {
-                confirmButton: 'btn btn-success me-2',
-                cancelButton: 'btn btn-secondary'
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-success',
+                cancelButton: 'swal-tailwind-cancel'
             },
             buttonsStyling: false
         }).then((result) => {
@@ -1721,9 +2043,14 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        Swal.fire({
+        const openRejectPrompt = () => Swal.fire({
             title: 'Tolak Pembayaran',
-            html: `<p class="mb-0">Apakah Anda yakin ingin menolak pembayaran dari <strong>${nama}</strong>?</p><p class="text-muted small">Status akan dikembalikan ke "Belum Bayar" dan bukti pembayaran akan dihapus.</p>`,
+            html: `<div class="text-start">
+                <p class="mb-3">Berikan alasan penolakan untuk <strong>${escapeHtml(nama)}</strong>. Catatan ini akan tampil di halaman tagihan customer.</p>
+                <label for="swalAlasanPenolakan" class="form-label fw-semibold">Catatan Penolakan</label>
+                <textarea id="swalAlasanPenolakan" class="form-control" rows="4" maxlength="1000" placeholder="Contoh: Nominal transfer tidak sesuai, bukti pembayaran kurang jelas, atau rekening tujuan tidak sesuai."></textarea>
+                <div class="form-text mt-2">Status akan dikembalikan ke "Belum Bayar" dan bukti pembayaran akan dihapus.</div>
+            </div>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
@@ -1732,10 +2059,25 @@ document.addEventListener("DOMContentLoaded", function () {
             cancelButtonText: 'Batal',
             reverseButtons: true,
             customClass: {
-                confirmButton: 'btn btn-danger me-2',
-                cancelButton: 'btn btn-secondary'
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                cancelButton: 'swal-tailwind-cancel'
             },
-            buttonsStyling: false
+            buttonsStyling: false,
+            focusConfirm: false,
+            didOpen: () => {
+                document.getElementById('swalAlasanPenolakan')?.focus();
+            },
+            preConfirm: () => {
+                const alasan = document.getElementById('swalAlasanPenolakan')?.value.trim() || '';
+                if (alasan.length < 5) {
+                    Swal.showValidationMessage('Catatan penolakan minimal 5 karakter.');
+                    return false;
+                }
+
+                return alasan;
+            }
         }).then((result) => {
             if (result.isConfirmed) {
                 // showLoading();
@@ -1745,6 +2087,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     method: 'POST',
                     data: {
                         _token: $('meta[name="csrf-token"]').attr('content'),
+                        alasan_penolakan: result.value,
                     },
                     success: function(response) {
                         // hideLoading();
@@ -1761,11 +2104,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
                             Swal.fire({
                                 title: 'Pembayaran Ditolak!',
-                                html: `<p>Tagihan <strong>${nama}</strong> telah dikembalikan ke status "Belum Bayar".</p>`,
+                                html: `<p>Tagihan <strong>${escapeHtml(nama)}</strong> telah dikembalikan ke status "Belum Bayar".</p><div class="alert alert-danger text-start mt-3 mb-0"><strong>Alasan:</strong><br>${escapeHtml(result.value)}</div>`,
                                 icon: 'success',
                                 confirmButtonText: 'OK',
                                 customClass: {
-                                    confirmButton: 'btn btn-primary'
+                                    container: 'swal-tailwind-backdrop',
+                                    popup: 'swal-tailwind-popup',
+                                    confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-primary'
                                 },
                                 buttonsStyling: false
                             });
@@ -1776,58 +2121,57 @@ document.addEventListener("DOMContentLoaded", function () {
                     error: function(xhr) {
                         // hideLoading();
                         const response = xhr.responseJSON;
-                        Swal.fire('Gagal!', response?.message || 'Terjadi kesalahan server.', 'error');
+                        const errors = response?.errors || {};
+                        const message = errors.alasan_penolakan?.[0] || response?.message || 'Terjadi kesalahan server.';
+                        Swal.fire('Gagal!', message, 'error').then(() => $('#detailModal').modal('show'));
                     }
                 });
+            } else if (result.dismiss) {
+                $('#detailModal').modal('show');
             }
         });
+
+        if ($('#detailModal').hasClass('show')) {
+            $('#detailModal').one('hidden.bs.modal', openRejectPrompt).modal('hide');
+            return;
+        }
+
+        openRejectPrompt();
     });
 
     // ========================================
     // EDIT PAKET MODAL
     // ========================================
-    $(document).on('click', '#btnEditPaket', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const tagihanId = $('#detailModal').data('tagihan-id');
-        const nama = $('#detailModal').data('tagihan-nama');
-        
+    function openEditPaketModal(tagihanId, nama, fromDetail = false) {
         if (!tagihanId) {
             Swal.fire('Error!', 'Data tagihan tidak ditemukan.', 'error');
             return;
         }
-        
-        // Get current row data for dates
+
         const $tr = $(`tr[data-tagihan-id="${tagihanId}"]`);
         const tanggalMulaiRaw = $tr.data('tanggal-mulai-raw') || '';
         const tanggalBerakhirRaw = $tr.data('tanggal-berakhir-raw') || '';
         const currentPaketId = $tr.data('paket-id') || '';
-        
-        // Set the current tagihan ID to edit modal
-        $('#editPaketModal').data('tagihan-id', tagihanId);
-        $('#editPaketModal').data('tagihan-nama', nama);
-        $('#editNamaTagihan').text(nama);
-        
-        // Set date values
+
+        $('#editPaketModal')
+            .data('tagihan-id', tagihanId)
+            .data('tagihan-nama', nama)
+            .data('from-detail', fromDetail ? 1 : 0);
+        $('#editNamaTagihan').text(nama || '-');
+
         $('#editTanggalMulai').val(tanggalMulaiRaw);
         $('#editTanggalBerakhir').val(tanggalBerakhirRaw);
-        
-        // Set current paket if available
+
         if (currentPaketId) {
             $('#selectPaketEdit').val(currentPaketId).trigger('change');
         } else {
             $('#selectPaketEdit').val('').trigger('change');
         }
-        
-        // Hide detail modal and show edit modal
-        $('#detailModal').modal('hide');
-        
-        setTimeout(function() {
+
+        const showEditModal = function() {
             $('#editPaketModal').modal('show');
-            
-            // Initialize Select2 after modal is shown
-            if (!$('#selectPaketEdit').hasClass('select2-hidden-accessible')) {
+
+            if ($.fn.select2 && !$('#selectPaketEdit').hasClass('select2-hidden-accessible')) {
                 $('#selectPaketEdit').select2({
                     dropdownParent: $('#editPaketModal'),
                     placeholder: '-- Cari dan Pilih Paket --',
@@ -1835,32 +2179,51 @@ document.addEventListener("DOMContentLoaded", function () {
                     width: '100%'
                 });
             }
-            
-            // Initialize Flatpickr for date inputs
-            if (!$('#editTanggalMulai').hasClass('flatpickr-input')) {
-                flatpickr('#editTanggalMulai', {
-                    dateFormat: 'Y-m-d',
-                    altInput: true,
-                    altFormat: 'd M Y',
-                    allowInput: true,
-                    defaultDate: tanggalMulaiRaw || null
-                });
-            } else {
-                $('#editTanggalMulai')[0]._flatpickr.setDate(tanggalMulaiRaw || null);
+
+            if (window.flatpickr) {
+                if (!$('#editTanggalMulai').hasClass('flatpickr-input')) {
+                    flatpickr('#editTanggalMulai', {
+                        dateFormat: 'Y-m-d',
+                        altInput: true,
+                        altFormat: 'd M Y',
+                        allowInput: true,
+                        defaultDate: tanggalMulaiRaw || null
+                    });
+                } else if ($('#editTanggalMulai')[0]._flatpickr) {
+                    $('#editTanggalMulai')[0]._flatpickr.setDate(tanggalMulaiRaw || null);
+                }
+
+                if (!$('#editTanggalBerakhir').hasClass('flatpickr-input')) {
+                    flatpickr('#editTanggalBerakhir', {
+                        dateFormat: 'Y-m-d',
+                        altInput: true,
+                        altFormat: 'd M Y',
+                        allowInput: true,
+                        defaultDate: tanggalBerakhirRaw || null
+                    });
+                } else if ($('#editTanggalBerakhir')[0]._flatpickr) {
+                    $('#editTanggalBerakhir')[0]._flatpickr.setDate(tanggalBerakhirRaw || null);
+                }
             }
-            
-            if (!$('#editTanggalBerakhir').hasClass('flatpickr-input')) {
-                flatpickr('#editTanggalBerakhir', {
-                    dateFormat: 'Y-m-d',
-                    altInput: true,
-                    altFormat: 'd M Y',
-                    allowInput: true,
-                    defaultDate: tanggalBerakhirRaw || null
-                });
-            } else {
-                $('#editTanggalBerakhir')[0]._flatpickr.setDate(tanggalBerakhirRaw || null);
-            }
-        }, 300);
+        };
+
+        if (fromDetail && $('#detailModal').hasClass('show')) {
+            $('#detailModal').modal('hide');
+            setTimeout(showEditModal, 300);
+            return;
+        }
+
+        showEditModal();
+    }
+
+    $(document).on('click', '#btnEditPaket', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const tagihanId = $('#detailModal').data('tagihan-id');
+        const nama = $('#detailModal').data('tagihan-nama');
+
+        openEditPaketModal(tagihanId, nama, true);
     });
 
     // ========================================
@@ -1870,10 +2233,12 @@ document.addEventListener("DOMContentLoaded", function () {
         e.preventDefault();
         
         $('#editPaketModal').modal('hide');
-        
-        setTimeout(function() {
-            $('#detailModal').modal('show');
-        }, 300);
+
+        if ($('#editPaketModal').data('from-detail')) {
+            setTimeout(function() {
+                $('#detailModal').modal('show');
+            }, 300);
+        }
     });
 
     // ========================================
@@ -1920,8 +2285,10 @@ document.addEventListener("DOMContentLoaded", function () {
             cancelButtonText: 'Batal',
             reverseButtons: true,
             customClass: {
-                confirmButton: 'btn btn-primary me-2',
-                cancelButton: 'btn btn-secondary'
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-primary',
+                cancelButton: 'swal-tailwind-cancel'
             },
             buttonsStyling: false
         }).then((result) => {
@@ -1988,11 +2355,7 @@ document.addEventListener("DOMContentLoaded", function () {
         e.preventDefault();
         e.stopPropagation();
 
-        $('#detailModal')
-            .data('tagihan-id', $(this).data('id'))
-            .data('tagihan-nama', $(this).data('nama'));
-
-        $('#btnEditPaket').trigger('click');
+        openEditPaketModal($(this).data('id'), $(this).data('nama'), false);
     });
 
     // ========================================
@@ -2028,8 +2391,10 @@ document.addEventListener("DOMContentLoaded", function () {
             cancelButtonText: 'Batal',
             reverseButtons: true,
             customClass: {
-                confirmButton: 'btn btn-success me-2',
-                cancelButton: 'btn btn-secondary'
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-success',
+                cancelButton: 'swal-tailwind-cancel'
             },
             buttonsStyling: false
         }).then((result) => {
@@ -2076,18 +2441,20 @@ document.addEventListener("DOMContentLoaded", function () {
         const $row = $form.closest('tr');
 
         Swal.fire({
-            title: 'Konfirmasi Penghapusan',
-            html: '<p class="mb-0">Yakin ingin menghapus tagihan ini?<br><strong class="text-danger">Data tidak dapat dikembalikan!</strong></p>',
+            title: 'Hapus Tagihan?',
+            html: '<p class="mb-0">Yakin ingin menghapus tagihan ini?<br><span style="color:#6b7280;font-size:0.875rem;">Data tidak dapat dikembalikan.</span></p>',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: '<i class="ri-delete-bin-line me-1"></i>Hapus',
+            confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
             cancelButtonText: 'Batal',
             reverseButtons: true,
+            buttonsStyling: false,
             customClass: {
-                confirmButton: 'btn btn-danger me-2',
-                cancelButton: 'btn btn-secondary'
-            },
-            buttonsStyling: false
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                cancelButton: 'swal-tailwind-cancel'
+            }
         }).then((result) => {
             if (!result.isConfirmed) return;
 
@@ -2231,17 +2598,19 @@ document.addEventListener("DOMContentLoaded", function () {
   <div class="card">
     <div class="card-header">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div>
-          <h5 class="mb-1 fw-bold">
-            <i class="ri-file-list-3-line me-2 text-warning"></i>
-            Tagihan Proses Verifikasi
-          </h5>
-          <small class="text-muted">Kelola tagihan yang sedang dalam proses verifikasi pembayaran</small>
+        <div class="d-flex align-items-center gap-3">
+          <span class="verification-title-icon">
+            <i class="ri-file-list-3-line fs-4"></i>
+          </span>
+          <div>
+            <h5 class="mb-1 fw-bold">Tagihan Proses Verifikasi</h5>
+            <small class="text-muted">Kelola tagihan yang sedang dalam proses verifikasi pembayaran</small>
+          </div>
         </div>
         
         @if($tagihans->total() > 0)
         <div>
-          <span class="badge bg-label-warning" style="padding: 10px 20px; font-size: 0.9rem;">
+          <span class="verification-summary-chip">
             <i class="ri-database-2-line me-1"></i>
             {{ $tagihans->total() }} Tagihan
           </span>
@@ -2289,10 +2658,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     <div class="card-body p-0">
       <div class="table-responsive">
+        <div class="verification-selection-toolbar" id="verificationSelectionToolbar">
+          <span class="selected-text" id="verificationSelectedCount">0 dipilih</span>
+          <button type="button" class="delete-selected-btn" id="verificationBulkDeleteBtn" title="Hapus data dipilih">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </div>
         <table class="table table-hover mb-0 verification-table">
           <thead>
             <tr>
-              <th style="width: 56px;"><span class="verification-check"></span></th>
+              <th style="width: 56px;">
+                <input type="checkbox" class="verification-row-checkbox" id="selectAllVerification" aria-label="Pilih semua tagihan">
+              </th>
               <th>Pelanggan</th>
               <th>Jatuh tempo</th>
               <th>Progres</th>
@@ -2333,15 +2710,7 @@ document.addEventListener("DOMContentLoaded", function () {
               } else {
                 $typePembayaranLabel = $rawTypePembayaran;
               }
-              $buktiRaw = trim((string)($item->bukti_pembayaran ?? ''));
-              if ($buktiRaw !== '' && $buktiRaw !== '-') {
-                $buktiFile = basename(parse_url($buktiRaw, PHP_URL_PATH) ?: $buktiRaw);
-                $buktiUrl = ($buktiFile && $buktiFile !== '-')
-                  ? asset('storage/bukti_pembayaran/' . $buktiFile)
-                  : '';
-              } else {
-                $buktiUrl = '';
-              }
+              $buktiUrl = trim((string)($item->bukti_pembayaran_resolved ?? ''));
             @endphp
 
             <tr 
@@ -2367,7 +2736,7 @@ document.addEventListener("DOMContentLoaded", function () {
               data-bukti="{{ $buktiUrl }}"
             >
               <td>
-                <span class="verification-check"></span>
+                <input type="checkbox" class="verification-row-checkbox verification-checkbox" value="{{ $item->id }}" aria-label="Pilih tagihan {{ $item->pelanggan->nama_lengkap ?? '-' }}">
               </td>
               <td>
                 <div class="verification-customer">
@@ -2471,14 +2840,17 @@ document.addEventListener("DOMContentLoaded", function () {
       <!-- ========================================= -->
       @if($tagihans->total() > 0)
       <div class="pagination-wrapper">
+        @if(request('search'))
         <div class="pagination-info">
-            Menampilkan <strong>{{ $tagihans->firstItem() ?? 0 }}</strong> - <strong>{{ $tagihans->lastItem() ?? 0 }}</strong> dari <strong>{{ $tagihans->total() }}</strong> tagihan
-            @if(request('search'))
-              <span class="badge bg-label-primary ms-2">
-                <i class="ri-search-line me-1"></i>Hasil pencarian: "{{ request('search') }}"
-              </span>
-            @endif
+          <span class="badge bg-label-primary">
+            <i class="ri-search-line me-1"></i>Hasil pencarian: "{{ request('search') }}"
+          </span>
         </div>
+        @endif
+        <label class="dense-toggle-wrap mb-0">
+          <input type="checkbox" id="densePaddingToggleProses">
+          <span>Dense padding</span>
+        </label>
         <div>
           {{ $tagihans->onEachSide(2)->links('vendor.pagination.custom-always') }}
         </div>

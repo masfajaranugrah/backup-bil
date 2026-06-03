@@ -120,7 +120,12 @@ class LaporanHarianSheetExport implements FromArray, WithTitle, WithStyles, With
 
         // Pemasukan (cash payments) rows
         foreach ($this->cashPayments as $pay) {
-            $name = 'Pembayaran ' . ucfirst(strtolower($billingMonthName)) . ' - ' . ($pay->pelanggan->nama_lengkap ?? '-');
+            if (isset($pay->tanggal_mulai)) {
+                $billingName = ucfirst(strtolower($this->toIndonesianMonth(Carbon::parse($pay->tanggal_mulai)->month)));
+                $name = 'Pembayaran ' . $billingName . ' - ' . ($pay->pelanggan->nama_lengkap ?? '-');
+            } else {
+                $name = $pay->pelanggan->nama_lengkap ?? '-';
+            }
             $rows[] = [$no++, $name, $pay->jumlah, '', '', 'Cash / Tunai'];
             $r++;
             $bwPemasukan += $pay->jumlah;
@@ -202,7 +207,12 @@ class LaporanHarianSheetExport implements FromArray, WithTitle, WithStyles, With
 
         // Pemasukan dari $bankPayments
         foreach ($this->bankPayments as $pay) {
-            $name     = 'Pembayaran ' . ucfirst(strtolower($billingMonthName)) . ' - ' . ($pay->pelanggan->nama_lengkap ?? '-');
+            if (isset($pay->tanggal_mulai)) {
+                $billingName = ucfirst(strtolower($this->toIndonesianMonth(Carbon::parse($pay->tanggal_mulai)->month)));
+                $name = 'Pembayaran ' . $billingName . ' - ' . ($pay->pelanggan->nama_lengkap ?? '-');
+            } else {
+                $name = $pay->pelanggan->nama_lengkap ?? '-';
+            }
             $bankCode = $this->getBankCode($pay->rekening->nama_bank ?? '');
             $rows[] = [$no++, $name, $pay->jumlah, '', '', $bankCode];
             $r++;

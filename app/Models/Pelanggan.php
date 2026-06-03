@@ -54,6 +54,7 @@ class Pelanggan extends Authenticatable
         'tanggal_mulai',
         'tanggal_berakhir',
         'webpushr_sid',
+        'fcm_token',
         'deskripsi',
         'foto_ktp',
         'status',
@@ -85,7 +86,7 @@ class Pelanggan extends Authenticatable
         return $this->belongsTo(Paket::class, 'paket_id');
     }
 
-     /**
+    /**
      * Status keaktifan pelanggan (login / logout).
      */
     public function loginStatus()
@@ -113,20 +114,20 @@ class Pelanggan extends Authenticatable
     /**
      * ?? Scope untuk filter status pelanggan
      */
- public function scopeFilterStatus($query, $status)
-{
-    if (! empty($status)) {
-        return $query->where('status', $status);
-    }
+    public function scopeFilterStatus($query, $status)
+    {
+        if (!empty($status)) {
+            return $query->where('status', $status);
+        }
 
-    return $query;
-}
+        return $query;
+    }
     /**
      * ?? Scope pencarian global
      */
     public function scopeSearch($query, $term)
     {
-        if (! empty($term)) {
+        if (!empty($term)) {
             return $query->where(function ($q) use ($term) {
                 $q->where('nama_lengkap', 'like', "%{$term}%")
                     ->orWhere('no_whatsapp', 'like', "%{$term}%")

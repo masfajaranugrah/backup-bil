@@ -9,9 +9,91 @@ use App\Models\Tagihan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage; // pastikan import model Rekening
+use Illuminate\Support\Str;
 
 class MobileTagihanController extends Controller
 {
+    private function kwitansiUrl(Tagihan $tagihan, string $routeName = 'kwitansi.preview'): ?string
+    {
+        if (!$tagihan->kwitansi) {
+            return null;
+        }
+
+        $nomerId = strtoupper(str_replace(['.', '-', ' '], '', (string) ($tagihan->pelanggan->nomer_id ?? $tagihan->nomer_id ?? '')));
+        $baseUrl = str_starts_with($nomerId, 'JMKGK')
+            ? rtrim(config('app.jmkgk_app_url', 'https://layanan.beningmedia.co.id'), '/')
+            : rtrim(config('app.jmk_app_url', 'https://layanan.jernih.net.id'), '/');
+
+        return $baseUrl . route($routeName, [
+            'tagihan_id' => $tagihan->id,
+            'code' => $this->kwitansiCode($tagihan),
+        ], false);
+    }
+
+    private function kwitansiCode(Tagihan $tagihan): string
+    {
+        $paymentDate = $tagihan->tanggal_pembayaran
+            ? \Carbon\Carbon::parse($tagihan->tanggal_pembayaran)->format('Y-m-d H:i:s')
+            : '-';
+
+        $payload = implode('|', [
+            (string) $tagihan->id,
+            (string) ($tagihan->nomer_id ?? ''),
+            (string) ($tagihan->pelanggan_id ?? ''),
+            $paymentDate,
+            (string) ($tagihan->status_pembayaran ?? ''),
+            (string) ($tagihan->kwitansi ?? ''),
+        ]);
+
+        return strtoupper(substr(hash_hmac('sha256', $payload, (string) config('app.key')), 0, 16));
+    }
+
+    private function getBuktiPembayaranBasePathByNomorId(?string $nomorId): string
+    {
+        $isJmkGk = Str::startsWith(strtoupper(trim((string) $nomorId)), 'JMK-GK');
+        if ($isJmkGk) {
+            return rtrim(env('JMKGK_PUBLIC_STORAGE_PATH', '/var/www/billingJMKGK/storage/app/public'), '/');
+        }
+        return rtrim(env('JMK_PUBLIC_STORAGE_PATH', '/var/www/billingjmk/storage/app/public'), '/');
+    }
+
+    private function storeBuktiPembayaranByNomorId($file, ?string $nomorId): string
+    {
+        $basePath = $this->getBuktiPembayaranBasePathByNomorId($nomorId);
+        $targetDir = $basePath . '/bukti_pembayaran';
+
+        if (!is_dir($targetDir)) {
+            @mkdir($targetDir, 0755, true);
+        }
+
+        if (is_dir($targetDir) && is_writable($targetDir)) {
+            $filename = now()->format('YmdHis') . '_' . Str::random(20) . '.' . $file->getClientOriginalExtension();
+            $file->move($targetDir, $filename);
+            return 'bukti_pembayaran/' . $filename;
+        }
+
+        return $file->store('bukti_pembayaran', 'public');
+    }
+
+    private function deleteBuktiPembayaranByNomorId(?string $buktiPath, ?string $nomorId): void
+    {
+        $buktiPath = trim((string) $buktiPath);
+        if ($buktiPath === '') {
+            return;
+        }
+
+        $basePath = $this->getBuktiPembayaranBasePathByNomorId($nomorId);
+        $absolutePath = $basePath . '/' . ltrim($buktiPath, '/');
+        if (is_file($absolutePath)) {
+            @unlink($absolutePath);
+            return;
+        }
+
+        if (Storage::disk('public')->exists($buktiPath)) {
+            Storage::disk('public')->delete($buktiPath);
+        }
+    }
+
     public function update(Request $request, $id)
     {
         // Validasi request
@@ -37,11 +119,9 @@ class MobileTagihanController extends Controller
             if ($request->hasFile('bukti_pembayaran')) {
 
                 // Hapus file lama jika ada
-                if ($tagihan->bukti_pembayaran && Storage::disk('public')->exists($tagihan->bukti_pembayaran)) {
-                    Storage::disk('public')->delete($tagihan->bukti_pembayaran);
-                }
+                $this->deleteBuktiPembayaranByNomorId($tagihan->bukti_pembayaran, $pelanggan->nomer_id ?? null);
 
-                $path = $request->file('bukti_pembayaran')->store('bukti_pembayaran', 'public');
+                $path = $this->storeBuktiPembayaranByNomorId($request->file('bukti_pembayaran'), $pelanggan->nomer_id ?? null);
 
                 // Update tagihan
                 $tagihan->update([
@@ -201,7 +281,8 @@ public function indexHome()
                 // AMBIL NAMA BANK DARI RELASI REKENING
                 'type_pembayaran' => $tagihan->rekening->nama_bank ?? null,
 
-                'kwitansi' => $tagihan->kwitansi,
+                'kwitansi' => $this->kwitansiUrl($tagihan),
+                'kwitansi_download' => $this->kwitansiUrl($tagihan, 'kwitansi.download'),
             ];
         });
 
@@ -247,7 +328,8 @@ public function indexHome()
                 'tanggal_pembayaran' => $tagihan->tanggal_pembayaran,
                 'catatan' => $tagihan->catatan,
                 'bukti_pembayaran' => $tagihan->bukti_pembayaran,
-                'kwitansi' => $tagihan->kwitansi,
+                'kwitansi' => $this->kwitansiUrl($tagihan),
+                'kwitansi_download' => $this->kwitansiUrl($tagihan, 'kwitansi.download'),
                 'pelanggan' => [
                     'id' => $tagihan->pelanggan->id,
                     'nama_lengkap' => $tagihan->pelanggan->nama_lengkap,

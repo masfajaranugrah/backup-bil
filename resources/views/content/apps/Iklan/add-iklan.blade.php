@@ -10,16 +10,18 @@
     </div>
 </div>
 
-<!-- Page Header -->
 <div class="page-header">
-    <h4 class="page-title">
-        <i class="ri-notification-3-line"></i>Buat Notifikasi Baru
-    </h4>
-    <p class="page-subtitle">Buat dan kirim notifikasi informasi, maintenance, atau iklan ke pelanggan</p>
+    <div class="page-title-wrap">
+        <span class="page-title-icon"><i class="ri-notification-3-line"></i></span>
+        <div>
+            <h4 class="page-title">Buat Notifikasi Baru</h4>
+            <p class="page-subtitle">Buat informasi, maintenance, atau iklan. Setelah disimpan, notifikasi langsung dikirim ke pelanggan.</p>
+        </div>
+    </div>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-12">
+<div class="row g-4 justify-content-center">
+    <div class="col-xl-8 col-lg-9">
         @if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
             <h5 class="alert-heading mb-2">
@@ -198,14 +200,40 @@
             </div>
         </form>
     </div>
+    <div class="col-xl-4 col-lg-3">
+        <div class="side-panel sticky-lg-top">
+            <div class="side-panel-icon"><i class="ri-send-plane-2-line"></i></div>
+            <h5 class="fw-bold mb-2">Alur Pengiriman</h5>
+            <p class="text-muted small mb-3">Notifikasi akan masuk queue supaya dashboard tetap ringan saat data pelanggan banyak.</p>
+
+            <div class="delivery-step">
+                <span>1</span>
+                <div>
+                    <strong>Simpan Konten</strong>
+                    <small>Judul, pesan, tipe, dan gambar opsional.</small>
+                </div>
+            </div>
+            <div class="delivery-step">
+                <span>2</span>
+                <div>
+                    <strong>Kirim FCM</strong>
+                    <small>Dipakai untuk pelanggan yang punya token aplikasi.</small>
+                </div>
+            </div>
+            <div class="delivery-step mb-0">
+                <span>3</span>
+                <div>
+                    <strong>Fallback WebPushr</strong>
+                    <small>Dipakai jika token FCM pelanggan kosong.</small>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
 @section('page-style')
 <style>
-/* ========================================= */
-/* SHADCN UI STYLE - BLACK & WHITE */
-/* ========================================= */
 :root {
   --primary-color: #18181b;
   --primary-hover: #27272a;
@@ -231,14 +259,31 @@
 
 /* Page Header */
 .page-header {
-  background: white;
-  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%);
+  border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   border: 1px solid var(--gray-border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.page-title-wrap {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.page-title-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  background: #18181b;
+  color: #ffffff;
+  font-size: 1.25rem;
+  flex: 0 0 auto;
 }
 
 .page-title {
@@ -246,13 +291,7 @@
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
-  display: flex;
-  align-items: center;
-}
-
-.page-title i {
-  margin-right: 0.75rem;
-  color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .page-subtitle {
@@ -265,7 +304,7 @@
 .form-modern {
   border-radius: 12px;
   border: 1px solid var(--gray-border);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   background: white;
 }
 
@@ -339,6 +378,62 @@
   border-right: 1px solid #18181b;
 }
 
+.side-panel {
+  top: 1rem;
+  border: 1px solid var(--gray-border);
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.side-panel-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #f4f4f5;
+  color: #18181b;
+  border: 1px solid var(--gray-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.delivery-step {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--gray-border);
+}
+
+.delivery-step span {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #18181b;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+
+.delivery-step strong {
+  display: block;
+  color: #18181b;
+  font-size: 0.9rem;
+}
+
+.delivery-step small {
+  display: block;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
 .input-with-icon input,
 .input-with-icon textarea {
   flex: 1;
@@ -394,6 +489,34 @@
     border-color: #18181b;
     background: #f4f4f5;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+@media (max-width: 991.98px) {
+  .side-panel {
+    position: static !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .page-header {
+    padding: 1rem;
+  }
+
+  .page-title-wrap {
+    align-items: flex-start;
+  }
+
+  .card-body {
+    padding: 1rem !important;
+  }
+
+  .d-flex.justify-content-end.gap-3 {
+    flex-direction: column-reverse;
+  }
+
+  .d-flex.justify-content-end.gap-3 .btn {
+    width: 100%;
+  }
 }
 
 .type-title {

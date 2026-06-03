@@ -1,39 +1,41 @@
 @php
-use Illuminate\Support\Facades\Auth;
-$user = Auth::guard('customer')->user();
+    $unreadInformationCount = $unreadInformationCount ?? session('customer_unread_information_count', 0);
 @endphp
 
 <!-- Bottom Navigation -->
 <div class="bottom-nav">
-    <button class="tab-btn {{ $active === 'home' ? 'active' : '' }}"
-        onclick="window.location.href='/dashboard/customer/tagihan/home'">
+    <a class="tab-btn {{ $active === 'home' ? 'active' : '' }}" href="/dashboard/customer/tagihan/home">
         <i class="bi bi-house-door-fill"></i>
         <span>Home</span>
-    </button>
+    </a>
 
-    <button class="tab-btn {{ $active === 'tagihan' ? 'active' : '' }}"
-        onclick="window.location.href='/dashboard/customer/tagihan'">
+    <a class="tab-btn {{ $active === 'tagihan' ? 'active' : '' }}" href="/dashboard/customer/tagihan">
         <i class="bi bi-receipt"></i>
         <span>Tagihan</span>
-    </button>
+    </a>
 
-    <button class="tab-btn {{ $active === 'invoice' ? 'active' : '' }}"
-        onclick="window.location.href='/dashboard/customer/tagihan/selesai'">
+    <a class="tab-btn {{ $active === 'invoice' ? 'active' : '' }}" href="/dashboard/customer/tagihan/selesai">
         <i class="bi bi-file-earmark-text"></i>
         <span>Kwitansi</span>
-    </button>
+    </a>
 
-    <button class="tab-btn {{ $active === 'chat' ? 'active' : '' }}"
-        onclick="window.location.href='/dashboard/customer/chat'">
+    <a class="tab-btn {{ $active === 'informasi' ? 'active' : '' }}" href="/dashboard/customer/informasi">
+        <i class="bi bi-megaphone"></i>
+        @if($unreadInformationCount > 0 && $active !== 'informasi')
+            <span class="notification-count" aria-label="{{ $unreadInformationCount }} informasi baru">{{ $unreadInformationCount > 99 ? '99+' : $unreadInformationCount }}</span>
+        @endif
+        <span>Info</span>
+    </a>
+
+    <a class="tab-btn {{ $active === 'chat' ? 'active' : '' }}" href="/dashboard/customer/chat">
         <i class="bi bi-chat-dots"></i>
         <span>Chat</span>
-    </button>
+    </a>
 
-    <button class="tab-btn {{ $active === 'profile' ? 'active' : '' }}"
-        onclick="window.location.href='/dashboard/customer/profile'">
+    <a class="tab-btn {{ $active === 'profile' ? 'active' : '' }}" href="/dashboard/customer/profile">
         <i class="bi bi-person-circle"></i>
         <span>Profile</span>
-    </button>
+    </a>
 </div>
 
 <style>
@@ -48,16 +50,42 @@ $user = Auth::guard('customer')->user();
         transform: translateX(-50%);
         width: min(92vw, 420px);
         height: 64px;
-        background: #1f2326;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.28));
         display: flex;
         justify-content: space-around;
         align-items: center;
         padding: 8px 16px;
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255,255,255,0.06);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        box-shadow: 0 22px 48px rgba(15, 23, 42, 0.24), 0 6px 18px rgba(15, 23, 42, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(255, 255, 255, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.76);
         border-radius: 9999px;
         z-index: 999;
         font-family: 'Inter', sans-serif;
+        backdrop-filter: blur(30px) saturate(220%) contrast(112%);
+        -webkit-backdrop-filter: blur(30px) saturate(220%) contrast(112%);
+        overflow: hidden;
+        animation: glassFloat 4.5s ease-in-out infinite;
+    }
+
+    .bottom-nav::before {
+        content: '';
+        position: absolute;
+        inset: -40% -30%;
+        border-radius: inherit;
+        background: linear-gradient(115deg, transparent 18%, rgba(255, 255, 255, 0.72) 34%, rgba(255, 255, 255, 0.18) 45%, transparent 62%);
+        pointer-events: none;
+        z-index: 0;
+        transform: translateX(-42%) rotate(8deg);
+        animation: glassShimmer 3.2s ease-in-out infinite;
+    }
+
+    .bottom-nav::after {
+        content: '';
+        position: absolute;
+        inset: 1px;
+        border-radius: inherit;
+        border: 1px solid rgba(255, 255, 255, 0.36);
+        pointer-events: none;
+        z-index: 0;
     }
 
     .bottom-nav .tab-btn {
@@ -66,7 +94,7 @@ $user = Auth::guard('customer')->user();
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #cfd6dd;
+        color: rgba(15, 23, 42, 0.58);
         position: relative;
         transition: all 0.2s ease;
         cursor: pointer;
@@ -75,10 +103,13 @@ $user = Auth::guard('customer')->user();
         padding: 0;
         border-radius: 9999px;
         line-height: 0;
+        z-index: 1;
+        text-decoration: none;
+        -webkit-tap-highlight-color: transparent;
     }
 
     .bottom-nav .tab-btn:hover {
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.52);
     }
 
     .bottom-nav .tab-btn i {
@@ -93,18 +124,77 @@ $user = Auth::guard('customer')->user();
         display: none;
     }
 
+    .bottom-nav .tab-btn .notification-count {
+        display: block;
+        position: absolute;
+        top: 3px;
+        right: 1px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: #ef4444;
+        border: 2px solid #1f2326;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.18);
+        color: #ffffff;
+        font-size: 0.62rem;
+        font-weight: 900;
+        line-height: 13px;
+        text-align: center;
+    }
+
+    .bottom-nav .tab-btn.active .notification-count {
+        border-color: #ffffff;
+    }
+
     /* Active tab */
     .bottom-nav .tab-btn.active {
         width: 48px;
         height: 48px;
-        color: #111827;
-        background: #ffffff;
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.22);
+        color: #0f172a;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.68));
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.20), inset 0 1px 0 rgba(255, 255, 255, 1), inset 0 -1px 0 rgba(15, 23, 42, 0.06);
         line-height: 0;
+        animation: glassActivePop 0.28s ease-out;
     }
 
     .bottom-nav .tab-btn.active::before {
         content: none;
+    }
+
+    @keyframes glassShimmer {
+        0%, 42% {
+            transform: translateX(-48%) rotate(8deg);
+            opacity: 0;
+        }
+        56% {
+            opacity: 0.75;
+        }
+        100% {
+            transform: translateX(48%) rotate(8deg);
+            opacity: 0;
+        }
+    }
+
+    @keyframes glassFloat {
+        0%, 100% {
+            box-shadow: 0 22px 48px rgba(15, 23, 42, 0.24), 0 6px 18px rgba(15, 23, 42, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(255, 255, 255, 0.28);
+        }
+        50% {
+            box-shadow: 0 26px 56px rgba(15, 23, 42, 0.28), 0 8px 22px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 1), inset 0 -1px 0 rgba(255, 255, 255, 0.36);
+        }
+    }
+
+    @keyframes glassActivePop {
+        0% {
+            transform: scale(0.88);
+        }
+        70% {
+            transform: scale(1.06);
+        }
+        100% {
+            transform: scale(1);
+        }
     }
 
 </style>

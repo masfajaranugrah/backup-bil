@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+@include('content.apps.Customer.partials.disable-zoom')
 <title>Daftar Invoice</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -285,6 +286,129 @@ body {
     gap: 0.5rem;
 }
 
+.kwitansi-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 4000;
+    background: #0f172a;
+    display: none;
+    flex-direction: column;
+    pointer-events: none;
+}
+
+.kwitansi-modal.show {
+    display: flex;
+    pointer-events: auto;
+}
+
+.kwitansi-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 14px 12px;
+    background: rgba(15, 23, 42, 0.94);
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.kwitansi-modal-title {
+    min-width: 0;
+}
+
+.kwitansi-modal-title strong {
+    display: block;
+    font-size: 0.98rem;
+    font-weight: 800;
+}
+
+.kwitansi-modal-title span {
+    display: block;
+    margin-top: 2px;
+    color: #cbd5e1;
+    font-size: 0.76rem;
+}
+
+.kwitansi-modal-actions {
+    display: flex;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.kwitansi-modal-btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 1.1rem;
+}
+
+.kwitansi-modal-frame {
+    width: 100%;
+    flex: 1;
+    border: 0;
+    background: #ffffff;
+}
+
+.kwitansi-pdf-viewer {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    background: #111827;
+    display: none;
+}
+
+.kwitansi-pdf-viewer.show {
+    display: block;
+}
+
+.kwitansi-pdf-viewer canvas,
+.kwitansi-pdf-viewer img,
+.kwitansi-pdf-viewer object {
+    display: block;
+    width: min(100%, 820px);
+    margin: 0 auto 16px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+.kwitansi-pdf-viewer canvas,
+.kwitansi-pdf-viewer img {
+    height: auto;
+}
+
+.kwitansi-pdf-viewer object {
+    height: calc(100dvh - 96px);
+    border: 0;
+}
+
+.kwitansi-modal-loading {
+    flex: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    color: #ffffff;
+    text-align: center;
+    padding: 24px;
+}
+
+.kwitansi-modal-loading.show {
+    display: flex;
+}
+
+.kwitansi-modal-loading i {
+    font-size: 2rem;
+}
+
 .alert-empty {
     background: #f9f9f9;
     border: 1px solid #e5e5e5;
@@ -517,17 +641,18 @@ body {
                     @if ($tagihan->kwitansi)
                         {{-- Preview Button --}}
                         <a class="btn-action btn-view" 
-                
-                           href="{{ route('kwitansi.preview', $tagihan->id) }}"
+                           data-kwitansi-preview="true"
+                           href="{{ route('customer.kwitansi.preview', $tagihan->id, false) }}"
+                           data-title="Kwitansi {{ $tagihan->nomer_id }}"
                            title="Lihat kwitansi di browser">
                             <i class="bi bi-eye"></i> Lihat
                         </a>
                         
                         {{-- Download Button - Buka di Tab Baru Sama Seperti Lihat --}}
                         <a class="btn-action btn-download" 
-                           data-download-url="{{ route('kwitansi.download', $tagihan->id) }}"
+                           data-download-url="{{ route('kwitansi.download', $tagihan->id, false) }}"
                            data-filename="Kwitansi_{{ $tagihan->nomer_id }}.pdf"
-                           href="{{ route('kwitansi.download', $tagihan->id) }}"
+                           href="{{ route('kwitansi.download', $tagihan->id, false) }}"
                            title="Lihat kwitansi">
                             <i class="bi bi-download"></i> Download
                         </a>
@@ -562,9 +687,35 @@ body {
 
 </div>
 
+<div id="kwitansi-preview-modal" class="kwitansi-modal" aria-hidden="true">
+    <div class="kwitansi-modal-header">
+        <div class="kwitansi-modal-title">
+            <strong id="kwitansi-modal-title">Preview Kwitansi</strong>
+            <span>Dokumen kwitansi pembayaran</span>
+        </div>
+        <div class="kwitansi-modal-actions">
+            <button type="button" class="kwitansi-modal-btn" onclick="closeKwitansiPreview()" aria-label="Tutup preview kwitansi">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+    <div id="kwitansi-modal-loading" class="kwitansi-modal-loading">
+        <i class="bi bi-arrow-repeat"></i>
+        <strong>Memuat kwitansi...</strong>
+        <span>Mohon tunggu sebentar.</span>
+    </div>
+    <div id="kwitansi-pdf-viewer" class="kwitansi-pdf-viewer"></div>
+    <iframe id="kwitansi-preview-frame" class="kwitansi-modal-frame" src="about:blank" title="Preview Kwitansi"></iframe>
+</div>
+
 @include('content.apps.Customer.tagihan.bottom-navbar', ['active' => 'invoice'])
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
+    if (window.pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
     function parseFileNameFromDisposition(disposition) {
         if (!disposition) return null;
 
@@ -675,11 +826,178 @@ body {
         }
     }
 
+    let kwitansiPreviewBlobUrl = null;
+
+    async function renderPdfToModal(arrayBuffer) {
+        if (!window.pdfjsLib) {
+            throw new Error('PDF.js belum termuat');
+        }
+
+        const viewer = document.getElementById('kwitansi-pdf-viewer');
+        viewer.innerHTML = '';
+
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer, disableWorker: true }).promise;
+        const maxCanvasWidth = Math.min(window.innerWidth - 32, 900);
+        const outputScale = Math.min(window.devicePixelRatio || 1, 3);
+
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber);
+            const baseViewport = page.getViewport({ scale: 1 });
+            const scale = maxCanvasWidth / baseViewport.width;
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            canvas.width = Math.floor(viewport.width * outputScale);
+            canvas.height = Math.floor(viewport.height * outputScale);
+            canvas.style.width = Math.floor(viewport.width) + 'px';
+            canvas.style.height = Math.floor(viewport.height) + 'px';
+            viewer.appendChild(canvas);
+
+            await page.render({
+                canvasContext: context,
+                viewport,
+                transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null,
+            }).promise;
+        }
+    }
+
+    async function renderImageToModal(blob) {
+        const viewer = document.getElementById('kwitansi-pdf-viewer');
+        viewer.innerHTML = '';
+
+        if (kwitansiPreviewBlobUrl) {
+            URL.revokeObjectURL(kwitansiPreviewBlobUrl);
+        }
+
+        kwitansiPreviewBlobUrl = URL.createObjectURL(blob);
+        const image = document.createElement('img');
+        image.src = kwitansiPreviewBlobUrl;
+        image.alt = 'Preview Kwitansi';
+        viewer.appendChild(image);
+    }
+
+    function renderBlobObjectToModal(blob) {
+        const viewer = document.getElementById('kwitansi-pdf-viewer');
+        viewer.innerHTML = '';
+
+        if (kwitansiPreviewBlobUrl) {
+            URL.revokeObjectURL(kwitansiPreviewBlobUrl);
+        }
+
+        kwitansiPreviewBlobUrl = URL.createObjectURL(blob);
+        const object = document.createElement('object');
+        object.data = kwitansiPreviewBlobUrl;
+        object.type = blob.type || 'application/pdf';
+        object.innerHTML = '<div style="color:#fff;text-align:center;padding:24px;">Preview tidak didukung browser ini.</div>';
+        viewer.appendChild(object);
+    }
+
+    async function openKwitansiPreview(url, title) {
+        const modal = document.getElementById('kwitansi-preview-modal');
+        const frame = document.getElementById('kwitansi-preview-frame');
+        const viewer = document.getElementById('kwitansi-pdf-viewer');
+        const modalTitle = document.getElementById('kwitansi-modal-title');
+        const loading = document.getElementById('kwitansi-modal-loading');
+
+        modalTitle.textContent = title || 'Preview Kwitansi';
+        frame.src = 'about:blank';
+        frame.style.display = 'none';
+        viewer.classList.remove('show');
+        viewer.innerHTML = '';
+        loading.classList.add('show');
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        if (kwitansiPreviewBlobUrl) {
+            URL.revokeObjectURL(kwitansiPreviewBlobUrl);
+            kwitansiPreviewBlobUrl = null;
+        }
+
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type') || '';
+            const blob = await response.blob();
+
+            if (contentType.includes('pdf') || blob.type.includes('pdf')) {
+                const buffer = await blob.arrayBuffer();
+                try {
+                    await renderPdfToModal(buffer);
+                } catch (renderError) {
+                    console.warn('PDF.js render gagal, pakai object fallback:', renderError);
+                    renderBlobObjectToModal(blob);
+                }
+            } else if (contentType.startsWith('image/') || blob.type.startsWith('image/')) {
+                await renderImageToModal(blob);
+            } else {
+                throw new Error('Format kwitansi tidak didukung untuk preview modal');
+            }
+
+            viewer.classList.add('show');
+            loading.classList.remove('show');
+        } catch (error) {
+            console.warn('Preview kwitansi gagal:', error);
+            loading.innerHTML = `
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Preview gagal dimuat</strong>
+                <span>Pastikan domain PWA sama dengan domain aplikasi dan coba buka ulang halaman.</span>
+            `;
+        }
+    }
+
+    function closeKwitansiPreview() {
+        const modal = document.getElementById('kwitansi-preview-modal');
+        const frame = document.getElementById('kwitansi-preview-frame');
+        const viewer = document.getElementById('kwitansi-pdf-viewer');
+        const loading = document.getElementById('kwitansi-modal-loading');
+
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        frame.src = 'about:blank';
+        frame.style.display = 'block';
+        viewer.classList.remove('show');
+        viewer.innerHTML = '';
+        loading.classList.remove('show');
+        loading.innerHTML = `
+            <i class="bi bi-arrow-repeat"></i>
+            <strong>Memuat kwitansi...</strong>
+            <span>Mohon tunggu sebentar.</span>
+        `;
+        if (kwitansiPreviewBlobUrl) {
+            URL.revokeObjectURL(kwitansiPreviewBlobUrl);
+            kwitansiPreviewBlobUrl = null;
+        }
+        document.body.style.overflow = '';
+    }
+
     document.querySelectorAll('.btn-download[data-download-url]').forEach((btn) => {
         btn.addEventListener('click', function (event) {
             event.preventDefault();
             handleKwitansiDownload(this);
         });
+    });
+
+    document.querySelectorAll('[data-kwitansi-preview="true"]').forEach((btn) => {
+        btn.addEventListener('click', function (event) {
+            event.preventDefault();
+            openKwitansiPreview(this.getAttribute('href'), this.dataset.title);
+        });
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeKwitansiPreview();
+        }
     });
 </script>
 

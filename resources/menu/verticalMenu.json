@@ -10,26 +10,12 @@
         "admin"
       ]
     },
-{
-      "menuHeader": "Cloud",
-      "roles": [
-        "administrator",
-        "admin"
-      ]
-    },
     {
       "name": "Cloud",
       "icon": "menu-icon tf-icons ri-cloud-line",
       "slug": "app-cloud",
       "url": "https://cloud.jernih.net.id",
       "target": "_blank",
-      "roles": [
-        "administrator",
-        "admin"
-      ]
-    },
-    {
-      "menuHeader": "Data Tagihan",
       "roles": [
         "administrator",
         "admin"
@@ -94,9 +80,9 @@
           ],
           "icon": "ri-notification-3-line"
         },
-{
+        {
           "url": "/dashboard/admin/tagihan/status-baca",
-          "name": "Staus Baca Tagihan",
+          "name": "Status Baca Tagihan",
           "slug": "app-user-list",
           "roles": [
             "administrator",
@@ -104,7 +90,6 @@
           ],
           "icon": "ri-notification-3-line"
         }
-
       ]
     },
     {
@@ -140,12 +125,11 @@
         }
       ]
     },
- {
+    {
       "menuHeader": "Laporan Tarik Kabel",
       "roles": "logistic"
     },
-
-{
+    {
       "name": "Laporan Kabel",
       "icon": "menu-icon tf-icons ri-file-chart-line",
       "slug": "app-logistik-laporan-kabel",
@@ -159,10 +143,6 @@
           "icon": "ri-list-check"
         }
       ]
-    },
-    {
-      "menuHeader": "Data Karyawan",
-      "roles": "administrator"
     },
     {
       "name": "Karyawan",
@@ -187,10 +167,6 @@
       ]
     },
     {
-      "menuHeader": "Data Gaji Karyawan",
-      "roles": "administrator"
-    },
-    {
       "name": "Gaji Karyawan",
       "icon": "menu-icon tf-icons ri-wallet-3-line",
       "slug": "app-user",
@@ -205,14 +181,7 @@
         }
       ]
     },
-    {
-      "menuHeader": "Data Pelanggan",
-      "roles": [
-        "administrator",
-        "admin"
-      ]
-    },
-    {
+      {
       "name": "Pelanggan",
       "icon": "menu-icon tf-icons ri-account-circle-line",
       "slug": "app-user",
@@ -243,15 +212,7 @@
         }
       ]
     },
-     
-    {
-      "menuHeader": "Data Paket",
-      "roles": [
-        "administrator",
-        "admin"
-      ]
-    },
-    {
+      {
       "name": "Paket",
       "icon": "menu-icon tf-icons ri-gift-line",
       "slug": "app-user",
@@ -272,11 +233,7 @@
         }
       ]
     },
-    {
-      "menuHeader": "Data Akun",
-      "roles": "administrator"
-    },
-    {
+      {
       "name": "Akun",
       "icon": "menu-icon tf-icons ri-admin-line",
       "slug": "app-user",
@@ -291,14 +248,7 @@
         }
       ]
     },
-    {
-      "menuHeader": "Data Absensi",
-      "roles": [
-        "administrator",
-        "admin"
-      ]
-    },
-    {
+     {
       "name": "Absensi",
       "icon": "menu-icon tf-icons ri-calendar-check-line",
       "slug": "app-user",
@@ -335,7 +285,8 @@
           "slug": "app-user-list",
           "roles": "customer_service",
           "icon": "ri-ticket-2-line"
-        }      ]
+        }
+      ]
     },
     {
       "menuHeader": "History",
@@ -364,10 +315,6 @@
       ]
     },
     {
-      "menuHeader": "Absensi",
-      "roles": "karyawan"
-    },
-    {
       "name": "Absensi",
       "icon": "menu-icon tf-icons ri-fingerprint-line",
       "slug": "app-user",
@@ -392,14 +339,7 @@
         }
       ]
     },
-    {
-      "menuHeader": "Data Laporan",
-      "roles": [
-        "administrator",
-        "admin"
-      ]
-    },
-    {
+      {
       "name": "Laporan",
       "icon": "menu-icon tf-icons ri-bar-chart-box-line",
       "slug": "app-user",
@@ -409,26 +349,6 @@
       ],
       "submenu": [
         {
-          "url": "/dashboard/admin/laporan/tagihan",
-          "name": "Laporan Tagihan",
-          "slug": "app-user-list",
-          "roles": [
-            "administrator",
-            "admin"
-          ],
-          "icon": "ri-file-chart-line"
-        },
-        {
-          "url": "/dashboard/admin/laporan/tagihan/kwitansi",
-          "name": "Laporan Kwitansi",
-          "slug": "app-user-list",
-          "roles": [
-            "administrator",
-            "admin"
-          ],
-          "icon": "ri-receipt-line"
-        },
- {
           "url": "/dashboard/admin/laporan/harian",
           "name": "Laporan Harian",
           "slug": "app-user-list",
@@ -479,13 +399,6 @@
       ]
     },
     {
-      "menuHeader": "Data Administrasi",
-      "roles": [
-        "administrator",
-        "admin"
-      ]
-    },
-    {
       "name": "Administrasi",
       "icon": "menu-icon tf-icons ri-funds-line",
       "slug": "app-user",
@@ -524,12 +437,6 @@
           ],
           "icon": "ri-wallet-3-line"
         }
-      ]
-    },
-    {
-      "menuHeader": "Buku Besar",
-      "roles": [
-        "administrator"
       ]
     },
     {
@@ -580,11 +487,7 @@
         }
       ]
     },
-    {
-      "menuHeader": "Rekening",
-      "roles": "administrator"
-    },
-    {
+     {
       "name": "Rekening",
       "icon": "menu-icon tf-icons ri-bank-card-line",
       "slug": "app-user",
@@ -600,10 +503,6 @@
       ]
     },
     {
-      "menuHeader": "Backup Data",
-      "roles": "administrator"
-    },
-    {
       "name": "Backup",
       "icon": "menu-icon tf-icons ri-database-2-line",
       "slug": "app-user",
@@ -615,14 +514,15 @@
           "slug": "app-user-list",
           "roles": "administrator",
           "icon": "ri-save-3-line"
+        },
+  {
+          "url": "/dashboard/admin/console/pushjob",
+          "name": "Console Pushjob",
+          "slug": "app-console-pushjob",
+          "roles": "administrator",
+          "icon": "ri-terminal-box-line"
         }
-      ]
-    },
-    {
-      "menuHeader": "Status Pelanggan",
-      "roles": [
-        "administrator",
-        "admin"
+
       ]
     },
     {
@@ -647,10 +547,6 @@
       ]
     },
     {
-      "menuHeader": "Iklan Notifikasi",
-      "roles": "administrator"
-    },
-    {
       "name": "Iklan",
       "icon": "menu-icon tf-icons ri-megaphone-line",
       "slug": "app-user",
@@ -664,10 +560,6 @@
           "icon": "ri-broadcast-line"
         }
       ]
-    },
-    {
-      "menuHeader": "Pelanggan",
-      "roles": "marketing"
     },
     {
       "name": "Pelanggan",
@@ -738,11 +630,7 @@
         }
       ]
     },
-    {
-      "menuHeader": "Sistem Chat",
-      "roles": "customer_service"
-    },
-    {
+     {
       "name": "Chat Admin",
       "icon": "menu-icon tf-icons ri-message-3-line",
       "slug": "app-user",
@@ -769,13 +657,6 @@
       "roles": "verifikasi"
     },
     {
-      "menuHeader": "Chat Pembayaran",
-      "roles": [
-        "administrator",
-        "admin"
-      ]
-    },
-    {
       "name": "Chat Pembayaran",
       "icon": "menu-icon tf-icons ri-money-dollar-circle-line",
       "slug": "admin.billing.chat",
@@ -784,8 +665,6 @@
         "administrator",
         "admin"
       ]
-    
- }
+    }
   ]
-
 }

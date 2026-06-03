@@ -61,23 +61,172 @@
 }
 .btn-add i { margin-right: 8px; }
 
-.table-modern { border-radius: 8px; overflow: hidden; }
-.table-modern thead th {
-  background: #f8fafc;
-  font-weight: 600;
+.card-datatable {
+  padding: 1rem !important;
+  position: relative;
+}
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.modern-table th {
+  text-align: left;
+  padding: 1rem 1.25rem;
+  font-size: 0.78rem;
   text-transform: uppercase;
-  font-size: 0.75rem;
   letter-spacing: 0.5px;
-  color: #18181b;
-  border: none;
-  padding: 1rem;
+  color: #64748b;
+  font-weight: 800;
+  border-bottom: 1px solid #e5eaf0;
+  background: #f8fafc;
 }
-.table-modern tbody tr {
-  transition: all 0.2s;
-  border-bottom: 1px solid #e4e4e7;
+
+.modern-table td {
+  padding: 1.05rem 1.25rem;
+  vertical-align: middle;
+  border-bottom: 1px dashed #e5eaf0;
+  transition: background 0.2s;
 }
-.table-modern tbody tr:hover { background-color: #f4f4f5 !important; }
-.table-modern tbody td { padding: 1rem; color: #18181b; vertical-align: middle; }
+
+.modern-table tr:hover td {
+  background: #fcfcfd;
+}
+
+.modern-table tr.row-selected td {
+  background: #edf4fd !important;
+}
+
+.modern-table.is-dense th { padding: 0.7rem 1rem; }
+.modern-table.is-dense td { padding: 0.65rem 1rem; }
+.modern-table th.select-column,
+.modern-table td.select-column {
+  width: 52px;
+  min-width: 52px;
+  text-align: center;
+}
+
+.custom-check {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+}
+
+.custom-check:checked {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+
+.custom-check:checked::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.mui-code-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 0.65rem;
+  border-radius: 6px;
+  background: #f5f5f5 !important;
+  color: #18181b !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.mui-bank-icon {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #18181b;
+  color: #fff;
+}
+
+.action-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50% !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0 !important;
+  background: transparent !important;
+  color: #374151 !important;
+  box-shadow: none !important;
+}
+
+.action-btn:hover {
+  background: rgba(17, 24, 39, 0.08) !important;
+  color: #18181b !important;
+}
+
+.datatables-rekenings thead .sorting::before,
+.datatables-rekenings thead .sorting::after,
+.datatables-rekenings thead .sorting_asc::before,
+.datatables-rekenings thead .sorting_asc::after,
+.datatables-rekenings thead .sorting_desc::before,
+.datatables-rekenings thead .sorting_desc::after,
+.datatables-rekenings thead .sorting_disabled::before,
+.datatables-rekenings thead .sorting_disabled::after {
+  display: none !important;
+  content: none !important;
+}
+
+.selection-toolbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: #e7f0fb;
+  border-bottom: 1px solid #d6e4f3;
+  padding: 0.85rem 1.25rem;
+  color: #0f172a;
+}
+
+.selection-toolbar.active {
+  display: flex;
+}
+
+.selection-toolbar .selected-text {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.clear-btn {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 1.25rem;
+}
+
+.clear-btn:hover {
+  background: #dbe8f6 !important;
+  color: #1e293b !important;
+}
 
 .loading-overlay {
   position: fixed;
@@ -127,22 +276,41 @@ code {
   border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.dense-toggle-wrap input {
+  width: 18px;
+  height: 18px;
+  accent-color: #18181b;
+}
+
 .pagination-info {
   color: #71717a;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
-.pagination {
+.pagination,
+.mui-pagination {
   margin: 0;
   gap: 0.5rem;
   justify-content: flex-end;
 }
 
-.pagination .page-item .page-link {
-  border-radius: 50% !important;
-  width: 40px;
-  height: 40px;
+.pagination .page-item .page-link,
+.mui-pagination .page-item .page-link {
+  border-radius: 999px !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
   padding: 0;
   display: flex;
   align-items: center;
@@ -151,8 +319,10 @@ code {
   color: #18181b;
   font-weight: 600;
   background-color: #fff;
-  margin: 0 4px;
+  margin: 0 2px;
   transition: all 0.3s ease;
+  line-height: 1;
+  aspect-ratio: 1 / 1;
 }
 .pagination .page-item .page-link:hover { background-color: #f4f4f5; border-color: #18181b; }
 .pagination .page-item.active .page-link { background-color: #18181b !important; border-color: #18181b !important; color: #fafafa !important; }
@@ -183,6 +353,17 @@ nav[role="navigation"] > div > p {
 @section('page-script')
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    @if(session('success'))
+      Swal.fire({
+        toast: true,
+        position: 'bottom-end',
+        icon: 'success',
+        title: @json(session('success')),
+        showConfirmButton: false,
+        timer: 3200,
+        timerProgressBar: true
+      });
+    @endif
     // Helper function untuk loading overlay
     function showLoading() {
         $('.loading-overlay').css('display', 'flex');
@@ -197,33 +378,56 @@ document.addEventListener("DOMContentLoaded", function() {
     const dtRekeningTable = $('.datatables-rekenings').DataTable({
         paging: false,
         searching: false,
-        ordering: true,
+        ordering: false,
         info: false,
         responsive: false,
+        dom: 'rt',
         columnDefs: [
-            { orderable: false, targets: [-1] }
+            { orderable: false, targets: [0, -1] }
         ]
     });
 
-    // Event DELETE dengan konfirmasi modern - HANYA 2 BUTTON
-    $(document).on('click', '.btn-delete', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const form = $(this).closest('form');
+    function updateBulkDeleteState() {
+        const totalChecked = $('.rekening-checkbox:checked').length;
+        $('#selected-count').text(totalChecked + ' dipilih');
+        $('#selection-toolbar').toggleClass('active', totalChecked > 0);
+        $('#btn-bulk-delete').prop('disabled', totalChecked === 0);
+        $('.rekening-row').removeClass('row-selected');
+        $('.rekening-checkbox:checked').closest('.rekening-row').addClass('row-selected');
+        $('#select-all-rekenings').prop(
+            'checked',
+            totalChecked > 0 && totalChecked === $('.rekening-checkbox').length
+        );
+        $('#select-all-rekenings').prop(
+            'indeterminate',
+            totalChecked > 0 && totalChecked < $('.rekening-checkbox').length
+        );
+    }
 
+    $(document).on('change', '#select-all-rekenings', function() {
+        $('.rekening-checkbox').prop('checked', $(this).is(':checked'));
+        updateBulkDeleteState();
+    });
+
+    $(document).on('change', '.rekening-checkbox', updateBulkDeleteState);
+
+    $(document).on('submit', '#bulk-delete-form', function(e) {
+        const totalChecked = $('.rekening-checkbox:checked').length;
+        if (totalChecked === 0) {
+            e.preventDefault();
+            return;
+        }
+
+        e.preventDefault();
         Swal.fire({
-            title: 'Konfirmasi Penghapusan',
-            text: 'Yakin ingin menghapus data rekening ini? Data tidak dapat dikembalikan!',
+            title: 'Hapus Rekening Terpilih',
+            text: `Yakin ingin menghapus ${totalChecked} rekening? Data tidak dapat dikembalikan!`,
             icon: 'warning',
             showCancelButton: true,
-            showDenyButton: false,
-            showCloseButton: false,
             confirmButtonText: 'Ya, Hapus!',
             cancelButtonText: 'Batal',
             confirmButtonColor: '#f5365c',
             cancelButtonColor: '#8898aa',
-            reverseButtons: false,
-            allowOutsideClick: false,
             customClass: {
                 confirmButton: 'btn btn-danger me-2',
                 cancelButton: 'btn btn-secondary'
@@ -231,25 +435,29 @@ document.addEventListener("DOMContentLoaded", function() {
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                const btn = $(form).find('.btn-delete');
-                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Menghapus...');
+                $('#btn-bulk-delete')
+                    .prop('disabled', true)
+                    .html('<span class="spinner-border spinner-border-sm me-2"></span>Menghapus...');
                 showLoading();
-                
-                setTimeout(() => {
-                    hideLoading();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: 'Data rekening berhasil dihapus.',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        form.submit();
-                    });
-                }, 1000);
+                e.target.submit();
             }
         });
     });
+
+    const denseToggle = document.getElementById('dense-padding-toggle');
+    const tableEl = document.querySelector('.modern-table');
+    if (denseToggle && tableEl) {
+        const savedDense = localStorage.getItem('rekening_dense_padding') === '1';
+        denseToggle.checked = savedDense;
+        tableEl.classList.toggle('is-dense', savedDense);
+
+        denseToggle.addEventListener('change', function() {
+            const isDense = denseToggle.checked;
+            tableEl.classList.toggle('is-dense', isDense);
+            localStorage.setItem('rekening_dense_padding', isDense ? '1' : '0');
+        });
+    }
+
 });
 </script>
 @endsection
@@ -262,6 +470,10 @@ document.addEventListener("DOMContentLoaded", function() {
     </div>
 </div>
 
+<form id="bulk-delete-form" action="{{ route('rekenings.bulkDestroy') }}" method="POST">
+    @csrf
+</form>
+
 <!-- Rekening List Table -->
 <div class="card border-0 shadow-sm">
     <div class="card-header-custom">
@@ -272,7 +484,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 </h4>
                 <p class="mb-0 opacity-75 small">Kelola dan monitor data rekening bank</p>
             </div>
-            <div class="d-flex mt-3 mt-md-0">
+            <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0 align-items-center">
                 <a href="{{ route('rekenings.add') }}" class="btn btn-primary btn-add">
                     <i class="ri-add-line text-white" style="color: #fff !important;"></i>
                     Tambah Rekening
@@ -282,25 +494,46 @@ document.addEventListener("DOMContentLoaded", function() {
     </div>
     
     <div class="card-body p-0">
-        <div class="card-datatable table-responsive p-3">
-            <table class="datatables-rekenings table table-modern table-hover">
+        <div class="card-datatable table-responsive">
+            <div class="selection-toolbar rounded-3" id="selection-toolbar">
+                <span class="selected-text" id="selected-count">0 dipilih</span>
+                <button type="submit"
+                        form="bulk-delete-form"
+                        id="btn-bulk-delete"
+                        class="clear-btn"
+                        title="Hapus Terpilih"
+                        disabled>
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            </div>
+
+            <table class="datatables-rekenings modern-table">
                 <thead>
                     <tr>
-                        <th><i class="ri-hashtag me-1"></i>No</th>
-                        <th><i class="ri-bank-line me-1"></i>Nama Bank</th>
-                        <th><i class="ri-bank-card-line me-1"></i>Nomor Rekening</th>
-                        <th><i class="ri-user-3-line me-1"></i>Nama Pemilik</th>
-                        <th class="text-center"><i class="ri-settings-3-line me-1"></i>Aksi</th>
+                        <th class="select-column">
+                            <input type="checkbox" id="select-all-rekenings" class="custom-check" aria-label="Pilih semua rekening">
+                        </th>
+                        <th>Nama Bank</th>
+                        <th>Nomor Rekening</th>
+                        <th>Nama Pemilik</th>
+                        <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($rekenings as $rekening)
-                    <tr>
-                        <td class="fw-bold">{{ $loop->iteration + ($rekenings->currentPage() - 1) * $rekenings->perPage() }}</td>
+                    <tr class="rekening-row">
+                        <td class="select-column">
+                            <input type="checkbox"
+                                   class="custom-check rekening-checkbox"
+                                   name="ids[]"
+                                   value="{{ $rekening->id }}"
+                                   form="bulk-delete-form"
+                                   aria-label="Pilih rekening {{ $rekening->nama_bank }}">
+                        </td>
                         
                         <td>
                             <div class="d-flex align-items-center">
-                                <div class="icon-wrapper bg-label-primary me-2" style="width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <div class="mui-bank-icon me-2">
                                     <i class="ri-bank-line" style="font-size: 1.25rem;"></i>
                                 </div>
                                 <span class="fw-semibold">{{ $rekening->nama_bank }}</span>
@@ -308,9 +541,9 @@ document.addEventListener("DOMContentLoaded", function() {
                         </td>
                         
                         <td>
-                            <code style="background: #f8f9fa; padding: 4px 12px; border-radius: 6px; font-size: 0.875rem; font-weight: 600;">
+                            <span class="mui-code-chip">
                                 {{ $rekening->nomor_rekening }}
-                            </code>
+                            </span>
                         </td>
                         
                         <td>
@@ -322,18 +555,11 @@ document.addEventListener("DOMContentLoaded", function() {
                         <td>
                             <div class="d-flex gap-2 justify-content-center">
                                 <a href="{{ route('rekenings.edit', $rekening->id) }}" 
-                                   class="btn btn-sm btn-outline-primary"
+                                   class="action-btn"
                                    title="Edit">
                                     <i class="ri-edit-2-line"></i>
                                 </a>
 
-                                <form action="{{ route('rekenings.destroy', $rekening->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-delete" title="Hapus">
-                                        <i class="ri-delete-bin-line"></i>
-                                    </button>
-                                </form>
                             </div>
                         </td>
                     </tr>
@@ -344,19 +570,21 @@ document.addEventListener("DOMContentLoaded", function() {
     </div>
 
     <div class="pagination-wrapper">
-        <div class="pagination-info">
-            Menampilkan <strong>{{ $rekenings->firstItem() ?? 0 }}</strong> - <strong>{{ $rekenings->lastItem() ?? 0 }}</strong>
-            dari <strong>{{ $rekenings->total() }}</strong> rekening
-        </div>
+        <label class="dense-toggle-wrap mb-0">
+            <input type="checkbox" id="dense-padding-toggle">
+            <span>Dense padding</span>
+        </label>
         <div>
             @if($rekenings->hasPages())
-                {{ $rekenings->onEachSide(1)->links('pagination::bootstrap-5') }}
-            @else
+                {{ $rekenings->onEachSide(1)->links('pagination.mui') }}
+            @else 
                 <nav>
-                    <ul class="pagination mb-0">
-                        <li class="page-item disabled"><span class="page-link"><i class="ri-arrow-left-s-line"></i></span></li>
+                    <ul class="pagination mui-pagination mb-0">
+                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                        <li class="page-item disabled"><span class="page-link">&lsaquo;</span></li>
                         <li class="page-item active"><span class="page-link">1</span></li>
-                        <li class="page-item disabled"><span class="page-link"><i class="ri-arrow-right-s-line"></i></span></li>
+                        <li class="page-item disabled"><span class="page-link">&rsaquo;</span></li>
+                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
                     </ul>
                 </nav>
             @endif

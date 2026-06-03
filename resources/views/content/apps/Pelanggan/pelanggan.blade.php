@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 {{-- VENDOR STYLE --}}
 @section('vendor-style')
 @vite([
+  'resources/css/app.css',
   'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
@@ -48,7 +49,7 @@ body {
   box-shadow: var(--card-shadow);
   background: white;
   transition: var(--transition);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .card:hover {
@@ -288,7 +289,7 @@ body {
 .table-modern {
   margin-bottom: 0;
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;
   border-collapse: separate;
   border-spacing: 0;
 }
@@ -324,7 +325,189 @@ body {
 .table-modern thead th:first-child,
 .table-modern tbody td:first-child {
   text-align: center;
-  width: 60px;
+  width: 50px;
+}
+
+.table-modern thead th.sorting::before,
+.table-modern thead th.sorting::after,
+.table-modern thead th.sorting_asc::before,
+.table-modern thead th.sorting_asc::after,
+.table-modern thead th.sorting_desc::before,
+.table-modern thead th.sorting_desc::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* ========== MUI CHECKBOX ========== */
+.mui-checkbox {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+.mui-checkbox:checked {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+.mui-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 7px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.action-btn {
+  background: transparent;
+  border: 0;
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.action-btn:hover,
+.action-btn[aria-expanded="true"] {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.action-btn i {
+  font-size: 1.25rem;
+}
+
+.tagihan-action-menu {
+  position: absolute !important;
+  top: 50% !important;
+  right: calc(100% + 14px) !important;
+  left: auto !important;
+  transform: translateY(-50%) !important;
+  width: 230px;
+  min-width: 230px;
+  padding: 10px;
+  border: 1px solid #d7e2ee !important;
+  border-radius: 22px !important;
+  background: linear-gradient(110deg, #fff4f2 0%, #edf7ff 100%) !important;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.14) !important;
+  z-index: 20000;
+}
+.tagihan-action-menu.fixed-action-menu {
+  position: fixed !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  height: auto !important;
+}
+.tagihan-action-menu::after {
+  content: '';
+  display: none;
+  position: absolute;
+  right: var(--action-menu-arrow-right, -9px);
+  top: var(--action-menu-arrow-top, 50%);
+  width: 18px;
+  height: 18px;
+  border-top: 1px solid #d7e2ee;
+  border-right: 1px solid #d7e2ee;
+  background: #f2f8ff;
+  transform: translateY(-50%) rotate(45deg);
+}
+.tagihan-action-menu.show::after {
+  display: block;
+}
+.tagihan-action-menu .dropdown-item {
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tagihan-action-menu .dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.78);
+  color: #1e293b;
+}
+.tagihan-action-menu .dropdown-item.text-danger,
+.tagihan-action-menu .dropdown-item.text-danger:hover {
+  color: #ff3b30 !important;
+}
+.table-modern .dropdown {
+  position: relative !important;
+}
+.table-responsive {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+.table-modern tbody td:last-child,
+.table-modern thead th:last-child {
+  overflow: visible !important;
+  position: relative;
+}
+
+/* ========== BULK ACTION BAR ========== */
+.bulk-action-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  background: #eaf1fb;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 700;
+  border-bottom: 1px solid #d6e4f3;
+  animation: slideDown 0.2s ease;
+}
+
+.bulk-action-bar #selectedCount {
+  font-size: 1.05rem;
+}
+
+.bulk-action-bar.show {
+  display: flex;
+}
+
+.bulk-action-bar .selected-count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bulk-action-bar .btn-bulk-delete {
+  background: transparent;
+  color: #64748b;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: background 0.15s ease;
+}
+
+.bulk-action-bar .btn-bulk-delete:hover {
+  background: rgba(100, 116, 139, 0.12);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ========== BADGES - SHADCN STYLE ========== */
@@ -398,39 +581,89 @@ body {
   margin: 0;
 }
 
-.pagination .page-link {
-  border-radius: 50% !important;
-  width: 40px !important;
-  height: 40px !important;
+.table-modern.is-dense th {
+  padding: 0.7rem 1rem !important;
+}
+
+.table-modern.is-dense td {
+  padding: 0.65rem 1rem !important;
+}
+
+.dense-toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0f172a;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pagination-wrapper .pagination {
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+}
+
+.pagination-wrapper .page-link {
+  min-width: 32px;
+  height: 32px;
+  border-radius: 999px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.pagination-wrapper .mui-pagination {
+  align-items: center;
+  gap: 0.85rem;
+  display: flex;
+}
+
+.pagination-wrapper .mui-pagination .page-link {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  margin: 0 !important;
   padding: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin: 0 4px !important;
-  border: 1px solid #e4e4e7 !important;
-  color: #18181b !important;
-  background: #fff !important;
-  font-weight: 600 !important;
-  transition: all 0.3s ease !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: #1f2937 !important;
+  box-shadow: none !important;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
-.pagination .page-link:hover {
-  background: #fff !important;
-  border-color: #e4e4e7 !important;
-  color: #18181b !important;
+.pagination-wrapper .mui-pagination .page-item.active .page-link {
+  background: #1f2933 !important;
+  color: #ffffff !important;
 }
 
-.pagination .page-item.active .page-link {
-  background: #18181b !important;
-  border-color: #18181b !important;
-  color: #fafafa !important;
+.pagination-wrapper .mui-pagination .page-link:hover {
+  background: rgba(31, 41, 51, 0.06) !important;
+  color: #111827 !important;
 }
 
-.pagination .page-item.disabled .page-link {
-  background: #f4f4f5 !important;
-  border-color: #e4e4e7 !important;
-  color: #a1a1aa !important;
-  cursor: not-allowed;
+.pagination-wrapper .mui-pagination .page-item.disabled .page-link {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+}
+
+.pagination-wrapper .mui-pagination .pagination-ellipsis .page-link {
+  color: #64748b !important;
+  letter-spacing: 0.08em;
 }
 
 /* ========== EMPTY STATE ========== */
@@ -528,6 +761,36 @@ body {
   border-top: 1px solid #e4e4e7;
   background: #fafafa;
   border-radius: 0 0 16px 16px;
+}
+
+.swal2-container.pelanggan-delete-backdrop {
+  background: rgba(15, 23, 42, 0.48) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.swal2-popup.pelanggan-delete-popup {
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22) !important;
+}
+
+.swal2-popup.pelanggan-delete-popup .swal2-title {
+  color: #0f172a;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.swal2-popup.pelanggan-delete-popup .swal2-html-container {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-top: 0.75rem;
+}
+
+.swal2-popup.pelanggan-delete-popup .swal2-actions {
+  gap: 0.75rem;
+  margin-top: 1.5rem;
 }
 
 .customer-avatar {
@@ -740,6 +1003,18 @@ body {
     text-align: center;
   }
 
+  .tagihan-action-menu {
+    top: calc(100% + 10px) !important;
+    right: 0 !important;
+    left: auto !important;
+    transform: none !important;
+    min-width: 210px;
+  }
+
+  .tagihan-action-menu::after {
+    display: none !important;
+  }
+
   .btn-add {
     width: 100%;
   }
@@ -842,6 +1117,76 @@ body {
 /* Hide duplicate pagination summary from Laravel Links */
 .pagination-wrapper nav .text-muted {
     display: none !important;
+}
+
+/* ========================================= */
+/* EXACT PAGINATION STYLES (MATCH OUTSTANDING) */
+/* ========================================= */
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: #fafafa;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  border-top: 1px solid #e4e4e7;
+}
+
+.pagination-wrapper .pagination {
+  margin: 0;
+  gap: 0.5rem;
+}
+
+.pagination-wrapper .page-item .page-link {
+  border-radius: 50% !important;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e4e4e7;
+  color: #18181b;
+  font-weight: 600;
+  background-color: #fff;
+  margin: 0 2px;
+  transition: all 0.3s ease;
+}
+
+.pagination-wrapper .page-item .page-link:hover {
+  background-color: #18181b;
+  border-color: #18181b;
+  color: #fafafa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(24, 24, 27, 0.2);
+}
+
+.pagination-wrapper .page-item.active .page-link {
+  background-color: #18181b !important;
+  border-color: #18181b !important;
+  color: #fafafa !important;
+  box-shadow: 0 4px 12px rgba(24, 24, 27, 0.4);
+}
+
+.pagination-wrapper .page-item.disabled .page-link {
+  background-color: #f4f4f5;
+  border-color: #e4e4e7;
+  color: #a1a1aa;
+  cursor: not-allowed;
+}
+
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #111827;
 }
 
 /* Ensure DataTables info is hidden */
@@ -1027,6 +1372,48 @@ document.addEventListener("DOMContentLoaded", function() {
     function hideLoading() {
         $('.loading-overlay').fadeOut(300);
     }
+
+    function showOutstandingToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        const isError = type === 'error';
+        toast.style.cssText = [
+            'position:fixed',
+            'right:24px',
+            'bottom:28px',
+            'transform:translateY(10px)',
+            'z-index:99999',
+            'display:flex',
+            'align-items:center',
+            'gap:12px',
+            'max-width:min(520px,calc(100vw - 32px))',
+            'min-width:min(360px,calc(100vw - 32px))',
+            'padding:14px 20px',
+            'border-radius:18px',
+            `background:${isError ? '#dc2626' : '#111827'}`,
+            'color:#fff',
+            'box-shadow:0 16px 42px rgba(15,23,42,.32)',
+            'font-size:1rem',
+            'font-weight:500',
+            'opacity:0',
+            'transition:all .2s ease'
+        ].join(';');
+        toast.innerHTML = `<i class="ri-${isError ? 'error-warning-fill' : 'checkbox-circle-fill'}" style="font-size:1.15rem;line-height:1;color:${isError ? '#fecaca' : '#86efac'}"></i><span>${message}</span>`;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        });
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+            setTimeout(() => toast.remove(), 220);
+        }, 3200);
+    }
+
+    @if(session('success'))
+      showOutstandingToast(@json(session('success')));
+    @endif
+
 
     // ? HANYA INISIALISASI DATATABLES JIKA ADA DATA
     @if($pelanggan->count() > 0)
@@ -1272,11 +1659,19 @@ document.addEventListener("DOMContentLoaded", function() {
             cancelButtonText: 'Batal',
             confirmButtonColor: '#f5365c',
             cancelButtonColor: '#8898aa',
-            reverseButtons: false,
+            reverseButtons: true,
             allowOutsideClick: false,
             customClass: {
-                confirmButton: 'btn btn-danger me-2',
-                cancelButton: 'btn btn-secondary'
+                container: 'swal-tailwind-backdrop pelanggan-delete-backdrop',
+                popup: 'swal-tailwind-popup pelanggan-delete-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                cancelButton: 'swal-tailwind-cancel'
+            },
+            showClass: {
+                popup: 'animate__animated animate__fadeInUp animate__faster'
+            },
+            hideClass: {
+                popup: 'animate__animated animate__fadeOutDown animate__faster'
             },
             buttonsStyling: false
         }).then((result) => {
@@ -1284,20 +1679,169 @@ document.addEventListener("DOMContentLoaded", function() {
                 const btn = $(form).find('.btn-delete');
                 btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Menghapus...');
                 showLoading();
-
-                setTimeout(() => {
-                    hideLoading();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: 'Data pelanggan berhasil dihapus.',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        form.submit();
-                    });
-                }, 1000);
+                form.submit();
             }
+        });
+    });
+
+    const denseToggle = document.getElementById('densePaddingToggle');
+
+    // BULK DELETE CHECKBOX LOGIC
+    const selectAll = document.getElementById('selectAll');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const bulkActionBar = document.getElementById('bulkActionBar');
+    const selectedCount = document.getElementById('selectedCount');
+    const btnBulkDelete = document.getElementById('btnBulkDelete');
+
+    function updateBulkActionBar() {
+        if (!bulkActionBar || !selectedCount) return;
+        const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+        selectedCount.textContent = checkedCount;
+        
+        if (checkedCount > 0) {
+            bulkActionBar.classList.add('show');
+        } else {
+            bulkActionBar.classList.remove('show');
+        }
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            rowCheckboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+            });
+            updateBulkActionBar();
+        });
+    }
+
+    rowCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            if (selectAll) {
+                const allChecked = document.querySelectorAll('.row-checkbox:checked').length === rowCheckboxes.length;
+                selectAll.checked = allChecked;
+            }
+            updateBulkActionBar();
+        });
+    });
+
+    if (btnBulkDelete) {
+        btnBulkDelete.addEventListener('click', function() {
+            const selectedIds = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) return;
+
+            Swal.fire({
+                title: 'Hapus Pelanggan Terpilih?',
+                text: `Anda akan menghapus ${selectedIds.length} pelanggan. Data tidak dapat dikembalikan!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Hapus Semua!',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                customClass: {
+                    container: 'swal-tailwind-backdrop pelanggan-delete-backdrop',
+                    popup: 'swal-tailwind-popup pelanggan-delete-popup',
+                    confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                    cancelButton: 'swal-tailwind-cancel'
+                },
+                showClass: {
+                    popup: 'animate__animated animate__fadeInUp animate__faster'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutDown animate__faster'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoading();
+                    
+                    // Lakukan request ke route bulk delete jika ada, 
+                    // atau loop request delete biasa (sebaiknya dibuat endpoint khusus).
+                    // Contoh menggunakan loop delete karena blm ada endpoint khusus bulk-delete di web.php:
+                    let deletePromises = selectedIds.map(id => {
+                        return fetch(`/dashboard/admin/pelanggan/delete/${id}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({ _method: 'DELETE' })
+                        });
+                    });
+
+                    Promise.all(deletePromises)
+                        .then(() => {
+                            hideLoading();
+                            window.location.reload();
+                        })
+                        .catch(err => {
+                            hideLoading();
+                            console.error(err);
+                            Swal.fire('Error', 'Terjadi kesalahan saat menghapus data.', 'error');
+                        });
+                }
+            });
+        });
+    }
+    const tableEl = document.querySelector('.table-modern');
+    if (denseToggle && tableEl) {
+        const savedDense = localStorage.getItem('pelanggan_dense_padding') === '1';
+        denseToggle.checked = savedDense;
+        tableEl.classList.toggle('is-dense', savedDense);
+
+        denseToggle.addEventListener('change', function() {
+            const isDense = denseToggle.checked;
+            tableEl.classList.toggle('is-dense', isDense);
+            localStorage.setItem('pelanggan_dense_padding', isDense ? '1' : '0');
+        });
+    }
+
+    document.querySelectorAll('.table-modern .dropdown').forEach(dropdown => {
+        const button = dropdown.querySelector('[data-bs-toggle="dropdown"]');
+        const menu = dropdown.querySelector('.tagihan-action-menu');
+        if (!button || !menu) return;
+
+        dropdown.addEventListener('shown.bs.dropdown', () => {
+            const buttonRect = button.getBoundingClientRect();
+            const menuWidth = menu.offsetWidth || 230;
+            const menuHeight = menu.offsetHeight || 280;
+            const gap = 12;
+            const padding = window.innerWidth < 768 ? 8 : 16;
+            let top = buttonRect.top + (buttonRect.height / 2) - (menuHeight / 2);
+            let left = buttonRect.left - menuWidth - gap;
+
+            if (top + menuHeight > window.innerHeight - padding) {
+                top = window.innerHeight - menuHeight - padding;
+            }
+            if (top < padding) {
+                top = padding;
+            }
+            if (left < padding) {
+                left = padding;
+            }
+
+            const arrowTop = buttonRect.top + (buttonRect.height / 2) - top;
+            const arrowRight = Math.max(-9, left + menuWidth - buttonRect.left - 9);
+            menu.classList.add('fixed-action-menu');
+            menu.style.setProperty('top', `${top}px`, 'important');
+            menu.style.setProperty('left', `${left}px`, 'important');
+            menu.style.setProperty('right', 'auto', 'important');
+            menu.style.setProperty('bottom', 'auto', 'important');
+            menu.style.setProperty('height', 'auto', 'important');
+            menu.style.setProperty('transform', 'none', 'important');
+            menu.style.setProperty('--action-menu-arrow-top', `${arrowTop}px`);
+            menu.style.setProperty('--action-menu-arrow-right', `${arrowRight}px`);
+        });
+
+        dropdown.addEventListener('hidden.bs.dropdown', () => {
+            menu.classList.remove('fixed-action-menu');
+            menu.style.removeProperty('top');
+            menu.style.removeProperty('left');
+            menu.style.removeProperty('right');
+            menu.style.removeProperty('bottom');
+            menu.style.removeProperty('height');
+            menu.style.removeProperty('transform');
+            menu.style.removeProperty('--action-menu-arrow-top');
+            menu.style.removeProperty('--action-menu-arrow-right');
         });
     });
 });
@@ -1411,27 +1955,37 @@ document.addEventListener("DOMContentLoaded", function() {
         </form>
     </div>
 
+    {{-- BULK ACTION BAR --}}
+    <div class="bulk-action-bar" id="bulkActionBar">
+        <div class="selected-count">
+            <span id="selectedCount">0</span> dipilih
+        </div>
+        <button type="button" class="btn-bulk-delete" id="btnBulkDelete">
+            <i class="ri-delete-bin-line"></i>
+        </button>
+    </div>
+
     {{-- TABLE SECTION --}}
     <div class="card-body p-0">
-        <div class="table-responsive p-3">
+        <div class="table-responsive p-0">
             @if($pelanggan->count() > 0)
                 <table class="datatables-users table table-modern table-hover">
                     <thead>
                         <tr>
-                        <th><i class="ri-hashtag me-1"></i>No</th>
-                            <th><i class="ri-eye-line me-1"></i>Detail</th>
-                            <th><i class="ri-barcode-line me-1"></i>No. ID</th>
-                            <th><i class="ri-user-3-line me-1"></i>Nama Lengkap</th>
-                            <th><i class="ri-whatsapp-line me-1"></i>No. WhatsApp</th>
-                            <th><i class="ri-map-pin-line me-1"></i>Alamat</th>
-                            <th><i class="ri-calendar-line me-1"></i>Tanggal</th>
-                            <th><i class="ri-shield-check-line me-1"></i>Status</th>
-                            <th class="text-center"><i class="ri-settings-3-line me-1"></i>Aksi</th>
+                            <th><input type="checkbox" class="mui-checkbox" id="selectAll" title="Pilih Semua"></th>
+                            <th>No. ID</th>
+                            <th>Nama Lengkap</th>
+                            <th>No. WhatsApp</th>
+                            <th>Alamat</th>
+                            <th>Tanggal</th>
+                            <th>Status</th>
+                            <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($pelanggan as $p)
                         <tr
+                            data-id="{{ $p->id }}"
                             data-nomer-id="{{ $p->nomer_id }}"
                             data-nama="{{ $p->nama_lengkap }}"
                             data-whatsapp="{{ $p->no_whatsapp }}"
@@ -1449,13 +2003,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             data-created-at="{{ \Carbon\Carbon::parse($p->created_at)->format('d M Y H:i') }}"
                             data-progress-note="{{ $p->progress_note }}"
                         >
-                            <td class="text-muted fw-semibold">{{ ($pelanggan->firstItem() ?? 1) + $loop->index }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-icon btn-outline-primary btn-detail" title="Lihat Detail">
-                                    <i class="ri-eye-line"></i>
-                                </button>
-                            </td>
-
+                            <td><input type="checkbox" class="mui-checkbox row-checkbox" value="{{ $p->id }}"></td>
                             <td>
                                 <span class="badge bg-label-dark">{{ $p->nomer_id }}</span>
                             </td>
@@ -1489,21 +2037,33 @@ document.addEventListener("DOMContentLoaded", function() {
                                 <span class="{{ $statusClass }}">{{ in_array(strtolower($p->status ?? ''), ['pending', 'proses']) ? 'Progress' : ucfirst($p->status ?? '-') }}</span>
                             </td>
 
-                            <td>
-                                <div class="d-flex gap-2 justify-content-center">
-                                    <a href="{{ route('pelanggan.edit', $p->id) }}"
-                                       class="btn btn-sm btn-outline-primary"
-                                       title="Edit">
-                                        <i class="ri-edit-2-line"></i>
-                                    </a>
-
-                                    <form action="{{ route('pelanggan.delete', $p->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete" title="Hapus">
-                                            <i class="ri-delete-bin-line"></i>
-                                        </button>
-                                    </form>
+                            <td class="text-center">
+                                <div class="dropdown d-inline-block">
+                                    <button class="action-btn" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" data-bs-boundary="window">
+                                        <i class="ri-more-2-fill"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end tagihan-action-menu">
+                                        <li>
+                                            <button class="dropdown-item btn-detail" type="button">
+                                                <i class="ri-eye-line"></i>Detail
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('pelanggan.edit', $p->id) }}">
+                                                <i class="ri-edit-2-line"></i>Edit
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider my-1"></li>
+                                        <li>
+                                            <form action="{{ route('pelanggan.delete', $p->id) }}" method="POST">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" class="dropdown-item text-danger btn-delete w-100 border-0 bg-transparent text-start">
+                                                    <i class="ri-delete-bin-line"></i>Delete
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
                                 </div>
                             </td>
                         </tr>
@@ -1533,17 +2093,15 @@ document.addEventListener("DOMContentLoaded", function() {
             @endif
         </div>
 
-        {{-- PAGINATION --}}
-        @if($pelanggan->hasPages())
-        <div class="pagination-section mt-4">
-            <div class="pagination-wrapper p-3 d-flex justify-content-between align-items-center  rounded-3 ">
-                <div class="pagination-info text-muted small fw-medium">
-                  Menampilkan <strong>{{ $pelanggan->firstItem() ?? 0 }}</strong> - <strong>{{ $pelanggan->lastItem() ?? 0 }}</strong> dari <strong>{{ $pelanggan->total() }}</strong> pelanggan
-                </div>
-                <div>
-                    {{ $pelanggan->appends(request()->query())->onEachSide(1)->links('pagination::bootstrap-5') }}
-                </div>
-            </div>
+        @if($pelanggan->count() > 0)
+        <div class="pagination-wrapper">
+          <label class="dense-toggle-wrap mb-0">
+            <input type="checkbox" id="densePaddingToggle">
+            <span>Dense padding</span>
+          </label>
+          <div>
+            {{ $pelanggan->appends(request()->query())->onEachSide(1)->links('pagination.mui') }}
+          </div>
         </div>
         @endif
     </div>

@@ -232,4 +232,14 @@ class EmployeeController extends Controller
             'Cache-Control' => 'private, max-age=86400',
         ]);
     }
+
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->ids;
+        if (is_array($ids) && count($ids) > 0) {
+            Employee::whereIn('id', $ids)->delete();
+            return response()->json(['success' => true, 'message' => 'Data karyawan terpilih berhasil dihapus.']);
+        }
+        return response()->json(['success' => false, 'message' => 'Tidak ada data karyawan yang dipilih.'], 400);
+    }
 }

@@ -25,6 +25,8 @@ class Tagihan extends Model
         'tanggal_berakhir',
         'status_pembayaran',
         'catatan',
+        'alasan_penolakan',
+        'ditolak_at',
         'bukti_pembayaran',
         'kwitansi',
         'type_pembayaran',
@@ -34,6 +36,7 @@ class Tagihan extends Model
 
     protected $casts = [
         'read_at' => 'datetime',
+        'ditolak_at' => 'datetime',
     ];
 
     /**

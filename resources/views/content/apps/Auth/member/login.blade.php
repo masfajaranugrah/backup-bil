@@ -16,6 +16,7 @@ $customizerHidden = 'customizer-hide';
 @section('page-style')
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+@include('content.apps.Customer.partials.disable-zoom')
 <style>
 * {
     margin: 0;
@@ -116,45 +117,144 @@ body::after {
     line-height: 1.5;
 }
 
-/* Alert Messages */
-.alert {
-    padding: 14px 16px;
-    border-radius: 12px;
-    margin-bottom: 24px;
+/* ========== ERROR MODAL - Premium Glassmorphism ========== */
+.error-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    animation: slideDown 0.3s ease;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.error-modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
 }
 
-.alert-error {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #991b1b;
+.error-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
-.alert-icon {
+.error-modal-card {
+    position: relative;
+    width: 100%;
+    max-width: 340px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 24px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.04);
+    padding: 32px 24px 24px;
+    text-align: center;
+    transform: translateY(20px) scale(0.96);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.error-modal-overlay.show .error-modal-card {
+    transform: translateY(0) scale(1);
+}
+
+.error-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(15, 23, 42, 0.05);
+    color: rgba(15, 23, 42, 0.4);
     font-size: 1.25rem;
-    flex-shrink: 0;
-    margin-top: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    line-height: 1;
 }
 
-.alert-content {
-    flex: 1;
+.error-modal-close:hover {
+    background: rgba(15, 23, 42, 0.1);
+    color: #0f172a;
+    transform: rotate(90deg) scale(1.1);
+}
+
+.error-modal-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.15) 100%);
+    border: 2px solid rgba(239, 68, 68, 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.1);
+    animation: error-icon-pulse 2s ease-in-out infinite;
+}
+
+.error-modal-icon i {
+    color: #ef4444;
+    font-size: 1.75rem;
+}
+
+@keyframes error-icon-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 8px 20px rgba(239, 68, 68, 0.1); }
+    50% { transform: scale(1.05); box-shadow: 0 12px 28px rgba(239, 68, 68, 0.18); }
+}
+
+.error-modal-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+}
+
+.error-modal-text {
     font-size: 0.875rem;
-    font-weight: 500;
-    line-height: 1.5;
+    color: #64748b;
+    line-height: 1.55;
+    margin-bottom: 20px;
+}
+
+.error-modal-btn {
+    width: 100%;
+    padding: 13px 24px;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: #0f172a;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.error-modal-btn:hover {
+    background: #1e293b;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.3);
+}
+
+.error-modal-btn:active {
+    transform: translateY(0);
 }
 
 /* Toggle Button Group */
@@ -308,10 +408,11 @@ body::after {
 }
 
 .btn-submit:disabled {
-    background: #cbd5e1;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #ffffff;
     cursor: not-allowed;
     transform: none;
-    box-shadow: none;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.2);
 }
 
 .btn-icon {
@@ -505,9 +606,8 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem('remember_login');
         }
 
-        // Show loading state
+        // Disable button to prevent double submit
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner"></span> Memproses...';
     });
 
     // Remove alert on input
@@ -519,18 +619,51 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function showAlert(message) {
-        const existingAlert = document.querySelector('.alert-error');
-        if (existingAlert) existingAlert.remove();
+        showErrorModal(message);
+    }
 
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-error';
-        alertDiv.innerHTML = `
-            <i class="bi bi-exclamation-circle alert-icon"></i>
-            <div class="alert-content">${message}</div>
-        `;
+    function showErrorModal(message) {
+        const overlay = document.getElementById('errorModalOverlay');
+        const textEl = document.getElementById('errorModalText');
+        if (!overlay || !textEl) return;
+        textEl.textContent = message;
+        overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
 
-        const formSection = document.querySelector('.form-section form');
-        formSection.insertBefore(alertDiv, formSection.firstChild);
+    function closeErrorModal() {
+        const overlay = document.getElementById('errorModalOverlay');
+        if (!overlay) return;
+        overlay.classList.remove('show');
+        document.body.style.overflow = '';
+        input.focus();
+    }
+
+    // Close on backdrop click
+    const errorOverlay = document.getElementById('errorModalOverlay');
+    errorOverlay?.addEventListener('click', function(e) {
+        if (e.target === this || e.target.classList.contains('error-modal-backdrop')) {
+            closeErrorModal();
+        }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeErrorModal();
+    });
+
+    // Close on button click
+    const closeBtns = document.querySelectorAll('.error-modal-close, .error-modal-btn');
+    closeBtns.forEach(btn => {
+        btn.addEventListener('click', closeErrorModal);
+    });
+
+    // Auto-show modal if server returned an error
+    const serverError = document.getElementById('serverErrorMessage');
+    if (serverError && serverError.value) {
+        setTimeout(function() {
+            showErrorModal(serverError.value);
+        }, 300);
     }
 });
 </script>
@@ -549,18 +682,11 @@ document.addEventListener('DOMContentLoaded', function() {
             <form id="formAuthentication" action="{{ route('login.member.post') }}" method="POST">
                 @csrf
 
-                @if(session('error'))
-                <div class="alert alert-error">
-                    <i class="bi bi-exclamation-circle alert-icon"></i>
-                    <div class="alert-content">{{ session('error') }}</div>
-                </div>
-                @endif
-
-                @if($errors->has('login_input'))
-                <div class="alert alert-error">
-                    <i class="bi bi-exclamation-circle alert-icon"></i>
-                    <div class="alert-content">{{ $errors->first('login_input') }}</div>
-                </div>
+                @php
+                    $loginError = session('error') ?: ($errors->has('login_input') ? $errors->first('login_input') : '');
+                @endphp
+                @if($loginError)
+                    <input type="hidden" id="serverErrorMessage" value="{{ $loginError }}">
                 @endif
 
                 <!-- Toggle Login Method -->
@@ -609,6 +735,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
             </form>
         </div>
+    </div>
+</div>
+
+<!-- Error Modal Overlay -->
+<div id="errorModalOverlay" class="error-modal-overlay">
+    <div class="error-modal-backdrop"></div>
+    <div class="error-modal-card">
+        <button type="button" class="error-modal-close">
+            <i class="bi bi-x"></i>
+        </button>
+        <div class="error-modal-icon">
+            <i class="bi bi-exclamation-circle-fill"></i>
+        </div>
+        <h3 class="error-modal-title">Gagal Masuk</h3>
+        <p class="error-modal-text" id="errorModalText"></p>
+        <button type="button" class="error-modal-btn">
+            Ok, Mengerti
+        </button>
     </div>
 </div>
 @endsection

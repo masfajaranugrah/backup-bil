@@ -9,14 +9,12 @@ use Illuminate\Support\Str;
 
 @section('vendor-style')
 @vite([
+  'resources/css/app.css',
   'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'
 ])
 
 <style>
-/* ========================================= */
-/* SHADCN UI STYLE - BLACK & WHITE */
-/* ========================================= */
 :root {
   --card-shadow: 0 2px 8px rgba(0,0,0,0.08);
   --card-hover-shadow: 0 4px 16px rgba(0,0,0,0.12);
@@ -25,6 +23,90 @@ use Illuminate\Support\Str;
   --primary-color: #18181b;
   --gray-bg: #fafafa;
   --gray-border: #e4e4e7;
+  --text-muted: #71717a;
+}
+
+.notification-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.notification-hero {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%);
+  border: 1px solid var(--gray-border);
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: var(--card-shadow);
+}
+
+.notification-hero-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notification-hero-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #18181b;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex: 0 0 auto;
+}
+
+.notification-hero h4 {
+  color: #18181b;
+  letter-spacing: -0.02em;
+}
+
+.notification-hero p {
+  color: var(--text-muted);
+}
+
+.notification-stat-card {
+  height: 100%;
+  border: 1px solid var(--gray-border);
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.notification-stat-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.notification-stat-value {
+  color: #18181b;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.notification-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notification-card-title-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #f4f4f5;
+  color: #18181b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--gray-border);
 }
 
 /* ========== CARD ========== */
@@ -45,7 +127,7 @@ use Illuminate\Support\Str;
 .card-header-custom {
   background: #ffffff !important;
   border-bottom: 1px solid var(--gray-border);
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   border-radius: var(--border-radius) var(--border-radius) 0 0;
 }
 
@@ -66,7 +148,7 @@ use Illuminate\Support\Str;
 .table-modern {
   margin-bottom: 0;
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;
   border-collapse: separate;
   border-spacing: 0;
 }
@@ -97,6 +179,113 @@ use Illuminate\Support\Str;
   vertical-align: middle;
   border-bottom: 1px solid #e4e4e7;
   color: #18181b;
+}
+
+.notification-title-cell strong {
+  display: block;
+  color: #18181b;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.notification-title-cell small {
+  line-height: 1.45;
+}
+
+.notification-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.notification-empty-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 1rem;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f4f5;
+  color: #18181b;
+  border: 1px solid var(--gray-border);
+  font-size: 1.65rem;
+}
+
+.table-modern.is-dense th,
+.table-modern.is-dense td {
+  padding: 0.55rem 0.85rem !important;
+}
+
+.mui-checkbox {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.mui-checkbox:checked {
+  background: #18181b;
+  border-color: #18181b;
+}
+
+.mui-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.bulk-action-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e4e4e7;
+  color: #18181b;
+  font-weight: 700;
+}
+
+.bulk-action-bar.show {
+  display: flex;
+}
+
+.btn-bulk-delete {
+  border: 0;
+  background: #fee2e2;
+  color: #dc2626;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #18181b;
 }
 
 /* ========== BUTTONS - ALL BLACK ========== */
@@ -184,6 +373,86 @@ use Illuminate\Support\Str;
   color: #18181b !important;
 }
 
+.action-btn {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.action-btn:hover,
+.action-btn:focus {
+  background: #f1f5f9;
+  color: #18181b;
+}
+
+.action-btn i {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.iklan-action-menu {
+  position: relative;
+  min-width: 160px;
+  padding: 0.7rem;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  background: linear-gradient(115deg, #fff4f1 0%, #ffffff 50%, #f1fbff 100%) !important;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16) !important;
+  margin-top: -62px !important;
+  margin-right: 34px !important;
+  overflow: visible !important;
+}
+
+.iklan-action-menu::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  background: #f7fdff;
+  border-right: 1px solid #e2e8f0;
+  border-top: 1px solid #e2e8f0;
+  transform: translateY(-50%) rotate(45deg);
+  z-index: 0;
+}
+
+.iklan-action-menu .dropdown-item {
+  position: relative;
+  z-index: 1;
+  border-radius: 10px;
+  padding: 0.55rem 0.6rem;
+  font-weight: 600;
+  color: #1f2937;
+  gap: 0.65rem;
+}
+
+.iklan-action-menu .dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.72);
+  color: #111827;
+}
+
+.iklan-action-menu .dropdown-item.danger-action {
+  color: #ff4528 !important;
+}
+
+.iklan-action-menu .dropdown-item.danger-action:hover {
+  background: rgba(255, 69, 40, 0.08) !important;
+}
+
+.iklan-action-menu .dropdown-item i {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
 /* ========== BADGES ========== */
 .badge {
   border-radius: 9999px !important;
@@ -206,8 +475,9 @@ use Illuminate\Support\Str;
 .badge.bg-label-info,
 .badge.bg-label-success,
 .badge.bg-label-warning {
-  background: #18181b !important;
-  color: #fafafa !important;
+  background: #f4f4f5 !important;
+  color: #18181b !important;
+  border: 1px solid #e4e4e7;
 }
 
 /* ========== NOTIFICATION IMAGE ========== */
@@ -215,8 +485,23 @@ use Illuminate\Support\Str;
   width: 60px;
   height: 60px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid #e4e4e7;
+}
+
+@media (max-width: 767.98px) {
+  .notification-hero {
+    padding: 1rem;
+  }
+
+  .notification-hero-title {
+    align-items: flex-start;
+  }
+
+  .notification-hero .btn {
+    width: 100%;
+    margin-top: 1rem;
+  }
 }
 
 /* ========== LOADING OVERLAY ========== */
@@ -232,32 +517,46 @@ use Illuminate\Support\Str;
 }
 
 /* ========== PAGINATION STYLES ========== */
-.pagination .page-item .page-link {
-  border-radius: 50% !important;
-  width: 40px;
-  height: 40px;
-  padding: 0;
+.pagination-wrapper {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e4e4e7;
+  background: #fafafa;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+.pagination-wrapper .mui-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.pagination-wrapper .mui-pagination .page-link {
+  min-width: 34px;
+  height: 34px;
+  border-radius: 50% !important;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  border: 1px solid #e4e4e7;
-  color: #18181b;
-  font-weight: 600;
-  background-color: #fff;
-  margin: 0 4px;
-  transition: all 0.3s ease;
+  border: 0 !important;
+  color: #18181b !important;
+  font-weight: 700;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 0.5rem;
 }
 
-.pagination .page-item .page-link:hover {
-  background-color: #f4f4f5;
-  border-color: #18181b;
-  color: #18181b;
+.pagination-wrapper .mui-pagination .page-item.active .page-link {
+  background: #18181b !important;
+  color: #fff !important;
 }
 
-.pagination .page-item.active .page-link {
-  background-color: #18181b !important;
-  border-color: #18181b !important;
-  color: #fafafa !important;
+.pagination-wrapper .mui-pagination .page-link:hover {
+  background: #f1f5f9 !important;
 }
 
 /* ========== ANIMATIONS ========== */
@@ -268,6 +567,48 @@ use Illuminate\Support\Str;
 
 .card {
   animation: fadeIn 0.3s ease-out;
+}
+
+.bottom-snackbar {
+  position: fixed;
+  right: 24px;
+  bottom: 28px;
+  transform: translateY(10px);
+  z-index: 99999;
+  min-width: min(360px, calc(100vw - 32px));
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 14px 20px;
+  border-radius: 18px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 16px 42px rgba(15,23,42,.32);
+  opacity: 0;
+  transition: all .2s ease;
+}
+
+.bottom-snackbar.is-error {
+  background: #dc2626;
+}
+
+.bottom-snackbar.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.bottom-snackbar.hide {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.bottom-snackbar i {
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  line-height: 1;
 }
 </style>
 @endsection
@@ -282,6 +623,26 @@ use Illuminate\Support\Str;
 @section('page-script')
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    function showBottomSnackbar(message, type = 'success') {
+        const existing = document.querySelector('.bottom-snackbar');
+        if (existing) existing.remove();
+
+        const isError = type === 'error';
+
+        const snackbar = document.createElement('div');
+        snackbar.className = `bottom-snackbar${isError ? ' is-error' : ''}`;
+        snackbar.innerHTML = `
+            <i class="${isError ? 'ri-error-warning-line' : 'ri-checkbox-circle-line'}" style="color:${isError ? '#fecaca' : '#86efac'}"></i>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(snackbar);
+        requestAnimationFrame(() => snackbar.classList.add('show'));
+        setTimeout(() => {
+            snackbar.classList.add('hide');
+            setTimeout(() => snackbar.remove(), 220);
+        }, 3200);
+    }
+
     function showLoading() {
         $('.loading-overlay').css('display', 'flex');
     }
@@ -290,23 +651,110 @@ document.addEventListener("DOMContentLoaded", function() {
         $('.loading-overlay').fadeOut(300);
     }
 
-    // DataTable
-    $('.datatables-notifications').DataTable({
-        paging: true,
-        pageLength: 10,
-        searching: true,
-        ordering: true,
-        responsive: true,
-        language: {
-            search: "Cari:",
-            lengthMenu: "Tampilkan _MENU_ data",
-            info: "Menampilkan _START_ - _END_ dari _TOTAL_ notifikasi",
-            paginate: {
-                previous: '<i class="ri-arrow-left-s-line"></i>',
-                next: '<i class="ri-arrow-right-s-line"></i>'
-            }
-        }
+    function updateBulkActionBar() {
+        const checkedCount = $('.row-checkbox:checked').length;
+        $('#selectedCount').text(`${checkedCount} dipilih`);
+        $('#bulkActionBar').toggleClass('show', checkedCount > 0);
+        $('#selectAll').prop('checked', $('.row-checkbox').length > 0 && checkedCount === $('.row-checkbox').length);
+    }
+
+    $('#selectAll').on('change', function() {
+        $('.row-checkbox').prop('checked', this.checked);
+        updateBulkActionBar();
     });
+
+    $(document).on('change', '.row-checkbox', updateBulkActionBar);
+
+    const denseToggle = document.getElementById('densePaddingToggle');
+    const tableEl = document.querySelector('.table-modern');
+    if (denseToggle && tableEl) {
+        const savedDense = localStorage.getItem('iklan_dense_padding') === '1';
+        denseToggle.checked = savedDense;
+        tableEl.classList.toggle('is-dense', savedDense);
+
+        denseToggle.addEventListener('change', function() {
+            const isDense = denseToggle.checked;
+            tableEl.classList.toggle('is-dense', isDense);
+            localStorage.setItem('iklan_dense_padding', isDense ? '1' : '0');
+        });
+    }
+
+    let progressPoller = null;
+
+    function stopProgressPolling() {
+        if (progressPoller) {
+            clearInterval(progressPoller);
+            progressPoller = null;
+        }
+    }
+
+    function trackSendProgress(notifId, title = 'Notifikasi') {
+        stopProgressPolling();
+
+        Swal.fire({
+            title: 'Mengirim Notifikasi',
+            html: `<p class="mb-1"><strong>${title}</strong></p><p class="mb-0">Menyiapkan data...</p>`,
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            customClass: {
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup'
+            },
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        const pullProgress = () => {
+            fetch(`/dashboard/admin/iklan/${notifId}/progress`)
+                .then((res) => res.json())
+                .then((data) => {
+                    const total = Number(data.total || 0);
+                    const processed = Number(data.processed || 0);
+                    const sent = Number(data.sent || 0);
+                    const failed = Number(data.failed || 0);
+                    const status = data.status || 'processing';
+
+                    const progressText = total > 0
+                        ? `${processed}/${total}`
+                        : `${processed}`;
+
+                    const html = `<p class="mb-1"><strong>${title}</strong></p><p class="mb-0">Progress: <strong>${progressText}</strong> | Berhasil: <strong>${sent}</strong> | Gagal: <strong>${failed}</strong></p>`;
+
+                    if (Swal.isVisible()) {
+                        Swal.update({ html });
+                    }
+
+                    if (status === 'completed') {
+                        stopProgressPolling();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Pengiriman Selesai',
+                            html: `<p class="mb-0">Berhasil: <strong>${sent}</strong> | Gagal: <strong>${failed}</strong></p>`,
+                            showCancelButton: false,
+                            showDenyButton: false,
+                            confirmButtonText: 'Refresh Data',
+                            customClass: {
+                                container: 'swal-tailwind-backdrop',
+                                popup: 'swal-tailwind-popup',
+                                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-success'
+                            },
+                            buttonsStyling: false
+                        }).then(() => window.location.reload());
+                    }
+                })
+                .catch(() => {
+                    stopProgressPolling();
+                    if (Swal.isVisible()) {
+                        Swal.close();
+                    }
+                    showBottomSnackbar('Gagal mengambil progress pengiriman.', 'error');
+                });
+        };
+
+        pullProgress();
+        progressPoller = setInterval(pullProgress, 2000);
+    }
 
     // Kirim Notifikasi
     $(document).on('click', '.btn-send', function(e) {
@@ -322,9 +770,12 @@ document.addEventListener("DOMContentLoaded", function() {
             showDenyButton: false,
             confirmButtonText: '<i class="ri-send-plane-fill me-2"></i>Ya, Kirim!',
             cancelButtonText: 'Batal',
+            reverseButtons: true,
             customClass: {
-                confirmButton: 'btn btn-success me-2',
-                cancelButton: 'btn btn-secondary'
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-success',
+                cancelButton: 'swal-tailwind-cancel'
             },
             buttonsStyling: false
         }).then((result) => {
@@ -343,16 +794,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     hideLoading();
 
                     if (data.queued) {
-                        Swal.fire({
-                            toast: true,
-                            position: 'top-end',
-                            icon: 'success',
-                            title: 'Dikirim ke antrian',
-                            html: `<small>Notifikasi sedang dikirim di background. Anda bisa lanjut bekerja.</small>`,
-                            showConfirmButton: false,
-                            timer: 3500,
-                            timerProgressBar: true,
-                        });
+                        showBottomSnackbar('Notifikasi sedang dikirim di background. Anda bisa lanjut bekerja.', 'success');
                         return;
                     }
 
@@ -364,7 +806,11 @@ document.addEventListener("DOMContentLoaded", function() {
                             showCancelButton: false,
                             showDenyButton: false,
                             confirmButtonText: 'OK',
-                            customClass: { confirmButton: 'btn btn-success' },
+                            customClass: {
+                                container: 'swal-tailwind-backdrop',
+                                popup: 'swal-tailwind-popup',
+                                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-success'
+                            },
                             buttonsStyling: false
                         });
                     }
@@ -378,7 +824,11 @@ document.addEventListener("DOMContentLoaded", function() {
                         showCancelButton: false,
                         showDenyButton: false,
                         confirmButtonText: 'OK',
-                        customClass: { confirmButton: 'btn btn-danger' },
+                        customClass: {
+                            container: 'swal-tailwind-backdrop',
+                            popup: 'swal-tailwind-popup',
+                            confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger'
+                        },
                         buttonsStyling: false
                     });
                 });
@@ -399,9 +849,12 @@ document.addEventListener("DOMContentLoaded", function() {
             showDenyButton: false,
             confirmButtonText: 'Ya, Hapus!',
             cancelButtonText: 'Batal',
+            reverseButtons: true,
             customClass: {
-                confirmButton: 'btn btn-danger me-2',
-                cancelButton: 'btn btn-secondary'
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                cancelButton: 'swal-tailwind-cancel'
             },
             buttonsStyling: false
         }).then((result) => {
@@ -410,30 +863,119 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     });
+
+    $('#btnBulkDelete').on('click', async function() {
+        const checked = $('.row-checkbox:checked').toArray();
+        if (!checked.length) return;
+
+        const result = await Swal.fire({
+            title: 'Hapus Notifikasi Terpilih?',
+            text: `Anda akan menghapus ${checked.length} notifikasi. Data tidak dapat dikembalikan!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                cancelButton: 'swal-tailwind-cancel'
+            },
+            buttonsStyling: false
+        });
+
+        if (!result.isConfirmed) return;
+
+        showLoading();
+        for (const cb of checked) {
+            try {
+                await fetch(`/dashboard/admin/iklan/${$(cb).val()}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ _method: 'DELETE' })
+                });
+            } catch (e) {}
+        }
+        window.location.reload();
+    });
+
+    @if(session('iklan_progress_id'))
+        showBottomSnackbar('Notifikasi sedang dikirim di background. Anda bisa lanjut membuka menu lain.', 'success');
+    @endif
+
+    @if(session('success') && !session('iklan_progress_id'))
+        showBottomSnackbar(@json(session('success')), 'success');
+    @endif
+
+    @if(session('error'))
+        showBottomSnackbar(@json(session('error')), 'error');
+    @endif
 });
 </script>
 @endsection
 
 @section('content')
+@php
+    $notifCollection = $iklans->getCollection();
+    $totalSentOnPage = $notifCollection->sum(fn ($item) => (int) ($item->total_sent ?? 0));
+    $sentCountOnPage = $notifCollection->filter(fn ($item) => !empty($item->sent_at))->count();
+    $maintenanceCountOnPage = $notifCollection->where('type', 'maintenance')->count();
+@endphp
+
 <div class="loading-overlay">
     <div class="spinner-border text-light" style="width: 3rem; height: 3rem;"></div>
 </div>
 
-@if(session('success'))
-<div class="alert alert-success alert-dismissible fade show" role="alert">
-    {{ session('success') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
+<div class="notification-shell">
+    <div class="notification-hero">
+        <div class="row g-3 align-items-center">
+            <div class="col-lg-6">
+                <div class="notification-hero-title">
+                    <span class="notification-hero-icon"><i class="ri-notification-3-line"></i></span>
+                    <div>
+                        <h4 class="mb-1 fw-bold">Kelola Notifikasi</h4>
+                        <p class="mb-0 small">Buat informasi, maintenance, dan iklan. Sistem akan kirim FCM lalu fallback WebPushr jika token pelanggan kosong.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="row g-2">
+                    <div class="col-6 col-md-4">
+                        <div class="notification-stat-card">
+                            <div class="notification-stat-label">Total</div>
+                            <div class="notification-stat-value">{{ number_format($iklans->total()) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="notification-stat-card">
+                            <div class="notification-stat-label">Terkirim</div>
+                            <div class="notification-stat-value">{{ number_format($totalSentOnPage) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="notification-stat-card">
+                            <div class="notification-stat-label">Maintenance</div>
+                            <div class="notification-stat-value">{{ number_format($maintenanceCountOnPage) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 <div class="card border-0 shadow-sm">
     <div class="card-header-custom">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h4 class="mb-1 fw-bold">
-                    <i class="ri-notification-3-line me-2"></i>Kelola Notifikasi
-                </h4>
-                <p class="mb-0 text-muted small">Buat dan kirim notifikasi ke pelanggan</p>
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div class="notification-card-title">
+                <span class="notification-card-title-icon"><i class="ri-list-check-2"></i></span>
+                <div>
+                    <h4 class="mb-1 fw-bold">Daftar Notifikasi</h4>
+                    <p class="mb-0 text-muted small">{{ $sentCountOnPage }} sudah selesai dikirim di halaman ini</p>
+                </div>
             </div>
             <a href="{{ route('iklan.create')}}" class="btn btn-primary">
                 <i class="ri-add-line me-2 text-white"></i>Buat Notifikasi
@@ -442,11 +984,19 @@ document.addEventListener("DOMContentLoaded", function() {
     </div>
 
     <div class="card-body p-0">
-        <div class="table-responsive p-3">
-            <table class="datatables-notifications table table-modern table-hover">
+        <div class="bulk-action-bar" id="bulkActionBar">
+            <span id="selectedCount">0 dipilih</span>
+            <button type="button" class="btn-bulk-delete" id="btnBulkDelete" title="Hapus Terpilih">
+                <i class="ri-delete-bin-line"></i>
+            </button>
+        </div>
+        <div class="table-responsive p-0">
+            <table class="table table-modern table-hover">
                 <thead>
                     <tr>
-                        <th>No</th>
+                        <th style="width:56px; text-align:center;">
+                            <input type="checkbox" class="mui-checkbox" id="selectAll" title="Pilih Semua">
+                        </th>
                         <th>Gambar</th>
                         <th>Judul</th>
                         <th>Tipe</th>
@@ -457,9 +1007,11 @@ document.addEventListener("DOMContentLoaded", function() {
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($iklans as $notif)
+                    @forelse($iklans as $notif)
                     <tr>
-                        <td>{{ $loop->iteration }}</td>
+                        <td style="text-align:center;">
+                            <input type="checkbox" class="mui-checkbox row-checkbox" value="{{ $notif->id }}">
+                        </td>
                         <td>
                             @if($notif->image)
                             <img src="{{ asset('storage/' . $notif->image) }}" class="notification-image" alt="Image">
@@ -469,9 +1021,8 @@ document.addEventListener("DOMContentLoaded", function() {
                             </div>
                             @endif
                         </td>
-                        <td>
+                        <td class="notification-title-cell">
                             <strong>{{ $notif->title }}</strong>
-                            <br>
                             <small class="text-muted">{{ Str::limit($notif->message, 50) }}</small>
                         </td>
                         <td>
@@ -488,8 +1039,10 @@ document.addEventListener("DOMContentLoaded", function() {
                             @endif
                         </td>
                         <td>
-                            @if($notif->status === 'sent')
-                                <span class="text-success">{{ $notif->total_sent }} orang</span>
+                            @if($notif->sent_at)
+                                <span class="text-success fw-semibold">{{ number_format($notif->total_sent) }} orang</span>
+                                <br>
+                                <small class="text-muted">{{ $notif->sent_at->format('d M Y H:i') }}</small>
                             @else
                                 <span class="text-muted">-</span>
                             @endif
@@ -500,33 +1053,66 @@ document.addEventListener("DOMContentLoaded", function() {
                             <small class="text-muted">{{ $notif->creator->name ?? 'Admin' }}</small>
                         </td>
                         <td>
-                            <div class="d-flex gap-2 justify-content-center">
-                                @if($notif->status === 'draft')
-                                <button class="btn btn-sm btn-success btn-send"
-                                        data-id="{{ $notif->id }}"
-                                        data-title="{{ $notif->title }}">
-                                    <i class="ri-send-plane-fill text-white"></i>
+                            <div class="dropdown d-flex justify-content-center">
+                                <button class="action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Aksi">
+                                    <i class="ri-more-2-fill"></i>
                                 </button>
-                                <a href="{{ route('iklan.edit', $notif->id) }}"
-                                   class="btn btn-sm btn-primary">
-                                    <i class="ri-edit-line text-white"></i>
-                                </a>
-                                @endif
-
-                                <form action="{{ route('iklan.destroy', $notif->id) }}" method="POST">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="btn btn-sm btn-danger btn-delete">
-                                        <i class="ri-delete-bin-line text-white"></i>
-                                    </button>
-                                </form>
+                                <ul class="dropdown-menu dropdown-menu-end iklan-action-menu">
+                                    @if($notif->status === 'draft')
+                                    <li>
+                                        <a href="javascript:void(0);"
+                                           class="dropdown-item d-flex align-items-center btn-send"
+                                           data-id="{{ $notif->id }}"
+                                           data-title="{{ $notif->title }}">
+                                            <i class="ri-send-plane-fill text-success"></i>Kirim
+                                        </a>
+                                    </li>
+                                    @endif
+                                    <li>
+                                        <a href="{{ route('iklan.edit', $notif->id) }}" class="dropdown-item d-flex align-items-center">
+                                            <i class="ri-edit-line text-primary"></i>Edit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <form action="{{ route('iklan.destroy', $notif->id) }}" method="POST" class="m-0 p-0">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" class="dropdown-item danger-action btn-delete d-flex align-items-center w-100 border-0 bg-transparent text-start">
+                                                <i class="ri-delete-bin-line"></i>Delete
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
                             </div>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="8">
+                            <div class="notification-empty">
+                                <div class="notification-empty-icon"><i class="ri-notification-off-line"></i></div>
+                                <h5 class="mb-1 fw-bold">Belum ada notifikasi</h5>
+                                <p class="text-muted mb-3">Mulai buat informasi, maintenance, atau iklan untuk pelanggan.</p>
+                                <a href="{{ route('iklan.create') }}" class="btn btn-primary">
+                                    <i class="ri-add-line text-white"></i>Buat Notifikasi
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
+        <div class="pagination-wrapper">
+            <label class="dense-toggle-wrap mb-0">
+                <input type="checkbox" id="densePaddingToggle">
+                <span>Dense padding</span>
+            </label>
+            <div>
+                {{ $iklans->appends(request()->query())->onEachSide(1)->links('pagination.mui') }}
+            </div>
+        </div>
     </div>
+</div>
 </div>
 @endsection

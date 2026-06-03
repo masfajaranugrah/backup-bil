@@ -4,6 +4,7 @@
 
 @section('vendor-style')
 @vite([
+    'resources/css/app.css',
     'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
     'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
     'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
@@ -30,23 +31,34 @@ body { background: #f5f5f9; }
 
 /* Header */
 .card-header-custom {
-  background: #fff !important;
+  background: #ffffff !important;
   border-bottom: 1px solid var(--gray-border);
-  padding: 1.5rem;
+  padding: 1.5rem 1.75rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-radius: var(--border-radius) var(--border-radius) 0 0;
+  position: relative;
+}
+.card-header-custom::before {
+  display: none;
+  content: none;
 }
 .card-header-custom h4 { font-size:1.4rem; font-weight:700; color:#18181b; margin:0; display:flex; align-items:center; gap:0.5rem; }
+.card-header-custom h4 i { color: #18181b; }
 .card-header-custom p  { color:#71717a; font-size:0.875rem; margin:0; }
+.search-wrapper { position: relative; }
+.search-wrapper .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; font-size: 0.9rem; }
+.search-wrapper .form-control { padding-left: 2.25rem; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 0.875rem; width: 260px; background: #f8fafc; transition: all 0.2s; }
+.search-wrapper .form-control:focus { border-color: #18181b; box-shadow: 0 0 0 3px rgba(24,24,27,0.08); background: #fff; }
+
 
 /* Table */
 .table-modern { margin-bottom: 0; width: 100% !important; }
-.table-modern thead th { background: #f8fafc; font-weight: 600; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.5px; color: #18181b; padding: 1rem; border: none; white-space: nowrap; }
+.table-modern thead th { background: #f8fafc; font-weight: 700; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.6px; color: #18181b; padding: 1.1rem 1.2rem; border: none; white-space: nowrap; }
 .table-modern tbody tr { transition: var(--transition); border-bottom: 1px solid var(--gray-border); }
 .table-modern tbody tr:hover { background-color: #f4f4f5 !important; }
-.table-modern tbody td { padding: 0.85rem 1rem; vertical-align: middle; border-bottom: 1px solid var(--gray-border); color: #18181b; font-size: 0.9rem; }
+.table-modern tbody td { padding: 1rem 1.2rem; vertical-align: middle; border-bottom: 1px solid var(--gray-border); color: #18181b; font-size: 0.9rem; }
 
 /* Buttons */
 .btn-outline-dark { border: 1px solid #18181b !important; color: #18181b !important; border-radius: 8px !important; font-weight: 600 !important; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.8rem; }
@@ -71,16 +83,87 @@ body { background: #f5f5f9; }
 /* Image wrapper */
 .absensi-img-wrapper { border: 1px solid var(--gray-border); border-radius: 8px; padding: 4px; background: #fafafa; display: inline-block; }
 .absensi-img { max-width: 100%; height: auto; border-radius: 4px; max-height: 200px; object-fit: contain; }
+
+/* Custom Checkbox */
+.custom-check { appearance: none; width: 22px; height: 22px; border: 1.5px solid #cbd5e1; border-radius: 5px; background: #fff; cursor: pointer; position: relative; display: block; margin: 0 auto; transition: all 0.2s; }
+.custom-check:hover { border-color: #18181b; }
+.custom-check:checked { background: #18181b; border-color: #18181b; }
+.custom-check:checked::after { content: ''; position: absolute; top: 3px; left: 7px; width: 6px; height: 11px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.dense-toggle-wrap input[type="checkbox"] { width: 22px; height: 22px; accent-color: #18181b; }
+
+/* Selection Toolbar */
+.selection-toolbar { display: none; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; padding: 0.9rem 1.2rem; border-radius: 10px; }
+.selection-toolbar.active { display: flex; }
+.selection-toolbar .selected-text { font-size: 1rem; font-weight: 700; color: #18181b; }
+.selection-toolbar .toolbar-delete-btn { border: 0; background: #fee2e2; color: #dc2626; width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: none; transition: all 0.2s; }
+.selection-toolbar .toolbar-delete-btn:hover { background: #fecaca; transform: translateY(-1px); }
+
+/* Pagination */
+.pagination-wrapper { display: flex; align-items: center; justify-content: center; }
+.pagination-wrapper .mui-pagination { display: flex; align-items: center; gap: 0.4rem; list-style: none; padding: 0; margin: 0; }
+.pagination-wrapper .mui-pagination .page-link { width: 34px !important; min-width: 34px !important; max-width: 34px !important; height: 34px !important; flex: 0 0 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50% !important; font-weight: 600; color: #18181b; background: transparent; border: 1px solid transparent; transition: all 0.2s; padding: 0 !important; font-size: 0.85rem; line-height: 1; box-sizing: border-box; }
+.pagination-wrapper .mui-pagination .page-item.active .page-link { background: #18181b; color: #fff; border-color: #18181b; box-shadow: none; }
+.pagination-wrapper .mui-pagination .page-link:hover:not(.active) { background: #f1f5f9; border-color: #e2e8f0; }
+.pagination-wrapper .mui-pagination .page-item.disabled .page-link { color: #cbd5e1; cursor: not-allowed; }
+.pagination-wrapper .mui-pagination .page-nav-icon { font-size: 1.1rem; font-weight: 700; }
+.dense-toggle-wrap { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #334155; }
+.table-modern.is-dense td, .table-modern.is-dense th { padding: 0.5rem 1rem !important; }
+.absensi-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 11000;
+  min-width: 280px;
+  max-width: min(380px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: #18181b;
+  color: #ffffff;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+  transform: translateY(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+.absensi-toast.show { transform: translateY(0); opacity: 1; }
+.absensi-toast i { color: #86efac; font-size: 1.25rem; }
+.absensi-toast span { color: #ffffff; font-size: 0.9rem; font-weight: 700; }
 </style>
 
 @section('page-script')
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    function showAbsensiToast(message) {
+        if (!message) return;
+        const toast = document.createElement('div');
+        toast.className = 'absensi-toast';
+        toast.innerHTML = `<i class="ri-check-line"></i><span>${message}</span>`;
+        document.body.appendChild(toast);
+        toast.offsetHeight;
+        setTimeout(() => toast.classList.add('show'), 50);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3200);
+    }
+
+    @if(session('success'))
+        showAbsensiToast(@json(session('success')));
+    @endif
+
+    const pendingAbsensiToast = localStorage.getItem('absensi_toast_success');
+    if (pendingAbsensiToast) {
+        localStorage.removeItem('absensi_toast_success');
+        showAbsensiToast(pendingAbsensiToast);
+    }
 
     const table = $('.table-absensi').DataTable({
         responsive: true,
         searching: true,
-        ordering: true,
+        ordering: false,
         paging: false,
         dom: 't' // Only show the table itself, hide default search & pagination
     });
@@ -143,11 +226,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
                     let diffMs = d2 - d1;
                     if (diffMs <= 0) return '0 menit';
-                    
+
                     let diffMins = Math.floor(diffMs / 60000);
                     let h = Math.floor(diffMins / 60);
                     let m = diffMins % 60;
-                    
+
                     if (h > 0 && m > 0) return `${h} jam ${m} menit`;
                     if (h > 0) return `${h} jam`;
                     return `${m} menit`;
@@ -217,11 +300,18 @@ document.addEventListener("DOMContentLoaded", function () {
             html: `Anda akan menghapus data absensi <strong>${name}</strong> pada tanggal <strong>${date}</strong>.<br><br>Tindakan ini tidak dapat dibatalkan.`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#18181b',
-            cancelButtonColor: '#6b7280',
+            customClass: {
+                popup: 'rounded-2xl shadow-xl bg-white border-0',
+                backdrop: 'backdrop-blur-sm bg-black/40',
+                confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl px-5 py-2.5 mx-2 shadow-sm transition-all duration-200 border-0',
+                cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl px-5 py-2.5 mx-2 transition-all duration-200 border-0'
+            },
+            showClass: { popup: 'animate__animated animate__fadeInUp animate__faster' },
+            hideClass: { popup: 'animate__animated animate__fadeOutDown animate__faster' },
             confirmButtonText: '<i class="ri-delete-bin-line me-1"></i> Ya, Hapus',
             cancelButtonText: 'Batal',
             reverseButtons: true,
+            buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
                 $('#formDeleteAbsensi').attr('action', `${baseUrl}/${id}`);
@@ -230,6 +320,78 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    // === Bulk Delete ===
+    function updateSelectionState() {
+        const $all = $('.row-checkbox');
+        const $checked = $('.row-checkbox:checked');
+        const count = $checked.length;
+        $('#selectAllAbsensi').prop('checked', $all.length > 0 && count === $all.length);
+        $('#selectedCount').text(count + ' dipilih');
+        $('#selectionToolbar').toggleClass('active', count > 0);
+    }
+
+    $('#selectAllAbsensi').on('change', function() {
+        $('.row-checkbox').prop('checked', this.checked);
+        updateSelectionState();
+    });
+
+    $(document).on('change', '.row-checkbox', updateSelectionState);
+
+    $('#btnBulkDelete').on('click', async function() {
+        const checked = $('.row-checkbox:checked').toArray();
+        if (!checked.length) return;
+
+        const result = await Swal.fire({
+            title: 'Konfirmasi Penghapusan',
+            text: `Hapus ${checked.length} data absensi terpilih?`,
+            icon: 'warning',
+            showCancelButton: true,
+            customClass: {
+                popup: 'rounded-2xl shadow-xl bg-white border-0',
+                backdrop: 'backdrop-blur-sm bg-black/40',
+                confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl px-5 py-2.5 mx-2 shadow-sm transition-all duration-200 border-0',
+                cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl px-5 py-2.5 mx-2 transition-all duration-200 border-0'
+            },
+            showClass: { popup: 'animate__animated animate__fadeInUp animate__faster' },
+            hideClass: { popup: 'animate__animated animate__fadeOutDown animate__faster' },
+            confirmButtonText: 'Hapus Semua',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            buttonsStyling: false
+        });
+
+        if (!result.isConfirmed) return;
+
+        for (const cb of checked) {
+            const id = $(cb).val();
+            try {
+                await fetch(`{{ url('/absensi') }}/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ _method: 'DELETE' })
+                });
+            } catch (e) {}
+        }
+        localStorage.setItem('absensi_toast_success', `${checked.length} data absensi berhasil dihapus.`);
+        location.reload();
+    });
+
+    const denseToggle = document.getElementById('densePaddingToggle');
+    const tableEl = document.querySelector('.table-modern');
+    if (denseToggle && tableEl) {
+        const savedDense = localStorage.getItem('absensi_dense_padding') === '1';
+        denseToggle.checked = savedDense;
+        tableEl.classList.toggle('is-dense', savedDense);
+
+        denseToggle.addEventListener('change', function() {
+            const isDense = denseToggle.checked;
+            tableEl.classList.toggle('is-dense', isDense);
+            localStorage.setItem('absensi_dense_padding', isDense ? '1' : '0');
+        });
+    }
 });
 </script>
 @endsection
@@ -248,31 +410,32 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
 
     <div class="table-responsive">
+        <div class="selection-toolbar rounded-3 m-3 mb-0" id="selectionToolbar">
+            <span class="selected-text" id="selectedCount">0 dipilih</span>
+            <button type="button" class="toolbar-delete-btn" id="btnBulkDelete" title="Hapus Terpilih">
+                <i class="ri-delete-bin-line fs-5"></i>
+            </button>
+        </div>
         <table class="table table-modern datatables-basic table-absensi">
             <thead>
                 <tr>
-                    <th style="width:50px; text-align:center;"># NO</th>
-                    <th><i class="ri-user-3-line me-1"></i> NAMA KARYAWAN</th>
-                    <th><i class="ri-login-circle-line me-1"></i> JAM MASUK</th>
-                    <th><i class="ri-logout-circle-line me-1"></i> JAM PULANG</th>
-                    <th><i class="ri-moon-line me-1"></i> LEMBUR MASUK</th>
-                    <th><i class="ri-moon-clear-line me-1"></i> LEMBUR PULANG</th>
-                    <th style="text-align:center;"><i class="ri-settings-3-line me-1"></i> AKSI</th>
+                    <th style="width:50px; text-align:center;"><input type="checkbox" class="custom-check" id="selectAllAbsensi"></th>
+                    <th>NAMA KARYAWAN</th>
+                    <th>JAM MASUK</th>
+                    <th>JAM PULANG</th>
+                    <th>LEMBUR MASUK</th>
+                    <th>LEMBUR PULANG</th>
+                    <th style="text-align:center;">DETAIL</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($absensi as $i => $a)
                 <tr>
-                    <td style="text-align:center; font-weight:600; color:#71717a;">{{ $i+1 }}</td>
+                    <td style="text-align:center;"><input type="checkbox" class="custom-check row-checkbox" value="{{ $a->id }}"></td>
                     <td>
                         <div class="data-badge-light border-0 px-0 bg-transparent">
                             <i class="ri-user-line" style="background:#18181b; color:#fff; padding:6px; border-radius:6px;"></i>
-                            <div>
-                                <div style="color:#18181b; font-weight:700;">{{ $a->user->name ?? '-' }}</div>
-                                <div style="color:#71717a; font-size:0.75rem; font-weight:500;">
-                                    <i class="ri-calendar-event-line"></i> {{ \Carbon\Carbon::parse($a->date)->translatedFormat('d M Y') }}
-                                </div>
-                            </div>
+                            <div style="color:#18181b; font-weight:700;">{{ $a->user->name ?? '-' }}</div>
                         </div>
                     </td>
                     <td>
@@ -305,25 +468,42 @@ document.addEventListener("DOMContentLoaded", function () {
                     </td>
                     <td style="text-align:center;">
                         <button
-                            class="btn btn-outline-dark btn-sm btn-detail btn-icon me-1"
+                            class="btn btn-outline-dark btn-sm btn-detail btn-icon"
                             title="Lihat Detail"
+                            style="width:34px;height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;"
                             data-item="{{ urlencode(json_encode($a)) }}">
                             <i class="ri-eye-line"></i>
-                        </button>
-                        <button
-                            class="btn btn-sm btn-icon btn-delete-absensi"
-                            title="Hapus Absensi"
-                            style="width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid #ef4444;color:#ef4444;border-radius:8px;background:transparent;"
-                            data-id="{{ $a->id }}"
-                            data-name="{{ $a->user->name ?? '-' }}"
-                            data-date="{{ \Carbon\Carbon::parse($a->date)->translatedFormat('d M Y') }}">
-                            <i class="ri-delete-bin-line"></i>
                         </button>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="d-flex justify-content-between align-items-center px-4 py-3" style="border-top: 1px solid #f1f5f9; background: #fafafa; border-radius: 0 0 var(--border-radius) var(--border-radius);">
+      <div class="d-flex align-items-center gap-4">
+        <label class="dense-toggle-wrap mb-0">
+          <input type="checkbox" id="densePaddingToggle">
+          <span class="small" style="font-weight:600; color:#334155;">Dense padding</span>
+        </label>
+      </div>
+      <div class="pagination-wrapper border-top-0 p-0 bg-transparent m-0">
+        @if($absensi instanceof \Illuminate\Pagination\LengthAwarePaginator && $absensi->hasPages())
+          {{ $absensi->appends(request()->query())->onEachSide(1)->links('pagination.mui') }}
+        @else
+          <nav aria-label="Page navigation">
+            <ul class="pagination mui-pagination mb-0 justify-content-end">
+              <li class="page-item disabled"><span class="page-link page-nav-icon">&laquo;</span></li>
+              <li class="page-item disabled"><span class="page-link page-nav-icon">&lsaquo;</span></li>
+              <li class="page-item active"><span class="page-link">1</span></li>
+              <li class="page-item disabled"><span class="page-link page-nav-icon">&rsaquo;</span></li>
+              <li class="page-item disabled"><span class="page-link page-nav-icon">&raquo;</span></li>
+            </ul>
+          </nav>
+        @endif
+      </div>
     </div>
 </div>
 

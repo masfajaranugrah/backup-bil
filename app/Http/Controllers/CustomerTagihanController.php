@@ -8,67 +8,239 @@ use App\Models\Rekening;
 use App\Models\Tagihan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage; // pastikan import model Rekening
+use Illuminate\Support\Str;
 
 class CustomerTagihanController extends Controller
 {
-private function markCustomerTagihansAsRead($pelangganId): void
-{
-    try {
-        if (!Schema::hasColumn('tagihans', 'read_at')) {
+    private function getBuktiPembayaranBasePathByNomorId(?string $nomorId): string
+    {
+        $isJmkGk = Str::startsWith(strtoupper(trim((string) $nomorId)), 'JMK-GK');
+        if ($isJmkGk) {
+            return rtrim(env('JMKGK_PUBLIC_STORAGE_PATH', '/var/www/billingJMKGK/storage/app/public'), '/');
+        }
+
+        return rtrim(env('JMK_PUBLIC_STORAGE_PATH', '/var/www/billingjmk/storage/app/public'), '/');
+    }
+
+    private function storeBuktiPembayaranByNomorId($file, ?string $nomorId): string
+    {
+        $basePath = $this->getBuktiPembayaranBasePathByNomorId($nomorId);
+        $targetDir = $basePath.'/bukti_pembayaran';
+
+        if (! is_dir($targetDir)) {
+            @mkdir($targetDir, 0755, true);
+        }
+
+        if (is_dir($targetDir) && is_writable($targetDir)) {
+            $filename = now()->format('YmdHis').'_'.Str::random(20).'.'.$file->getClientOriginalExtension();
+            $file->move($targetDir, $filename);
+
+            return 'bukti_pembayaran/'.$filename;
+        }
+
+        return $file->store('bukti_pembayaran', 'public');
+    }
+
+    private function deleteBuktiPembayaranByNomorId(?string $buktiPath, ?string $nomorId): void
+    {
+        $buktiPath = trim((string) $buktiPath);
+        if ($buktiPath === '') {
             return;
         }
 
-        Tagihan::where('pelanggan_id', $pelangganId)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
-    } catch (\Throwable $e) {
-        Log::warning('Gagal update read_at pada tagihan pelanggan', [
-            'pelanggan_id' => $pelangganId,
-            'error' => $e->getMessage(),
+        $basePath = $this->getBuktiPembayaranBasePathByNomorId($nomorId);
+        $absolutePath = $basePath.'/'.ltrim($buktiPath, '/');
+        if (is_file($absolutePath)) {
+            @unlink($absolutePath);
+
+            return;
+        }
+
+        if (Storage::disk('public')->exists($buktiPath)) {
+            Storage::disk('public')->delete($buktiPath);
+        }
+    }
+
+    private function markCustomerTagihansAsRead($pelangganId): void
+    {
+        try {
+            $hasReadAtColumn = Cache::remember('tagihans_has_read_at_column', now()->addHour(), function (): bool {
+                return Schema::hasColumn('tagihans', 'read_at');
+            });
+
+            if (! $hasReadAtColumn) {
+                return;
+            }
+
+            Tagihan::where('pelanggan_id', $pelangganId)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+        } catch (\Throwable $e) {
+            Log::warning('Gagal update read_at pada tagihan pelanggan', [
+                'pelanggan_id' => $pelangganId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function getUnreadInformationCount(): int
+    {
+        $lastInformationReadAt = session('customer_information_read_at');
+
+        return \App\Models\Iklan::where('status', 'active')
+            ->when($lastInformationReadAt, function ($query) use ($lastInformationReadAt) {
+                $query->where('created_at', '>', $lastInformationReadAt);
+            })
+            ->count();
+    }
+
+    public function profile()
+    {
+        $user = Auth::guard('customer')->user();
+
+        if (! $user) {
+            return redirect()->route('users.member');
+        }
+
+        return view('content.apps.Customer.profile.profile', compact('user'));
+    }
+
+    public function riwayat()
+    {
+        $user = Auth::guard('customer')->user();
+
+        if (! $user) {
+            return redirect()->route('users.member');
+        }
+
+        $this->markCustomerTagihansAsRead($user->id);
+
+        $tagihans = Tagihan::with(['paket', 'rekening'])
+            ->where('pelanggan_id', $user->id)
+            ->where('status_pembayaran', 'lunas')
+            ->orderBy('tanggal_mulai', 'desc')
+            ->get();
+
+        return view('content.apps.Customer.riwayat.riwayat', compact('user', 'tagihans'));
+    }
+
+    public function faq()
+    {
+        $user = Auth::guard('customer')->user();
+
+        return view('content.apps.Customer.faq.faq', compact('user'));
+    }
+
+    public function previewKwitansi($id)
+    {
+        $pelanggan = Auth::guard('customer')->user();
+
+        if (! $pelanggan) {
+            abort(401, 'Silakan login terlebih dahulu.');
+        }
+
+        $tagihan = Tagihan::where('pelanggan_id', $pelanggan->id)->findOrFail($id);
+
+        if (! $tagihan->kwitansi) {
+            abort(404, 'Kwitansi belum tersedia.');
+        }
+
+        $kwitansiPath = trim((string) $tagihan->kwitansi);
+        $kwitansiPath = Str::startsWith($kwitansiPath, ['http://', 'https://'])
+            ? ltrim((string) parse_url($kwitansiPath, PHP_URL_PATH), '/')
+            : ltrim($kwitansiPath, '/');
+
+        if (Str::startsWith($kwitansiPath, 'storage/')) {
+            $kwitansiPath = Str::after($kwitansiPath, 'storage/');
+        }
+
+        if (Str::startsWith($kwitansiPath, 'app/public/')) {
+            $kwitansiPath = Str::after($kwitansiPath, 'app/public/');
+        }
+
+        $candidatePaths = [
+            storage_path('app/public/'.$kwitansiPath),
+        ];
+
+        if (! Str::startsWith($kwitansiPath, 'kwitansi/')) {
+            $candidatePaths[] = storage_path('app/public/kwitansi/'.$kwitansiPath);
+        }
+
+        $externalStorageRoots = [
+            rtrim(env('JMKGK_PUBLIC_STORAGE_PATH', '/var/www/billingJMKGK/storage/app/public'), '/'),
+            rtrim(env('JMK_PUBLIC_STORAGE_PATH', '/var/www/billingjmk/storage/app/public'), '/'),
+        ];
+
+        foreach ($externalStorageRoots as $storageRoot) {
+            $candidatePaths[] = $storageRoot.'/'.$kwitansiPath;
+            if (! Str::startsWith($kwitansiPath, 'kwitansi/')) {
+                $candidatePaths[] = $storageRoot.'/kwitansi/'.$kwitansiPath;
+            }
+        }
+
+        $candidatePaths = array_values(array_unique($candidatePaths));
+
+        $filePath = collect($candidatePaths)->first(fn ($path) => is_file($path));
+        if (! is_file($filePath)) {
+            Log::error('Customer kwitansi preview file not found', [
+                'tagihan_id' => $id,
+                'pelanggan_id' => $pelanggan->id,
+                'kwitansi_field' => $tagihan->kwitansi,
+                'normalized_path' => $kwitansiPath,
+                'candidate_paths' => $candidatePaths,
+            ]);
+
+            abort(404, 'File kwitansi tidak ditemukan.');
+        }
+
+        $mimeType = mime_content_type($filePath) ?: 'application/pdf';
+        $fileSize = filesize($filePath);
+
+        return response()->stream(function () use ($filePath) {
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            $stream = fopen($filePath, 'rb');
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Length' => $fileSize,
+            'Content-Disposition' => 'inline; filename="'.basename($filePath).'"',
+            'Cache-Control' => 'private, max-age=300',
+            'Pragma' => 'public',
+            'Accept-Ranges' => 'bytes',
+            'X-Accel-Buffering' => 'no',
         ]);
     }
-}
 
-public function profile()
-{
-    $user = Auth::guard('customer')->user();
+    public function informasi()
+    {
+        $user = Auth::guard('customer')->user();
 
-    if (!$user) {
-        return redirect()->route('users.member');
+        if (! $user) {
+            return redirect()->route('users.member');
+        }
+
+        $iklans = Cache::remember('customer_active_iklans', now()->addMinutes(5), function () {
+            return \App\Models\Iklan::query()
+                ->select(['id', 'title', 'message', 'image', 'type', 'created_at'])
+                ->where('status', 'active')
+                ->orderBy('created_at', 'desc')
+                ->limit(20)
+                ->get();
+        });
+
+        session(['customer_information_read_at' => now()]);
+        session(['customer_unread_information_count' => 0]);
+
+        return view('content.apps.Customer.informasi.informasi', compact('user', 'iklans'));
     }
-
-    return view('content.apps.Customer.profile.profile', compact('user'));
-}
-
- 
-
-public function riwayat()
-{
-    $user = Auth::guard('customer')->user();
-
-    if (!$user) {
-        return redirect()->route('users.member');
-    }
-
-    $this->markCustomerTagihansAsRead($user->id);
-
-    $tagihans = Tagihan::with(['paket', 'rekening'])
-        ->where('pelanggan_id', $user->id)
-        ->where('status_pembayaran', 'lunas')
-        ->orderBy('tanggal_mulai', 'desc')
-        ->get();
-
-    return view('content.apps.Customer.riwayat.riwayat', compact('user', 'tagihans'));
-}
-
-public function faq()
-{
-    $user = Auth::guard('customer')->user();
-    return view('content.apps.Customer.faq.faq', compact('user'));
-}
 
     public function update(Request $request, $id)
     {
@@ -95,27 +267,26 @@ public function faq()
             if ($request->hasFile('bukti_pembayaran')) {
 
                 // Hapus file lama jika ada
-                if ($tagihan->bukti_pembayaran && Storage::disk('public')->exists($tagihan->bukti_pembayaran)) {
-                    Storage::disk('public')->delete($tagihan->bukti_pembayaran);
-                }
+                $this->deleteBuktiPembayaranByNomorId($tagihan->bukti_pembayaran, $pelanggan->nomer_id ?? null);
 
-                $path = $request->file('bukti_pembayaran')->store('bukti_pembayaran', 'public');
+                $path = $this->storeBuktiPembayaranByNomorId($request->file('bukti_pembayaran'), $pelanggan->nomer_id ?? null);
 
                 // Update tagihan
                 $tagihan->update([
                     'bukti_pembayaran' => $path,
                     'type_pembayaran' => $request->type_pembayaran, // ID rekening
                     'status_pembayaran' => 'proses_verifikasi',
+                    'alasan_penolakan' => null,
+                    'ditolak_at' => null,
                 ]);
 
-     // Kirim notifikasi Telegram ke admin
+                // Kirim notifikasi Telegram ke admin
                 try {
-                    $telegramService = new \App\Services\TelegramService();
+                    $telegramService = new \App\Services\TelegramService;
                     $telegramService->sendPaymentNotification($tagihan);
                 } catch (\Exception $e) {
-                    \Log::error('Gagal kirim notifikasi Telegram: ' . $e->getMessage());
+                    \Log::error('Gagal kirim notifikasi Telegram: '.$e->getMessage());
                 }
-
 
                 return response()->json([
                     'success' => true,
@@ -151,73 +322,77 @@ public function faq()
         $this->markCustomerTagihansAsRead($pelanggan->id);
 
         // Ambil tagihan pelanggan berdasarkan status tertentu
-        $tagihans = Tagihan::with('pelanggan.user')
+        $tagihans = Tagihan::with([
+            'pelanggan:id,user_id,nama_lengkap,nomer_id,no_whatsapp,alamat_jalan',
+            'pelanggan.user:id,name',
+            'paket:id,nama_paket,harga,kecepatan',
+        ])
+            ->select([
+                'id',
+                'pelanggan_id',
+                'paket_id',
+                'tanggal_mulai',
+                'tanggal_berakhir',
+                'status_pembayaran',
+                'catatan',
+                'bukti_pembayaran',
+                'kwitansi',
+                'type_pembayaran',
+                'alasan_penolakan',
+                'ditolak_at',
+                'updated_at',
+            ])
             ->where('pelanggan_id', $pelanggan->id)
             ->whereIn('status_pembayaran', ['proses_verifikasi', 'belum bayar'])
             ->orderBy('tanggal_mulai', 'desc')
             ->get();
 
         // Ambil semua rekening untuk ditampilkan di form pembayaran
-        $rekenings = Rekening::all();
+        $rekenings = Cache::remember('customer_payment_rekenings', now()->addMinutes(10), function () {
+            return Rekening::query()
+                ->select(['id', 'nama_bank', 'nomor_rekening', 'nama_pemilik'])
+                ->get();
+        });
 
         return view('content.apps.Customer.tagihan.tagihan', compact('tagihans', 'rekenings'));
     }
 
-public function indexHome()
-{
-    // Ambil pelanggan yang sedang login via guard 'customer'
-    $pelanggan = Auth::guard('customer')->user();
+    public function indexHome()
+    {
+        // Ambil pelanggan yang sedang login via guard 'customer'
+        $pelanggan = Auth::guard('customer')->user();
 
-    if (!$pelanggan) {
-        return redirect()->route('login')->with('warning', 'Silakan login terlebih dahulu.');
+        if (! $pelanggan) {
+            return redirect()->route('login')->with('warning', 'Silakan login terlebih dahulu.');
+        }
+
+        // Hitung semua statistik dalam satu query supaya dashboard customer lebih cepat.
+        $tagihanStats = Tagihan::where('pelanggan_id', $pelanggan->id)
+            ->selectRaw('COUNT(*) as total_tagihan')
+            ->selectRaw("SUM(CASE WHEN status_pembayaran = 'lunas' THEN 1 ELSE 0 END) as tagihan_lunas")
+            ->selectRaw("SUM(CASE WHEN status_pembayaran = 'proses_verifikasi' THEN 1 ELSE 0 END) as tagihan_menunggu")
+            ->selectRaw("SUM(CASE WHEN status_pembayaran = 'belum bayar' THEN 1 ELSE 0 END) as tagihan_belum")
+            ->first();
+
+        $totalTagihan = (int) ($tagihanStats->total_tagihan ?? 0);
+        $tagihanLunas = (int) ($tagihanStats->tagihan_lunas ?? 0);
+        $tagihanMenunggu = (int) ($tagihanStats->tagihan_menunggu ?? 0);
+        $tagihanBelum = (int) ($tagihanStats->tagihan_belum ?? 0);
+
+        $this->markCustomerTagihansAsRead($pelanggan->id);
+
+        $unreadInformationCount = $this->getUnreadInformationCount();
+        session(['customer_unread_information_count' => $unreadInformationCount]);
+
+        return view('content.apps.Customer.tagihan.home', compact(
+            'totalTagihan',
+            'tagihanLunas',
+            'tagihanMenunggu',
+            'tagihanBelum',
+            'unreadInformationCount'
+        ));
     }
 
-    // Hitung statistik tagihan berdasarkan status_pembayaran
-    $totalTagihan = Tagihan::where('pelanggan_id', $pelanggan->id)->count();
-    
-    $tagihanLunas = Tagihan::where('pelanggan_id', $pelanggan->id)
-        ->where('status_pembayaran', 'lunas')
-        ->count();
-    
-    $tagihanMenunggu = Tagihan::where('pelanggan_id', $pelanggan->id)
-        ->where('status_pembayaran', 'proses_verifikasi')
-        ->count();
-    
-    $tagihanBelum = Tagihan::where('pelanggan_id', $pelanggan->id)
-        ->where('status_pembayaran', 'belum bayar')
-        ->count();
-
-    $this->markCustomerTagihansAsRead($pelanggan->id);
-
-    // Ambil tagihan pelanggan berdasarkan status tertentu
-    $tagihans = Tagihan::with('pelanggan.user')
-        ->where('pelanggan_id', $pelanggan->id)
-        ->whereIn('status_pembayaran', ['proses_verifikasi', 'belum bayar'])
-        ->orderBy('tanggal_mulai', 'desc')
-        ->get();
-
-    // Ambil aktivitas terakhir (recent activities) - 5 terakhir
-    $recentActivities = Tagihan::where('pelanggan_id', $pelanggan->id)
-        ->orderBy('updated_at', 'desc')
-        ->limit(5)
-        ->get();
-
-    // ? AMBIL IKLAN/INFORMASI YANG ACTIVE
-    $iklans = \App\Models\Iklan::where('status', 'active')
-        ->orderBy('created_at', 'desc')
-        ->limit(5) // Ambil max 5 iklan terbaru
-        ->get();
-
-    return view('content.apps.Customer.tagihan.home', compact(
-        'tagihans', 
-        'totalTagihan', 
-        'tagihanLunas', 
-        'tagihanMenunggu', 
-        'tagihanBelum',
-        'recentActivities',
-        'iklans' // ? Pass iklan ke view
-    ));
-}
     public function selesai()
     {
         // Ambil pelanggan yang sedang login via guard 'customer'
@@ -231,7 +406,7 @@ public function indexHome()
         $this->markCustomerTagihansAsRead($pelanggan->id);
 
         // Ambil tagihan pelanggan dengan status 'lunas'
-        $tagihans = Tagihan::with(['pelanggan.user', 'rekening'])
+        $tagihans = Tagihan::with(['pelanggan.user', 'paket', 'rekening'])
             ->where('pelanggan_id', $pelanggan->id)
             ->where('status_pembayaran', 'lunas')
             ->orderBy('tanggal_mulai', 'desc')
@@ -314,7 +489,7 @@ public function indexHome()
                 'id' => $tagihan->id,
                 'pelanggan_id' => $tagihan->pelanggan_id,
                 'paket_id' => $tagihan->paket_id,
-                'nama_paket' => $tagihan->paket->nama ?? null,
+                'nama_paket' => $tagihan->paket->nama_paket ?? null,
                 'harga' => $tagihan->paket->harga,
                 'kecepatan' => $tagihan->paket->kecepatan ?? null,
                 'masa_pembayaran' => $tagihan->masa_pembayaran,
@@ -325,6 +500,7 @@ public function indexHome()
                 'catatan' => $tagihan->catatan,
                 'bukti_pembayaran' => $tagihan->bukti_pembayaran,
                 'kwitansi' => $tagihan->kwitansi,
+                'updated_at' => optional($tagihan->updated_at)->toISOString(),
                 'pelanggan' => [
                     'id' => $tagihan->pelanggan->id,
                     'nama_lengkap' => $tagihan->pelanggan->nama_lengkap,

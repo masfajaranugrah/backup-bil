@@ -7,7 +7,8 @@ use App\Models\Paket;
 use App\Models\Pelanggan;
 use App\Models\Tagihan;
 use App\Models\Rekening;
-use App\Jobs\SendSingleTagihanPushJob;
+use App\Jobs\SendFcmPushJob;
+use App\Jobs\SendFcmTagihanPushJob;
 use Carbon\Carbon;
 
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -19,9 +20,245 @@ use App\Exports\TagihanBelumLunasMonthlyExport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class TagihanController extends Controller
 {
+    private function getBuktiPembayaranBasePathByNomorId(?string $nomorId): string
+    {
+        $isJmkGk = Str::startsWith(strtoupper(trim((string) $nomorId)), 'JMK-GK');
+
+        if ($isJmkGk) {
+            return rtrim(env('JMKGK_PUBLIC_STORAGE_PATH', '/var/www/billingJMKGK/storage/app/public'), '/');
+        }
+
+        return rtrim(env('JMK_PUBLIC_STORAGE_PATH', '/var/www/billingjmk/storage/app/public'), '/');
+    }
+
+    private function storeBuktiPembayaranByNomorId($file, ?string $nomorId): string
+    {
+        $basePath = $this->getBuktiPembayaranBasePathByNomorId($nomorId);
+        $targetDir = $basePath . '/bukti_pembayaran';
+
+        try {
+            if (!is_dir($targetDir)) {
+                @mkdir($targetDir, 0755, true);
+            }
+
+            if (is_dir($targetDir) && is_writable($targetDir)) {
+                $filename = now()->format('YmdHis') . '_' . Str::random(20) . '.' . $file->getClientOriginalExtension();
+                $file->move($targetDir, $filename);
+                return 'bukti_pembayaran/' . $filename;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal simpan bukti ke path khusus, fallback ke public disk.', [
+                'nomor_id' => $nomorId,
+                'target_dir' => $targetDir,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $file->store('bukti_pembayaran', 'public');
+    }
+
+    private function deleteBuktiPembayaranByNomorId(?string $buktiPath, ?string $nomorId): void
+    {
+        $buktiPath = trim((string) $buktiPath);
+        if ($buktiPath === '') {
+            return;
+        }
+
+        if (str_starts_with($buktiPath, 'storage/')) {
+            $buktiPath = substr($buktiPath, 8);
+        }
+
+        $basePath = $this->getBuktiPembayaranBasePathByNomorId($nomorId);
+        $absolutePath = $basePath . '/' . ltrim($buktiPath, '/');
+
+        if (is_file($absolutePath)) {
+            @unlink($absolutePath);
+            return;
+        }
+
+        if (Storage::disk('public')->exists($buktiPath)) {
+            Storage::disk('public')->delete($buktiPath);
+        }
+    }
+
+    private function deleteKwitansi(?string $kwitansiPath): void
+    {
+        $kwitansiPath = trim((string) $kwitansiPath);
+        if ($kwitansiPath === '') {
+            return;
+        }
+
+        if (str_starts_with($kwitansiPath, 'storage/')) {
+            $kwitansiPath = substr($kwitansiPath, 8);
+        }
+
+        if (Storage::disk('public')->exists($kwitansiPath)) {
+            Storage::disk('public')->delete($kwitansiPath);
+        }
+    }
+
+    private function deleteIncomeForTagihan(Tagihan $tagihan): int
+    {
+        $amount = $tagihan->jumlah_tagihan ?? $tagihan->paket?->harga;
+        $description = 'Pembayaran paket ' . ($tagihan->paket?->nama_paket ?? '') . ' dari ' . ($tagihan->pelanggan?->nama_lengkap ?? '');
+
+        $incomeByRelation = Income::query()->where('tagihan_id', $tagihan->id)->latest('created_at')->first();
+        if ($incomeByRelation) {
+            $incomeByRelation->delete();
+
+            return 1;
+        }
+
+        if ($amount === null || trim($description) === 'Pembayaran paket  dari') {
+            return 0;
+        }
+
+        $query = Income::query()
+            ->whereIn('kategori', ['penjualan', 'Tagihan'])
+            ->where('keterangan', $description)
+            ->where('jumlah', $amount);
+
+        if ($tagihan->tanggal_pembayaran) {
+            $query->whereDate('tanggal_masuk', Carbon::parse($tagihan->tanggal_pembayaran)->toDateString());
+        }
+
+        $income = $query->latest('created_at')->first();
+
+        if (! $income && $tagihan->tanggal_pembayaran) {
+            $income = Income::query()
+                ->whereIn('kategori', ['penjualan', 'Tagihan'])
+                ->where('keterangan', $description)
+                ->where('jumlah', $amount)
+                ->latest('created_at')
+                ->first();
+        }
+
+        if (! $income) {
+            return 0;
+        }
+
+        $income->delete();
+
+        return 1;
+    }
+
+    private function incomeDescriptionForTagihan(Tagihan $tagihan, ?Paket $paket = null): string
+    {
+        $paket ??= $tagihan->paket;
+        $paketNama = $paket?->nama_paket ?: ($tagihan->nama_paket ?: '-');
+        $pelangganNama = $tagihan->pelanggan?->nama_lengkap ?: '-';
+
+        return 'Pembayaran paket ' . $paketNama . ' dari ' . $pelangganNama;
+    }
+
+    private function incomePaymentTypeForTagihan(Tagihan $tagihan): string
+    {
+        $typePembayaran = trim((string) ($tagihan->type_pembayaran ?? ''));
+        if ($typePembayaran === '' || strtolower($typePembayaran) === 'cash') {
+            return 'cash';
+        }
+
+        return $tagihan->rekening?->nama_bank ?: $typePembayaran;
+    }
+
+    private function findIncomeForTagihan(Tagihan $tagihan, $oldAmount = null, ?string $oldDescription = null): ?Income
+    {
+        $income = Income::query()->where('tagihan_id', $tagihan->id)->latest('created_at')->first();
+        if ($income) {
+            return $income;
+        }
+
+        if ($oldAmount === null || trim((string) $oldDescription) === '') {
+            return null;
+        }
+
+        $query = Income::query()
+            ->whereIn('kategori', ['penjualan', 'Tagihan'])
+            ->where('keterangan', $oldDescription)
+            ->where('jumlah', $oldAmount);
+
+        if ($tagihan->tanggal_pembayaran) {
+            $query->whereDate('tanggal_masuk', Carbon::parse($tagihan->tanggal_pembayaran)->toDateString());
+        }
+
+        return $query->latest('created_at')->first()
+            ?: Income::query()
+                ->whereIn('kategori', ['penjualan', 'Tagihan'])
+                ->where('keterangan', $oldDescription)
+                ->where('jumlah', $oldAmount)
+                ->latest('created_at')
+                ->first();
+    }
+
+    private function syncIncomeForPaidTagihan(Tagihan $tagihan, $oldAmount = null, ?string $oldDescription = null): Income
+    {
+        $tagihan->loadMissing(['pelanggan', 'paket', 'rekening']);
+
+        $amount = $tagihan->harga ?? $tagihan->paket?->harga ?? 0;
+        $description = $this->incomeDescriptionForTagihan($tagihan);
+        $income = $this->findIncomeForTagihan($tagihan, $oldAmount, $oldDescription);
+
+        $data = [
+            'tagihan_id' => $tagihan->id,
+            'kategori' => $income?->kategori ?: 'penjualan',
+            'jumlah' => $amount,
+            'keterangan' => $description,
+            'tipe_pembayaran' => $this->incomePaymentTypeForTagihan($tagihan),
+            'tanggal_masuk' => $tagihan->tanggal_pembayaran ?: now(),
+        ];
+
+        if ($income) {
+            $income->update($data);
+
+            return $income;
+        }
+
+        return Income::create($data + [
+            'kode' => $this->getKode('penjualan'),
+        ]);
+    }
+
+    private function resolveBuktiPembayaranUrlByNomorId(?string $buktiPath, ?string $nomorId): string
+    {
+        $buktiPath = trim((string) $buktiPath);
+        if ($buktiPath === '' || $buktiPath === '-') {
+            return '';
+        }
+
+        if (Str::startsWith($buktiPath, ['http://', 'https://'])) {
+            return $buktiPath;
+        }
+
+        if (str_starts_with($buktiPath, 'storage/')) {
+            $buktiPath = substr($buktiPath, 8);
+        }
+
+        $jmkgkPath = rtrim(env('JMKGK_PUBLIC_STORAGE_PATH', '/var/www/billingJMKGK/storage/app/public'), '/');
+        $jmkPath = rtrim(env('JMK_PUBLIC_STORAGE_PATH', '/var/www/billingjmk/storage/app/public'), '/');
+        $jmkgkUrl = rtrim(env('JMKGK_APP_URL', config('app.url')), '/');
+        $jmkUrl = rtrim(env('JMK_APP_URL', config('app.url')), '/');
+
+        $preferJmkgk = Str::startsWith(strtoupper(trim((string) $nomorId)), 'JMK-GK');
+
+        $candidates = $preferJmkgk
+            ? [[$jmkgkPath, $jmkgkUrl], [$jmkPath, $jmkUrl]]
+            : [[$jmkPath, $jmkUrl], [$jmkgkPath, $jmkgkUrl]];
+
+        foreach ($candidates as [$basePath, $baseUrl]) {
+            $absolute = $basePath . '/' . ltrim($buktiPath, '/');
+            if (is_file($absolute)) {
+                return $baseUrl . '/storage/' . ltrim($buktiPath, '/');
+            }
+        }
+
+        return asset('storage/' . ltrim($buktiPath, '/'));
+    }
+
     private function eligibleBroadcastCustomersQuery(int $month, int $year)
     {
         return Pelanggan::query()
@@ -32,6 +269,97 @@ class TagihanController extends Controller
                 $q->whereMonth('tanggal_mulai', $month)
                     ->whereYear('tanggal_mulai', $year);
             });
+    }
+
+    private function shouldSendFcmSynchronously(): bool
+    {
+        return filter_var(env('TAGIHAN_BROADCAST_FCM_SYNC', true), FILTER_VALIDATE_BOOL);
+    }
+
+    private function dispatchFcmTagihanPush(array $tagihanIds, ?string $batchId = null, string $notificationType = 'reminder'): string
+    {
+        if (empty($tagihanIds)) {
+            return 'none';
+        }
+
+        if ($this->shouldSendFcmSynchronously()) {
+            SendFcmTagihanPushJob::dispatchSync($tagihanIds, $batchId, $notificationType);
+
+            return 'sync';
+        }
+
+        $queueConnection = (string) config('queue.default', 'database');
+        $jobsTable = (string) config('queue.connections.database.table', 'jobs');
+
+        if ($queueConnection === 'database' && !Schema::hasTable($jobsTable)) {
+            Log::warning('Tagihan broadcast FCM queue table missing, fallback to sync', [
+                'jobs_table' => $jobsTable,
+                'tagihan_count' => count($tagihanIds),
+                'batch_id' => $batchId,
+            ]);
+
+            SendFcmTagihanPushJob::dispatchSync($tagihanIds, $batchId, $notificationType);
+
+            return 'sync_fallback';
+        }
+
+        SendFcmTagihanPushJob::dispatch($tagihanIds, $batchId, $notificationType);
+
+        return 'queue';
+    }
+
+    private function dispatchSinglePush(array $notification): string
+    {
+        if (($notification['provider'] ?? null) === 'fcm' && $this->shouldSendFcmSynchronously()) {
+            SendFcmPushJob::dispatchSync(
+                $notification['pelanggan_id'],
+                $notification['title'],
+                $notification['message'],
+                $notification['target_url']
+            );
+
+            return 'sync';
+        }
+
+        SendFcmPushJob::dispatch(
+            $notification['pelanggan_id'],
+            $notification['title'],
+            $notification['message'],
+            $notification['target_url']
+        );
+
+        return 'queue';
+    }
+
+    private function dispatchCustomerFcmPush(Pelanggan $pelanggan, string $title, string $message, string $targetUrl): string
+    {
+        if (trim((string) ($pelanggan->fcm_token ?? '')) === '') {
+            return 'none';
+        }
+
+        if ($this->shouldSendFcmSynchronously()) {
+            SendFcmPushJob::dispatchSync((string) $pelanggan->id, $title, $message, $targetUrl);
+
+            return 'sync';
+        }
+
+        $queueConnection = (string) config('queue.default', 'database');
+        $jobsTable = (string) config('queue.connections.database.table', 'jobs');
+
+        if ($queueConnection === 'database' && !Schema::hasTable($jobsTable)) {
+            Log::warning('Customer FCM queue table missing, fallback to sync', [
+                'jobs_table' => $jobsTable,
+                'pelanggan_id' => $pelanggan->id,
+            ]);
+
+            SendFcmPushJob::dispatchSync((string) $pelanggan->id, $title, $message, $targetUrl);
+
+            return 'sync_fallback';
+        }
+
+        SendFcmPushJob::dispatch((string) $pelanggan->id, $title, $message, $targetUrl);
+
+        return 'queue';
     }
 
     /**
@@ -222,7 +550,7 @@ class TagihanController extends Controller
             'tanggal_berakhir' => $item->tanggal_berakhir,
             'status_pembayaran' => $item->status_pembayaran,
             'tanggal_pembayaran' => $item->tanggal_pembayaran ?? '-',
-            'bukti_pembayaran' => $item->bukti_pembayaran ?? '-',
+            'bukti_pembayaran' => $this->resolveBuktiPembayaranUrlByNomorId($item->bukti_pembayaran, $pelanggan->nomer_id ?? null),
             'no_whatsapp' => $pelanggan->no_whatsapp ?? '08xxxxxxxxxx',
             'catatan' => $item->catatan ?? '-',
         ];
@@ -246,14 +574,14 @@ class TagihanController extends Controller
             // Upload bukti pembayaran (opsional)
             if ($request->hasFile('bukti_pembayaran')) {
                 $file = $request->file('bukti_pembayaran');
-                $path = $file->store('bukti_pembayaran', 'public');
+                $path = $this->storeBuktiPembayaranByNomorId($file, $tagihan->pelanggan->nomer_id ?? null);
                 $tagihan->bukti_pembayaran = $path;
             }
 
             // Simpan tipe pembayaran jika dikirim dari admin
             if ($request->filled('type_pembayaran')) {
                 $typePembayaran = $request->input('type_pembayaran');
-                // Jika "cash" atau kosong → null (Cash/Tunai), selain itu simpan UUID rekening apa adanya
+                // Jika "cash" atau kosong â†’ null (Cash/Tunai), selain itu simpan UUID rekening apa adanya
                 $tagihan->type_pembayaran = ($typePembayaran === 'cash' || empty($typePembayaran))
                     ? null
                     : $typePembayaran;
@@ -276,45 +604,18 @@ class TagihanController extends Controller
             // Buat link publik PDF
             $pdfUrl = asset('storage/' . $pdfPath);
 
-            // Buat record Income
-            Income::create([
-                'kode' => $this->getKode('penjualan'),
-                'kategori' => 'penjualan',
-                'jumlah' => $tagihan->jumlah_tagihan ?? $tagihan->paket->harga,
-                'keterangan' => 'Pembayaran paket ' . $tagihan->paket->nama_paket . ' dari ' . $tagihan->pelanggan->nama_lengkap,
-                'tanggal_masuk' => now(),
-            ]);
+            $tagihan->load(['pelanggan', 'paket', 'rekening']);
+            $this->syncIncomeForPaidTagihan($tagihan);
 
-            // ===== Kirim push notification sebelum return =====
             $pelanggan = $tagihan->pelanggan;
-            if ($pelanggan && $pelanggan->webpushr_sid) {
-                $end_point = 'https://api.webpushr.com/v1/notification/send/sid';
-
-                $http_header = [
-                    'Content-Type: Application/Json',
-                    'webpushrKey: 2ee12b373a17d9ba5f44683cb42d4279', // ganti dengan API key Webpushr
-                    'webpushrAuthToken: 116294', // ganti dengan Auth Token Webpushr
-                ];
-
-                $req_data = [
-                    'title' => 'Pembayaran Berhasil',
-                    'message' => "Terima kasih, {$pelanggan->nama_lengkap}. Pembayaran Anda telah kami terima dan dikonfirmasi.",
-                    'target_url' => url('https://layanan.jernih.net.id/dashboard/customer/tagihan/selesai'), // link ke halaman tagihan
-                    'sid' => $pelanggan->webpushr_sid,
-                ];
-
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_HTTPHEADER, $http_header);
-                curl_setopt($ch, CURLOPT_URL, $end_point);
-                curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($req_data));
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                $response = curl_exec($ch);
-                curl_close($ch);
-
-                // Optional: log response untuk debug
+            if ($pelanggan) {
+                $this->dispatchCustomerFcmPush(
+                    $pelanggan,
+                    'Pembayaran Berhasil',
+                    "Terima kasih, {$pelanggan->nama_lengkap}. Pembayaran Anda telah kami terima dan dikonfirmasi.",
+                    url('/dashboard/customer/tagihan/selesai')
+                );
             }
-            // ===================================================
 
             // ===== Mikrotik Restore Logic (optional) =====
             if (class_exists(\App\Models\Router::class) && class_exists(\App\Services\MikrotikService::class)) {
@@ -388,17 +689,41 @@ class TagihanController extends Controller
         $query = Tagihan::with(['pelanggan', 'paket'])
             ->select('tagihans.*') // Wajib select tagihans.* agar id tagihan tidak tertimpa id pelanggan
             ->join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
-            ->whereIn('tagihans.status_pembayaran', ['belum bayar', 'proses_verifikasi']);
+            ->where('tagihans.status_pembayaran', 'belum bayar');
 
         // ? SEARCH FILTER - OPTIMALKAN DENGAN PELANGGANS. PREFIX
         if ($request->filled('search')) {
             $search = trim($request->search);
+            $normalizedSearch = preg_replace('/[\s.\-\/+]+/', '', strtolower($search));
+            $isCustomerIdSearch = preg_match('/^[a-z]+(?:[.\-\s]*[a-z]+)*[.\-\s]*\d+$/i', $search);
 
-            $query->where(function ($q) use ($search) {
+            $query->where(function ($q) use ($search, $normalizedSearch, $isCustomerIdSearch) {
+                if ($isCustomerIdSearch) {
+                    $q->whereRaw('LOWER(TRIM(pelanggans.nomer_id)) = ?', [strtolower($search)])
+                        ->orWhereRaw(
+                            "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(pelanggans.nomer_id, '.', ''), '-', ''), ' ', ''), '/', ''), '+', '')) = ?",
+                            [$normalizedSearch]
+                        );
+
+                    return;
+                }
+
                 $q->where('pelanggans.nama_lengkap', 'like', "%{$search}%")
                     ->orWhere('pelanggans.nomer_id', 'like', "%{$search}%")
+                    ->orWhereRaw(
+                        "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(pelanggans.nomer_id, '.', ''), '-', ''), ' ', ''), '/', ''), '+', '')) LIKE ?",
+                        ["%{$normalizedSearch}%"]
+                    )
                     ->orWhere('pelanggans.no_whatsapp', 'like', "%{$search}%")
+                    ->orWhereRaw(
+                        "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(pelanggans.no_whatsapp, '.', ''), '-', ''), ' ', ''), '/', ''), '+', '')) LIKE ?",
+                        ["%{$normalizedSearch}%"]
+                    )
                     ->orWhere('pelanggans.no_telp', 'like', "%{$search}%")
+                    ->orWhereRaw(
+                        "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(pelanggans.no_telp, '.', ''), '-', ''), ' ', ''), '/', ''), '+', '')) LIKE ?",
+                        ["%{$normalizedSearch}%"]
+                    )
                     ->orWhere('pelanggans.alamat_jalan', 'like', "%{$search}%")
                     ->orWhere('pelanggans.rt', 'like', "%{$search}%")
                     ->orWhere('pelanggans.rw', 'like', "%{$search}%")
@@ -463,7 +788,7 @@ class TagihanController extends Controller
                     'tanggal_berakhir' => $item->tanggal_berakhir,
                     'status_pembayaran' => $item->status_pembayaran ?? 'belum bayar',
                     'tanggal_pembayaran' => $item->tanggal_pembayaran ?? '-',
-                    'bukti_pembayaran' => $item->bukti_pembayaran ?? '-',
+                    'bukti_pembayaran' => $this->resolveBuktiPembayaranUrlByNomorId($item->bukti_pembayaran, $pelanggan->nomer_id ?? null),
                     'no_whatsapp' => $pelanggan->no_whatsapp ?? '08xxxxxxxxxx',
                     'catatan' => $item->catatan ?? '-',
                 ];
@@ -512,8 +837,22 @@ class TagihanController extends Controller
 
         // Tambahkan filter search jika ada parameter
         if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('pelanggan', function ($subQ) use ($search) {
+            $search = trim($search);
+            $normalizedSearch = preg_replace('/[\s.\-\/+]+/', '', strtolower($search));
+            $isCustomerIdSearch = preg_match('/^[a-z]+(?:[.\-\s]*[a-z]+)*[.\-\s]*\d+$/i', $search);
+
+            $query->where(function ($q) use ($search, $normalizedSearch, $isCustomerIdSearch) {
+                $q->whereHas('pelanggan', function ($subQ) use ($search, $normalizedSearch, $isCustomerIdSearch) {
+                    if ($isCustomerIdSearch) {
+                        $subQ->whereRaw('LOWER(TRIM(nomer_id)) = ?', [strtolower($search)])
+                            ->orWhereRaw(
+                                "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nomer_id, '.', ''), '-', ''), ' ', ''), '/', ''), '+', '')) = ?",
+                                [$normalizedSearch]
+                            );
+
+                        return;
+                    }
+
                     $subQ->where('nama_lengkap', 'LIKE', "%{$search}%")
                         ->orWhere('nomer_id', 'LIKE', "%{$search}%")
                         ->orWhere('no_whatsapp', 'LIKE', "%{$search}%")
@@ -522,8 +861,10 @@ class TagihanController extends Controller
                         ->orWhere('kecamatan', 'LIKE', "%{$search}%")
                         ->orWhere('kabupaten', 'LIKE', "%{$search}%");
                 })
-                    ->orWhereHas('paket', function ($subQ) use ($search) {
+                    ->when(! $isCustomerIdSearch, function ($query) use ($search) {
+                        $query->orWhereHas('paket', function ($subQ) use ($search) {
                         $subQ->where('nama_paket', 'LIKE', "%{$search}%");
+                        });
                     });
             });
         }
@@ -532,6 +873,14 @@ class TagihanController extends Controller
         $tagihans = $query->orderBy('created_at', 'desc')
             ->paginate(20)
             ->withQueryString();
+
+        $tagihans->getCollection()->transform(function ($item) {
+            $item->bukti_pembayaran_resolved = $this->resolveBuktiPembayaranUrlByNomorId(
+                $item->bukti_pembayaran,
+                optional($item->pelanggan)->nomer_id
+            );
+            return $item;
+        });
 
         // Ambil list unik untuk filter dropdown
         $kabupatenList = $pelanggan->pluck('kabupaten')->unique();
@@ -560,8 +909,16 @@ class TagihanController extends Controller
      * Update status tagihan dari proses_verifikasi kembali ke belum bayar
      * dan hapus bukti pembayaran yang salah
      */
-    public function updateStatusToBelumBayar($id)
+    public function updateStatusToBelumBayar(Request $request, $id)
     {
+        $validated = $request->validate([
+            'alasan_penolakan' => ['required', 'string', 'min:5', 'max:1000'],
+        ], [
+            'alasan_penolakan.required' => 'Catatan penolakan wajib diisi.',
+            'alasan_penolakan.min' => 'Catatan penolakan minimal 5 karakter.',
+            'alasan_penolakan.max' => 'Catatan penolakan maksimal 1000 karakter.',
+        ]);
+
         DB::beginTransaction();
         try {
             $tagihan = Tagihan::with('pelanggan', 'paket')->findOrFail($id);
@@ -575,46 +932,26 @@ class TagihanController extends Controller
             }
 
             // Hapus bukti pembayaran jika ada
-            if ($tagihan->bukti_pembayaran && Storage::disk('public')->exists($tagihan->bukti_pembayaran)) {
-                Storage::disk('public')->delete($tagihan->bukti_pembayaran);
-            }
+            $this->deleteBuktiPembayaranByNomorId($tagihan->bukti_pembayaran, $tagihan->pelanggan->nomer_id ?? null);
 
             // Update status ke belum bayar dan hapus bukti pembayaran
             $tagihan->status_pembayaran = 'belum bayar';
             $tagihan->bukti_pembayaran = null;
             $tagihan->tanggal_pembayaran = null;
+            $tagihan->alasan_penolakan = trim($validated['alasan_penolakan']);
+            $tagihan->ditolak_at = now();
             $tagihan->save();
 
-            // ===== Kirim push notification sebelum return =====
             $pelanggan = $tagihan->pelanggan;
-            if ($pelanggan && $pelanggan->webpushr_sid) {
-                $end_point = 'https://api.webpushr.com/v1/notification/send/sid';
-
-                $http_header = [
-                    'Content-Type: Application/Json',
-                    'webpushrKey: 2ee12b373a17d9ba5f44683cb42d4279', // ganti dengan API key Webpushr
-                    'webpushrAuthToken: 116294', // ganti dengan Auth Token Webpushr
-                ];
-
-                $req_data = [
-                    'title' => 'Status Tagihan Diperbarui',
-                    'message' => "Halo {$pelanggan->nama_lengkap}, status tagihan Anda telah dikembalikan ke 'Belum Bayar'. Silakan upload bukti pembayaran yang benar.",
-                    'target_url' => url('https://layanan.jernih.net.id/dashboard/customer/tagihan'), // link ke halaman tagihan
-                    'sid' => $pelanggan->webpushr_sid,
-                ];
-
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_HTTPHEADER, $http_header);
-                curl_setopt($ch, CURLOPT_URL, $end_point);
-                curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($req_data));
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                $response = curl_exec($ch);
-                curl_close($ch);
-
-                // Optional: log response untuk debug
+            $notificationStatus = 'none';
+            if ($pelanggan) {
+                $notificationStatus = $this->dispatchCustomerFcmPush(
+                    $pelanggan,
+                    'Pembayaran Ditolak',
+                    "Tagihan ditolak Yth. {$pelanggan->nama_lengkap}. Alasan: {$tagihan->alasan_penolakan}",
+                    url('/dashboard/customer/tagihan')
+                );
             }
-            // ===================================================
 
             // ===== Mikrotik Isolate Logic (optional) =====
             if (class_exists(\App\Models\Router::class) && class_exists(\App\Services\MikrotikService::class)) {
@@ -647,11 +984,72 @@ class TagihanController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Status tagihan berhasil diubah ke "Belum Bayar" dan bukti pembayaran telah dihapus. Notifikasi telah dikirim ke pelanggan.',
+                'message' => 'Pembayaran berhasil ditolak dan alasan penolakan telah dikirim ke pelanggan.',
+                'notification_status' => $notificationStatus,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error updating tagihan status to belum bayar', [
+                'tagihan_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function rejectLunas($id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $tagihan = Tagihan::with('pelanggan', 'paket')->findOrFail($id);
+
+            if ($tagihan->status_pembayaran !== 'lunas') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya tagihan dengan status lunas yang bisa ditolak.',
+                ], 400);
+            }
+
+            $deletedIncomeCount = $this->deleteIncomeForTagihan($tagihan);
+
+            $this->deleteBuktiPembayaranByNomorId($tagihan->bukti_pembayaran, $tagihan->pelanggan->nomer_id ?? null);
+            $this->deleteKwitansi($tagihan->kwitansi);
+
+            $tagihan->status_pembayaran = 'belum bayar';
+            $tagihan->bukti_pembayaran = null;
+            $tagihan->kwitansi = null;
+            $tagihan->tanggal_pembayaran = null;
+            $tagihan->save();
+
+            $pelanggan = $tagihan->pelanggan;
+            if ($pelanggan) {
+                $this->dispatchCustomerFcmPush(
+                    $pelanggan,
+                    'Pembayaran Dibatalkan',
+                    "Tagihan dibatalkan Yth. {$pelanggan->nama_lengkap}. Status tagihan dikembalikan menjadi belum bayar.",
+                    url('/dashboard/customer/tagihan')
+                );
+            }
+
+            DB::commit();
+
+            $message = $deletedIncomeCount > 0
+                ? 'Tagihan lunas berhasil ditolak, status dikembalikan ke belum bayar, dan data administrasi masuk sudah ditarik.'
+                : 'Tagihan lunas berhasil ditolak, status dikembalikan ke belum bayar. Data administrasi masuk terkait tidak ditemukan.';
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error rejecting paid tagihan', [
                 'tagihan_id' => $id,
                 'error' => $e->getMessage(),
             ]);
@@ -712,6 +1110,14 @@ class TagihanController extends Controller
             ->paginate(40)
             ->withQueryString();
 
+        $tagihans->getCollection()->transform(function ($item) {
+            $item->bukti_pembayaran_resolved = $this->resolveBuktiPembayaranUrlByNomorId(
+                $item->bukti_pembayaran,
+                optional($item->pelanggan)->nomer_id
+            );
+            return $item;
+        });
+
         // Bank totals - query sederhana dengan filter yang sama
         $bankTotalsQuery = Tagihan::leftJoin('rekenings', 'rekenings.id', '=', 'tagihans.type_pembayaran')
             ->leftJoin('pakets', 'pakets.id', '=', 'tagihans.paket_id')
@@ -740,40 +1146,155 @@ class TagihanController extends Controller
             ->orderByDesc('total')
             ->get();
 
-        // Ambil list bank untuk filter dropdown - query ringan
+        // Ambil list bank dan paket untuk filter/dropdown edit
         $rekeningList = Rekening::select('id', 'nama_bank')->get();
+        $paketList = Paket::select('id', 'nama_paket', 'harga', 'kecepatan', 'masa_pembayaran')->orderBy('nama_paket')->get();
 
         return view('content.apps.Tagihan.tagihan-lunas', compact(
             'tagihans',
             'rekeningList',
-            'bankTotals'
+            'bankTotals',
+            'paketList'
         ));
+    }
+
+    public function updateLunas(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'paket_id' => ['required', 'exists:pakets,id'],
+            'type_pembayaran' => ['required', 'string'],
+            'bukti_pembayaran' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:5120'],
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $tagihan = Tagihan::with(['pelanggan', 'paket', 'rekening'])->findOrFail($id);
+
+            if ($tagihan->status_pembayaran !== 'lunas') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya tagihan dengan status lunas yang bisa diedit dari halaman ini.',
+                ], 400);
+            }
+
+            $typePembayaran = $validated['type_pembayaran'];
+            if ($typePembayaran !== 'cash' && ! Rekening::whereKey($typePembayaran)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Metode pembayaran tidak valid.',
+                ], 422);
+            }
+
+            $oldAmount = $tagihan->harga ?? $tagihan->paket?->harga;
+            $oldDescription = $this->incomeDescriptionForTagihan($tagihan);
+            $paket = Paket::findOrFail($validated['paket_id']);
+
+            if ($request->hasFile('bukti_pembayaran')) {
+                $this->deleteBuktiPembayaranByNomorId($tagihan->bukti_pembayaran, $tagihan->pelanggan->nomer_id ?? null);
+                $tagihan->bukti_pembayaran = $this->storeBuktiPembayaranByNomorId(
+                    $request->file('bukti_pembayaran'),
+                    $tagihan->pelanggan->nomer_id ?? null
+                );
+            }
+
+            $tagihan->paket_id = $paket->id;
+            $tagihan->nama_paket = $paket->nama_paket;
+            $tagihan->harga = $paket->harga;
+            $tagihan->kecepatan = $paket->kecepatan;
+            $tagihan->masa_pembayaran = $paket->masa_pembayaran;
+            $tagihan->type_pembayaran = $typePembayaran === 'cash' ? null : $typePembayaran;
+
+            if (! $tagihan->tanggal_pembayaran) {
+                $tagihan->tanggal_pembayaran = now();
+            }
+
+            $this->deleteKwitansi($tagihan->kwitansi);
+            $tagihan->kwitansi = null;
+            $tagihan->save();
+            $tagihan->load(['pelanggan', 'paket', 'rekening']);
+
+            $pdf = Pdf::loadView('content.apps.pdf.kwitansi', ['tagihan' => $tagihan]);
+            $pdfPath = 'kwitansi/kwitansi-' . $tagihan->id . '.pdf';
+            Storage::disk('public')->put($pdfPath, $pdf->output());
+            $tagihan->kwitansi = $pdfPath;
+            $tagihan->save();
+
+            $income = $this->syncIncomeForPaidTagihan($tagihan, $oldAmount, $oldDescription);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tagihan lunas berhasil diperbarui. Data administrasi masuk juga sudah disesuaikan.',
+                'data' => [
+                    'paket_id' => $paket->id,
+                    'paket_nama' => $paket->nama_paket,
+                    'harga' => $paket->harga,
+                    'harga_formatted' => 'Rp ' . number_format($paket->harga ?? 0, 0, ',', '.'),
+                    'kecepatan' => ($paket->kecepatan ?? '-') . ' Mbps',
+                    'type_pembayaran' => $this->incomePaymentTypeForTagihan($tagihan),
+                    'bukti_url' => $this->resolveBuktiPembayaranUrlByNomorId($tagihan->bukti_pembayaran, $tagihan->pelanggan->nomer_id ?? null),
+                    'kwitansi_url' => asset('storage/' . $tagihan->kwitansi),
+                    'income_id' => $income->id,
+                    'income_jumlah' => $income->jumlah,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error updating paid tagihan', [
+                'tagihan_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
 
 
     public function searchPelanggan(Request $request)
     {
-        $term = $request->q;
+        $term = trim((string) $request->q);
+        $normalizedTerm = preg_replace('/[\s.\-\/]+/', '', strtolower($term));
         $filterNoTagihan = (int) $request->input('filter_no_tagihan', 0) === 1;
+        $filterApprove = (int) $request->input('filter_approve', 0) === 1;
 
-        $query = Pelanggan::with('paket')
-            ->whereRaw('LOWER(TRIM(status)) = ?', ['approve']);
+        $query = Pelanggan::with('paket');
+
+        if ($filterApprove || $filterNoTagihan) {
+            $query->whereRaw('LOWER(TRIM(status)) = ?', ['approve']);
+        }
 
         if ($filterNoTagihan) {
-            $currentMonth = now()->month;
-            $currentYear = now()->year;
-            $query->whereDoesntHave('tagihans', function ($q) use ($currentMonth, $currentYear) {
-                $q->whereMonth('tanggal_mulai', $currentMonth)
-                    ->whereYear('tanggal_mulai', $currentYear);
+            $periodDate = $request->filled('tanggal_mulai')
+                ? Carbon::parse($request->tanggal_mulai)
+                : now();
+            $periodMonth = $periodDate->month;
+            $periodYear = $periodDate->year;
+            $query->whereDoesntHave('tagihans', function ($q) use ($periodMonth, $periodYear) {
+                $q->whereMonth('tanggal_mulai', $periodMonth)
+                    ->whereYear('tanggal_mulai', $periodYear);
             });
         }
 
         if ($term) {
-            $query->where(function ($q) use ($term) {
+            $query->where(function ($q) use ($term, $normalizedTerm) {
                 $q->where('nama_lengkap', 'LIKE', "%{$term}%")
                     ->orWhere('nomer_id', 'LIKE', "%{$term}%")
-                    ->orWhere('no_whatsapp', 'LIKE', "%{$term}%");
+                    ->orWhereRaw(
+                        "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(nomer_id, '.', ''), '-', ''), ' ', ''), '/', '')) LIKE ?",
+                        ["%{$normalizedTerm}%"]
+                    )
+                    ->orWhere('no_whatsapp', 'LIKE', "%{$term}%")
+                    ->orWhereRaw(
+                        "REPLACE(REPLACE(REPLACE(REPLACE(no_whatsapp, '.', ''), '-', ''), ' ', ''), '/', '') LIKE ?",
+                        ["%{$normalizedTerm}%"]
+                    );
             });
         }
 
@@ -832,7 +1353,7 @@ class TagihanController extends Controller
             'kwitansi' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
         ]);
 
-        $tagihan = Tagihan::findOrFail($id);
+        $tagihan = Tagihan::with('pelanggan')->findOrFail($id);
         $paket = Paket::findOrFail($request->paket_id);
 
         // Parse tanggal
@@ -844,13 +1365,13 @@ class TagihanController extends Controller
         // Handle bukti_pembayaran
         if ($request->hasFile('bukti_pembayaran')) {
             // Hapus file lama jika ada
-            if ($tagihan->bukti_pembayaran && Storage::disk('public')->exists($tagihan->bukti_pembayaran)) {
-                Storage::disk('public')->delete($tagihan->bukti_pembayaran);
-            }
+            $this->deleteBuktiPembayaranByNomorId($tagihan->bukti_pembayaran, $tagihan->pelanggan->nomer_id ?? null);
 
             // Simpan file baru
-            $tagihan->bukti_pembayaran = $request->file('bukti_pembayaran')
-                ->store('bukti_pembayaran', 'public');
+            $tagihan->bukti_pembayaran = $this->storeBuktiPembayaranByNomorId(
+                $request->file('bukti_pembayaran'),
+                $tagihan->pelanggan->nomer_id ?? null
+            );
         }
 
         // Handle kwitansi jika ada
@@ -927,16 +1448,35 @@ class TagihanController extends Controller
             'catatan' => $request->catatan,
         ]);
 
-        // Kirim push notification via queue agar bisa retry saat kena rate limit
-        if ($pelanggan && $pelanggan->webpushr_sid) {
-            SendSingleTagihanPushJob::dispatch($tagihan->id)->delay(now()->addSeconds(2));
-            $message = 'Tagihan berhasil ditambahkan. Notifikasi diproses di background.';
+        $fcmToken = trim((string) ($pelanggan->fcm_token ?? ''));
+        Log::info('Debug push token pelanggan saat create tagihan', [
+            'tagihan_id' => $tagihan->id,
+            'pelanggan_id' => $pelanggan->id,
+            'has_fcm_token' => $fcmToken !== '',
+            'fcm_token_preview' => $fcmToken !== '' ? substr($fcmToken, 0, 12) . '...' : null,
+            'has_webpushr_sid' => false,
+        ]);
+
+        $notificationSent = false;
+        $fcmMode = 'none';
+
+        if ($fcmToken !== '') {
+            $fcmMode = $this->dispatchFcmTagihanPush([$tagihan->id], null, 'created');
+            $notificationSent = true;
+        }
+
+        if ($notificationSent) {
+            if ($fcmMode === 'sync' || $fcmMode === 'sync_fallback') {
+                $message = 'Tagihan berhasil ditambahkan. Notifikasi FCM dikirim langsung.';
+            } else {
+                $message = 'Tagihan berhasil ditambahkan. Notifikasi diproses di background.';
+            }
         } else {
-            $message = 'Tagihan berhasil ditambahkan (tanpa notifikasi - SID tidak tersedia).';
+            $message = 'Tagihan berhasil ditambahkan (tanpa notifikasi - token FCM tidak tersedia).';
 
             Log::info('Tagihan dibuat tanpa notifikasi', [
                 'pelanggan_id' => $request->pelanggan_id,
-                'reason' => $pelanggan ? 'SID tidak tersedia' : 'Pelanggan tidak ditemukan'
+                'reason' => 'FCM token dan Webpushr SID tidak tersedia',
             ]);
         }
 
@@ -1006,14 +1546,30 @@ class TagihanController extends Controller
         $tagihan->tanggal_pembayaran = now();
         $tagihan->save();
 
-        // Buat data Income baru
-        Income::create([
-            'kode' => $this->getCode(), // atau gunakan helper getKode() jika mau auto-generate
-            'kategori' => 'Tagihan',
-            'jumlah' => $tagihan->jumlah_tagihan ?? $tagihan->paket->harga,
-            'keterangan' => 'Pembayaran paket ' . $tagihan->paket->nama_paket . ' dari ' . $tagihan->pelanggan->nama_lengkap,
-            'tanggal_masuk' => now(),
-        ]);
+        $tagihan->load(['pelanggan', 'paket', 'rekening']);
+        $this->syncIncomeForPaidTagihan($tagihan);
+
+        $pelanggan = $tagihan->pelanggan;
+        if ($pelanggan) {
+            $this->dispatchCustomerFcmPush(
+                $pelanggan,
+                'Pembayaran Berhasil',
+                "Terima kasih, {$pelanggan->nama_lengkap}. Pembayaran Anda telah kami terima dan dikonfirmasi.",
+                url('/dashboard/customer/tagihan/selesai')
+            );
+        }
+
+        /*
+         * DRAFT NOTIFIKASI TUNGGAKAN (MEMO):
+         * --------------------------------------------------
+         * Selamat Siang! 
+         * Anda memiliki 1 tagihan yang belum dibayar
+         * ⚠️ Tunggakan 1 Tagihan
+         * Sudah lewat jatuh tempo selama 1 bulan
+         * 1 Tunggakan
+         * 1 Tagihan
+         * --------------------------------------------------
+         */
 
         return response()->json([
             'success' => true,
@@ -1041,37 +1597,14 @@ class TagihanController extends Controller
     // Hapus tagihan hanya jika status lunas
     public function destroyLunas($id)
     {
-        $tagihan = Tagihan::findOrFail($id);
+        $tagihan = Tagihan::with('pelanggan')->findOrFail($id);
         if ($tagihan->status_pembayaran !== 'lunas') {
             return redirect()->back()->with('error', 'Tagihan yang dihapus harus berstatus lunas!');
         }
 
         try {
-            // Hapus file bukti pembayaran jika ada
-            if ($tagihan->bukti_pembayaran) {
-                // Bersihkan path dari prefix 'storage/' jika ada
-                $buktiPath = $tagihan->bukti_pembayaran;
-                if (str_starts_with($buktiPath, 'storage/')) {
-                    $buktiPath = substr($buktiPath, 8); // Remove 'storage/' prefix
-                }
-
-                if (Storage::disk('public')->exists($buktiPath)) {
-                    Storage::disk('public')->delete($buktiPath);
-                }
-            }
-
-            // Hapus file kwitansi jika ada
-            if ($tagihan->kwitansi) {
-                // Bersihkan path dari prefix 'storage/' jika ada
-                $kwitansiPath = $tagihan->kwitansi;
-                if (str_starts_with($kwitansiPath, 'storage/')) {
-                    $kwitansiPath = substr($kwitansiPath, 8); // Remove 'storage/' prefix
-                }
-
-                if (Storage::disk('public')->exists($kwitansiPath)) {
-                    Storage::disk('public')->delete($kwitansiPath);
-                }
-            }
+            $this->deleteBuktiPembayaranByNomorId($tagihan->bukti_pembayaran, $tagihan->pelanggan->nomer_id ?? null);
+            $this->deleteKwitansi($tagihan->kwitansi);
         } catch (\Exception $e) {
             // Log error tapi tetap lanjut hapus tagihan
             Log::warning('Error menghapus file tagihan lunas', [
@@ -1089,28 +1622,29 @@ class TagihanController extends Controller
      * Get count of eligible customers for broadcast tagihan
      * (semua pelanggan yang belum punya tagihan di bulan ini)
      */
-    public function getBroadcastCount()
+    public function getBroadcastCount(Request $request)
     {
         try {
-            $currentMonth = now()->month;
-            $currentYear = now()->year;
+            $periodDate = $request->filled('tanggal_mulai')
+                ? Carbon::parse($request->tanggal_mulai)
+                : now();
+            $currentMonth = $periodDate->month;
+            $currentYear = $periodDate->year;
 
+            $approveCount = Pelanggan::query()
+                ->whereRaw("LOWER(TRIM(status)) = 'approve'")
+                ->count();
             $eligibleCount = $this->eligibleBroadcastCustomersQuery($currentMonth, $currentYear)->count();
             $pendingStatusCount = Pelanggan::query()
                 ->whereRaw("LOWER(TRIM(status)) IN ('pending', 'proses')")
                 ->count();
-            $inProgressCount = Pelanggan::query()
-                ->whereRaw("LOWER(TRIM(status)) = 'approve'")
-                ->whereNotNull('progres')
-                ->whereRaw('LOWER(TRIM(progres)) != ?', [strtolower(trim(Pelanggan::PROGRES_REGISTRASI))])
-                ->count();
 
             return response()->json([
                 'count' => $eligibleCount,
+                'approve_count' => $approveCount,
                 'eligible_count' => $eligibleCount,
+                'processable_count' => $eligibleCount,
                 'pending_status_count' => $pendingStatusCount,
-                'in_progress_count' => $inProgressCount,
-                'blocked_total' => $pendingStatusCount + $inProgressCount,
             ]);
         } catch (\Exception $e) {
             Log::error('Error getting broadcast count', ['error' => $e->getMessage()]);
@@ -1122,11 +1656,14 @@ class TagihanController extends Controller
      * Get IDs of eligible customers for broadcast tagihan
      * (semua pelanggan yang belum punya tagihan di bulan ini)
      */
-    public function getBroadcastIds()
+    public function getBroadcastIds(Request $request)
     {
         try {
-            $currentMonth = now()->month;
-            $currentYear = now()->year;
+            $periodDate = $request->filled('tanggal_mulai')
+                ? Carbon::parse($request->tanggal_mulai)
+                : now();
+            $currentMonth = $periodDate->month;
+            $currentYear = $periodDate->year;
 
             $ids = $this->eligibleBroadcastCustomersQuery($currentMonth, $currentYear)
                 ->pluck('id')
@@ -1147,11 +1684,13 @@ class TagihanController extends Controller
         $request->validate([
             'tanggal_mulai' => 'required|date',
             'tanggal_berakhir' => 'required|date|after_or_equal:tanggal_mulai',
+            'mode' => 'nullable|in:all,manual,broadcast',
             'pelanggan_ids' => 'required|array|min:1',
             'pelanggan_ids.*' => 'exists:pelanggans,id',
         ]);
 
         $pelangganIds = $request->pelanggan_ids;
+        $isManualMode = $request->input('mode') === 'manual';
 
         // Ambil pelanggan yang dipilih, filter yang belum ada tagihan pada periode tanggal_mulai
         $periodDate = Carbon::parse($request->tanggal_mulai);
@@ -1177,7 +1716,8 @@ class TagihanController extends Controller
 
         $successCount = 0;
         $failedCount = 0;
-        $tagihanIdsToNotify = [];
+        $fcmTagihanIdsToNotify = [];
+        $fcmDeliveryMode = 'none';
 
         DB::beginTransaction();
         try {
@@ -1204,24 +1744,27 @@ class TagihanController extends Controller
 
                 $successCount++;
 
-                // Queue notif untuk diproses async + retry saat rate_limit
-                if ($p->webpushr_sid) {
-                    $tagihanIdsToNotify[] = $newTagihan->id;
+                $fcmToken = trim((string) ($p->fcm_token ?? ''));
+
+                if ($fcmToken !== '') {
+                    $fcmTagihanIdsToNotify[] = $newTagihan->id;
                 }
             }
 
             DB::commit();
 
-            foreach ($tagihanIdsToNotify as $idx => $tagihanId) {
-                SendSingleTagihanPushJob::dispatch($tagihanId)
-                    ->delay(now()->addSeconds(($idx * 2) + 2));
+            if (!empty($fcmTagihanIdsToNotify)) {
+                $fcmNotificationChunkSize = max(1, (int) env('TAGIHAN_BROADCAST_FCM_CHUNK_SIZE', 1000));
+                foreach (array_chunk($fcmTagihanIdsToNotify, $fcmNotificationChunkSize) as $tagihanIdChunk) {
+                    $fcmDeliveryMode = $this->dispatchFcmTagihanPush($tagihanIdChunk, null, 'created');
+                }
             }
 
             $message = "Berhasil membuat tagihan untuk {$successCount} pelanggan.";
             if ($failedCount > 0) {
                 $message .= " {$failedCount} pelanggan gagal (tidak memiliki paket atau sudah memiliki tagihan).";
             }
-            if (!empty($tagihanIdsToNotify)) {
+            if (!empty($fcmTagihanIdsToNotify)) {
                 $message .= ' Notifikasi diproses di background.';
             }
 
@@ -1231,6 +1774,8 @@ class TagihanController extends Controller
                     'success' => true,
                     'processed' => $successCount,
                     'failed' => $failedCount,
+                    'fcm_notifications' => count($fcmTagihanIdsToNotify),
+                    'fcm_delivery_mode' => str_contains($fcmDeliveryMode, 'sync') ? 'sync' : 'queue',
                     'message' => $message,
                 ]);
             }
@@ -1264,18 +1809,66 @@ class TagihanController extends Controller
     public function export(Request $request)
     {
         $search = $request->input('search');
+        $status = $request->input('status', 'lunas');
         $bulan = $request->input('bulan');
         $tahun = $request->input('tahun');
         $bank = $request->input('bank');
+        $tanggalDari = $request->input('tanggal_dari');
+        $tanggalSampai = $request->input('tanggal_sampai');
+        $exportMode = $request->input('export_mode');
+        $tanggalBayar = $request->input('tanggal_bayar');
+
+        if ($exportMode === 'tanggal_bayar') {
+            if (empty($tanggalBayar)) {
+                return redirect()->back()->with('error', 'Tanggal bayar wajib dipilih untuk export tanggal bayar.');
+            }
+            $tanggalDari = $tanggalBayar;
+            $tanggalSampai = $tanggalBayar;
+            $bulan = null;
+            $tahun = null;
+        }
 
         $filename = 'Tagihan_Lunas_' .
+            ($tanggalBayar ? 'Tanggal_' . $tanggalBayar . '_' : '') .
+            ($tanggalDari ? 'From_' . $tanggalDari . '_' : '') .
+            ($tanggalSampai ? 'To_' . $tanggalSampai . '_' : '') .
             ($bulan ? 'B' . $bulan . '_' : '') .
             ($tahun ? 'Y' . $tahun . '_' : '') .
             now()->format('Y-m-d_His') .
             '.xlsx';
 
         return Excel::download(
-            new BayarExport($search, 'lunas', $bulan, $tahun, $bank),
+            new BayarExport($search, $status, $bulan, $tahun, $bank, $tanggalDari, $tanggalSampai),
+            $filename
+        );
+    }
+
+    /**
+     * Export khusus tanggal bayar/verifikasi:
+     * hanya pelanggan status lunas di tanggal pembayaran yang dipilih.
+     */
+    public function exportTanggalBayar(Request $request)
+    {
+        $request->validate([
+            'tanggal_bayar' => 'required|date',
+            'bank' => 'nullable|string',
+        ]);
+
+        $tanggalBayar = $request->input('tanggal_bayar');
+        $bank = $request->input('bank');
+
+        $filename = 'Tagihan_Lunas_Tanggal_Bayar_' . $tanggalBayar . '_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(
+            new BayarExport(
+                null,
+                'lunas',
+                null,
+                null,
+                $bank,
+                $tanggalBayar,
+                $tanggalBayar
+            ),
             $filename
         );
     }

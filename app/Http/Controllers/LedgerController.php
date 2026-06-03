@@ -51,7 +51,7 @@ class LedgerController extends Controller
             $filteredData = $this->getBukuPembantuData($bulan, $tahun);
             $incomesData = $filteredData['incomes'];
             $expensesData = $filteredData['expenses'];
-            
+
             $startDate = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
             $endDate = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
 
@@ -74,6 +74,29 @@ class LedgerController extends Controller
                 ->groupBy('tanggal')
                 ->get()
                 ->keyBy('tanggal');
+
+            $kasRegistrasiToday = DB::table('kas_registrasis')
+                ->whereDate('tanggal', $today)
+                ->sum('pemasukan');
+
+            $manualIncomeToday = DB::table('incomes')
+                ->whereNull('tagihan_id')
+                ->whereDate('tanggal_masuk', $today)
+                ->sum('jumlah');
+
+            $todayAdditionalIncome = $kasRegistrasiToday + $manualIncomeToday;
+            if ($todayAdditionalIncome > 0) {
+                $todayKey = $today->toDateString();
+
+                if ($incomesData->has($todayKey)) {
+                    $incomesData[$todayKey]->total_masuk += $todayAdditionalIncome;
+                } else {
+                    $incomesData->put($todayKey, (object) [
+                        'tanggal' => $todayKey,
+                        'total_masuk' => $todayAdditionalIncome,
+                    ]);
+                }
+            }
 
             // Get expenses hari ini
             $expensesData = Expense::whereDate('tanggal_keluar', $today)
@@ -190,7 +213,11 @@ class LedgerController extends Controller
         $periodeLabel = Carbon::createFromDate($tahun, $bulan, 1)->locale('id')->isoFormat('MMMM YYYY');
 
         return view('content.apps.Pembukuan.keluar.keluar', compact(
-            'pengeluaranGrouped', 'totalKeluar', 'bulan', 'tahun', 'periodeLabel'
+            'pengeluaranGrouped',
+            'totalKeluar',
+            'bulan',
+            'tahun',
+            'periodeLabel'
         ));
     }
 
@@ -224,7 +251,7 @@ class LedgerController extends Controller
             'BEBAN GUNUNGKIDUL' => ['kode' => '205', 'jumlah' => 0, 'items' => []],
         ];
 
-        $kategori206 = []; // Tampung kategori 206 (DLL) — nama bebas dari admin
+        $kategori206 = []; // Tampung kategori 206 (DLL)   nama bebas dari admin
 
         foreach ($expenses as $expense) {
             $kategori = strtoupper(trim($expense->kategori ?? ''));
@@ -232,22 +259,22 @@ class LedgerController extends Controller
                 // Kategori 202-205 yang sudah terdefinisi
                 $kategoriDefinisi[$kategori]['jumlah'] += $expense->jumlah;
                 $kategoriDefinisi[$kategori]['items'][] = [
-                    'tanggal'     => $expense->tanggal_keluar,
-                    'keterangan'  => $expense->keterangan ?? '-',
+                    'tanggal' => $expense->tanggal_keluar,
+                    'keterangan' => $expense->keterangan ?? '-',
                     'tipe_pembayaran' => $expense->tipe_pembayaran,
-                    'jumlah'      => $expense->jumlah,
+                    'jumlah' => $expense->jumlah,
                 ];
             } elseif (!empty($kategori)) {
-                // Kategori 206 (DLL) — nama kategori input admin, belum ada di daftar
+                // Kategori 206 (DLL)   nama kategori input admin, belum ada di daftar
                 if (!isset($kategori206[$kategori])) {
                     $kategori206[$kategori] = ['kode' => '206', 'jumlah' => 0, 'items' => []];
                 }
                 $kategori206[$kategori]['jumlah'] += $expense->jumlah;
                 $kategori206[$kategori]['items'][] = [
-                    'tanggal'    => $expense->tanggal_keluar,
+                    'tanggal' => $expense->tanggal_keluar,
                     'keterangan' => $expense->keterangan ?? '-',
                     'tipe_pembayaran' => $expense->tipe_pembayaran,
-                    'jumlah'     => $expense->jumlah,
+                    'jumlah' => $expense->jumlah,
                 ];
             }
         }
@@ -255,20 +282,20 @@ class LedgerController extends Controller
         $pengeluaranGrouped = [];
         foreach ($kategoriDefinisi as $nama => $data) {
             $pengeluaranGrouped[] = [
-                'kode'     => $data['kode'],
+                'kode' => $data['kode'],
                 'kategori' => $nama,
-                'jumlah'   => $data['jumlah'],
-                'items'    => $data['items'],
+                'jumlah' => $data['jumlah'],
+                'items' => $data['items'],
             ];
         }
 
-        // Tambahkan sheet 206 (DLL) — satu sheet per nama kategori unik
+        // Tambahkan sheet 206 (DLL)   satu sheet per nama kategori unik
         foreach ($kategori206 as $nama => $data) {
             $pengeluaranGrouped[] = [
-                'kode'     => '206',
+                'kode' => '206',
                 'kategori' => $nama,
-                'jumlah'   => $data['jumlah'],
-                'items'    => $data['items'],
+                'jumlah' => $data['jumlah'],
+                'items' => $data['items'],
             ];
         }
 
@@ -283,66 +310,66 @@ class LedgerController extends Controller
     {
         $bulan = $request->get('bulan', date('m'));
         $tahun = $request->get('tahun', date('Y'));
-        
+
         // Get Saldo Awal (default to empty model if null to prevent crashes)
         $saldoAwal = SaldoAwal::getByPeriod($bulan, $tahun) ?? new SaldoAwal();
-        
+
         // Get first and last day of the month for TAGIHAN/PEMASUKAN/PENGELUARAN
         $startDate = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
         $endDate = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
-        
+
         // UPDATED: Pengeluaran diambil dari BULAN YANG SAMA dengan filter
         // Jika filter Januari 2026, maka pengeluaran diambil dari Januari 2026
         $expenseStartDate = $startDate->copy();
         $expenseEndDate = $endDate->copy();
         $pengeluaranPeriodeLabel = Carbon::createFromDate($tahun, $bulan, 1)->locale('id')->isoFormat('MMMM YYYY');
-        
+
         // Get all incomes for the month (bulan yang difilter)
         $incomes = Income::whereBetween('tanggal_masuk', [$startDate, $endDate])
             ->orderBy('tanggal_masuk', 'asc')
             ->get();
-        
+
         // Get all expenses for THE SAME month (bukan bulan sebelumnya lagi)
         $expenses = Expense::whereBetween('tanggal_keluar', [$expenseStartDate, $expenseEndDate])
             ->orderBy('tanggal_keluar', 'asc')
             ->get();
-        
+
         // ===== PEMASUKAN =====
         // UPDATED: Semua pemasukan dari tagihan BULAN YANG SAMA (bukan bulan sebelumnya)
-        
+
         // 1. Pemasukan Dedicated Kotor = Tagihan Lunas + Paket Dedicated dari BULAN YANG SAMA
         $dedicatedData = $this->getDedicatedFromTagihan($expenseStartDate, $expenseEndDate);
         $pemasukanDedicatedKotor = $dedicatedData['kotor'];
         $jumlahDedicatedLunas = $dedicatedData['jumlah_lunas'];
         $jumlahDedicatedTotal = $dedicatedData['jumlah_total'];
-        
+
         // 2. Pemasukan Home Net Kotor = Total Tagihan Lunas NON-Dedicated dari BULAN YANG SAMA
         $homeNetData = $this->getHomeNetFromTagihan($expenseStartDate, $expenseEndDate);
         $pemasukanHomeNetKotor = $homeNetData['kotor'];
         $jumlahHomeNetLunas = $homeNetData['jumlah_lunas'];
         $jumlahHomeNetTotal = $homeNetData['jumlah_total'];
-        
+
         // 3. Potongan/Pengembalian
         // Potongan Dedicated = INPUT MANUAL dari SaldoAwal (atau 0 jika kosong)
         $potonganDedicated = $saldoAwal->pemasukan_dedicated_potongan ?? 0;
-        
+
         // Potongan Home Net = OTOMATIS dari Total Pengeluaran "Beban Komitmen / Fee" BULAN SEBELUMNYA
-        $bebanKomitmenFee = $expenses->filter(function($expense) {
+        $bebanKomitmenFee = $expenses->filter(function ($expense) {
             $kategori = strtoupper(trim($expense->kategori ?? ''));
             return str_contains($kategori, 'BEBAN KOMITMEN') || str_contains($kategori, 'FEE');
         })->sum('jumlah');
         $potonganHomeNet = $bebanKomitmenFee;
-        
+
         // 4. Bersih = Kotor - Potongan
         $pemasukanDedicatedBersih = $pemasukanDedicatedKotor - $potonganDedicated;
         $pemasukanHomeNetBersih = $pemasukanHomeNetKotor - $potonganHomeNet;
-        
+
         // 5. Registrasi - MANUAL input from SaldoAwal
         $pemasukanRegistrasi = $saldoAwal->pemasukan_registrasi ?? 0;
-        
+
         // Total Pemasukan
         $totalPemasukan = $pemasukanRegistrasi + $pemasukanDedicatedBersih + $pemasukanHomeNetBersih;
-        
+
         // ===== PENGELUARAN =====
         // Define all categories with their codes - show all individually
         $kategoriPengeluaran = [
@@ -362,7 +389,7 @@ class LedgerController extends Controller
             'BEBAN SRAGEN' => ['kode' => '205', 'jumlah' => 0],
             'BEBAN GUNUNGKIDUL' => ['kode' => '205', 'jumlah' => 0],
         ];
-        
+
         // Sum expenses by kategori field
         foreach ($expenses as $expense) {
             $kategori = strtoupper(trim($expense->kategori ?? ''));
@@ -370,7 +397,7 @@ class LedgerController extends Controller
                 $kategoriPengeluaran[$kategori]['jumlah'] += $expense->jumlah;
             }
         }
-        
+
         // Convert to array format for view
         $pengeluaranData = [];
         foreach ($kategoriPengeluaran as $nama => $data) {
@@ -380,9 +407,9 @@ class LedgerController extends Controller
                 'jumlah' => $data['jumlah']
             ];
         }
-        
+
         $totalPengeluaran = $expenses->sum('jumlah');
-        
+
         // ===== PIUTANG (Manual from DB) =====
         $piutangDedicated = $saldoAwal->piutang_dedicated ?? 0;
         $piutangHomeNet = $saldoAwal->piutang_homenet ?? 0;
@@ -390,19 +417,19 @@ class LedgerController extends Controller
         $piutangPeriodeSebelumnya = $saldoAwal->piutang_periode_sebelumnya ?? 0;
         $piutangTahunLalu = $saldoAwal->piutang_tahun_lalu ?? 0;
         $totalPiutang = $piutangDedicated + $piutangHomeNet + $piutangBulanSebelumnya + $piutangPeriodeSebelumnya + $piutangTahunLalu;
-        
+
         // Label dinamis untuk piutang berdasarkan filter
         // UPDATED: Karena pengeluaran sekarang dari bulan yang sama, piutang juga dari bulan yang sama
         // Dedicated, HomeNet, Bulan Sebelumnya = bulan yang difilter (Jan 2026 jika filter Jan 2026)
         $piutangBulanLabel = $pengeluaranPeriodeLabel; // Sekarang sama dengan bulan filter
-        
+
         // Periode sebelumnya: Jan - (bulan-1) tahun berjalan (jika filter Jan 2026 -> tidak ada/0)
         if ($bulan == '01') {
             // Jika filter Januari, tidak ada periode sebelumnya di tahun yang sama
             $piutangPeriodeLabel = "Jan - Des " . ($tahun - 1);
         } else {
             // Jika filter Feb atau selebihnya, periode = Jan - (bulan-1) tahun berjalan
-            $bulanAkhirPeriode = (int)$bulan - 1;
+            $bulanAkhirPeriode = (int) $bulan - 1;
             if ($bulanAkhirPeriode > 0) {
                 $namaBulanAkhir = Carbon::createFromDate($tahun, $bulanAkhirPeriode, 1)->locale('id')->isoFormat('MMM');
                 $piutangPeriodeLabel = "Jan - {$namaBulanAkhir} {$tahun}";
@@ -411,7 +438,7 @@ class LedgerController extends Controller
                 $piutangPeriodeLabel = "Jan - Des " . ($tahun - 1);
             }
         }
-        
+
         // Tahun lalu: tahun sebelumnya (2025 jika filter Jan 2026)
         if ($bulan == '01') {
             $tahunLalu = $tahun - 1; // Jika Jan 2026 -> 2025
@@ -420,7 +447,7 @@ class LedgerController extends Controller
             $tahunLalu = $tahun - 1; // Jika Feb 2026 -> 2025
             $piutangTahunLaluLabel = "Tahun = " . ($tahunLalu - 1);
         }
-        
+
         // Compile first month data
         $firstMonth = [
             'label' => Carbon::createFromDate($tahun, $bulan, 1)->locale('id')->isoFormat('MMMM YYYY'),
@@ -457,7 +484,7 @@ class LedgerController extends Controller
             ],
             'totalPiutang' => $totalPiutang,
         ];
-        
+
         return view('content.apps.Pembukuan.total.total', compact('firstMonth', 'saldoAwal', 'bulan', 'tahun'));
     }
     /**
@@ -496,31 +523,22 @@ class LedgerController extends Controller
         ];
 
         $filename = 'Buku_Pembantu_' . Carbon::createFromDate($tahunReq, $bulanReq, 1)->format('F_Y') . '.xlsx';
-        
+
         return Excel::download(new BukuPembantuExport($exportData, $bulanReq, $tahunReq), $filename);
     }
 
     private function getBukuPembantuData($bulan, $tahun)
     {
         $startDate = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
-        $endDate   = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
-        // Siklus billing dimulai dari tanggal 26:
-        // "Tagihan Februari" = tanggal_mulai 26 Jan s/d 25 Feb
-        // Jika filter Maret ? outstanding Feb = tanggal_mulai 26 Jan - 25 Feb
-        $twoMonthsAgo  = Carbon::createFromDate($tahun, $bulan, 1)->subMonths(2);
-        $prevMonth     = Carbon::createFromDate($tahun, $bulan, 1)->subMonth();
-        $prevStartDate = Carbon::createFromDate($twoMonthsAgo->year, $twoMonthsAgo->month, 26)->startOfDay();
-        $prevEndDate   = Carbon::createFromDate($prevMonth->year, $prevMonth->month, 25)->endOfDay();
+        $endDate = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
 
-        // Batas tanggal: 1-25 = normal, 26-31 = outstanding terlambat
-        $cutoffDate   = Carbon::createFromDate($tahun, $bulan, 25)->endOfDay();
-        $after26Start = Carbon::createFromDate($tahun, $bulan, 26)->startOfDay();
+        $prevMonthDate = Carbon::createFromDate($tahun, $bulan, 1)->subMonth();
 
-        // ---- QUERY 1: Tanggal 1-25 ----
-        // Tagihan FEBRUARI yang dibayar pada 1-25 Maret (pembayaran normal/awal bulan)
-        $incomesRegular = Tagihan::where('status_pembayaran', 'lunas')
-            ->whereBetween('tanggal_pembayaran', [$startDate, $cutoffDate])
-            ->whereBetween('tanggal_mulai', [$prevStartDate, $prevEndDate])
+        // Ambil data tagihan lunas pada bulan terpilih, dengan tanggal_mulai di bulan sebelumnya (tagihan bulan lalu)
+        $incomesData = Tagihan::where('status_pembayaran', 'lunas')
+            ->whereBetween('tanggal_pembayaran', [$startDate, $endDate])
+            ->whereMonth('tanggal_mulai', $prevMonthDate->month)
+            ->whereYear('tanggal_mulai', $prevMonthDate->year)
             ->leftJoin('pakets', 'tagihans.paket_id', '=', 'pakets.id')
             ->selectRaw('DATE(tagihans.tanggal_pembayaran) as tanggal, SUM(COALESCE(tagihans.harga, pakets.harga, 0)) as total_masuk')
             ->groupBy('tanggal')
@@ -528,28 +546,22 @@ class LedgerController extends Controller
             ->get()
             ->keyBy('tanggal');
 
-        // ---- QUERY 2: Tanggal 26-31 ----
-        // Tagihan FEBRUARI yang dibayar pada 26-31 Maret (outstanding terlambat)
-        $incomesOutstanding = Tagihan::where('status_pembayaran', 'lunas')
-            ->whereBetween('tanggal_pembayaran', [$after26Start, $endDate])
-            ->whereBetween('tanggal_mulai', [$prevStartDate, $prevEndDate])
-            ->leftJoin('pakets', 'tagihans.paket_id', '=', 'pakets.id')
-            ->selectRaw('DATE(tagihans.tanggal_pembayaran) as tanggal, SUM(COALESCE(tagihans.harga, pakets.harga, 0)) as total_masuk')
+        $kasRegistrasiData = DB::table('kas_registrasis')
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->selectRaw('DATE(tanggal) as tanggal, SUM(pemasukan) as total_masuk')
             ->groupBy('tanggal')
             ->orderBy('tanggal', 'asc')
             ->get()
             ->keyBy('tanggal');
 
-        // Gabungkan: regular (1-25) + outstanding (26-31)
-        // Tanggal yang muncul = tanggal_pembayaran (kapan pelanggan bayar)
-        $incomesData = $incomesRegular;
-        foreach ($incomesOutstanding as $tanggal => $item) {
+        foreach ($kasRegistrasiData as $tanggal => $item) {
             if ($incomesData->has($tanggal)) {
                 $incomesData[$tanggal]->total_masuk += $item->total_masuk;
             } else {
                 $incomesData->put($tanggal, $item);
             }
         }
+
         $incomesData = $incomesData->sortKeys();
 
         // Get expenses per hari dalam bulan yang dipilih
@@ -561,7 +573,7 @@ class LedgerController extends Controller
             ->keyBy('tanggal');
 
         return [
-            'incomes'  => $incomesData,
+            'incomes' => $incomesData,
             'expenses' => $expensesData,
         ];
     }
@@ -573,25 +585,25 @@ class LedgerController extends Controller
     {
         $bulan = $request->get('bulan', date('m'));
         $tahun = $request->get('tahun', date('Y'));
-        
+
         // Get Saldo Awal
         $saldoAwal = SaldoAwal::getByPeriod($bulan, $tahun) ?? new SaldoAwal();
-        
+
         // Get first and last day of the month for TAGIHAN/PEMASUKAN
         $startDate = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
         $endDate = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
-        
+
         // TUTUP BUKU: Pengeluaran diambil dari BULAN SEBELUMNYA
         $prevMonth = Carbon::createFromDate($tahun, $bulan, 1)->subMonth();
         $expenseStartDate = $prevMonth->copy()->startOfMonth();
         $expenseEndDate = $prevMonth->copy()->endOfMonth();
         $pengeluaranPeriodeLabel = $prevMonth->locale('id')->isoFormat('MMMM YYYY');
-        
+
         // Get all incomes for the month (bulan yang difilter)
         $incomes = Income::whereBetween('tanggal_masuk', [$startDate, $endDate])->get();
         // Get all expenses for PREVIOUS month (tutup buku)
         $expenses = Expense::whereBetween('tanggal_keluar', [$expenseStartDate, $expenseEndDate])->get();
-        
+
         // Calculate Pemasukan
         $dedicatedData = $this->getDedicatedFromTagihan($startDate, $endDate);
         $pemasukanDedicatedKotor = $dedicatedData['kotor'];
@@ -602,7 +614,7 @@ class LedgerController extends Controller
         $potonganHomeNet = $saldoAwal->pemasukan_homenet_potongan ?? 0;
         $pemasukanHomeNetBersih = $saldoAwal->pemasukan_homenet_bersih ?? 0;
         $totalPemasukan = $pemasukanRegistrasi + $pemasukanDedicatedBersih + $pemasukanHomeNetBersih;
-        
+
         // Calculate Pengeluaran
         $kategoriPengeluaran = [
             'BEBAN GAJI' => ['kode' => '202', 'jumlah' => 0],
@@ -622,14 +634,14 @@ class LedgerController extends Controller
             'BEBAN SRAGEN' => ['kode' => '205', 'jumlah' => 0],
             'BEBAN GUNUNGKIDUL' => ['kode' => '205', 'jumlah' => 0],
         ];
-        
+
         foreach ($expenses as $expense) {
             $kategori = strtoupper(trim($expense->kategori ?? ''));
             if (isset($kategoriPengeluaran[$kategori])) {
                 $kategoriPengeluaran[$kategori]['jumlah'] += $expense->jumlah;
             }
         }
-        
+
         $pengeluaranData = [];
         foreach ($kategoriPengeluaran as $nama => $data) {
             if ($data['jumlah'] > 0) { // Only include non-zero items
@@ -640,14 +652,14 @@ class LedgerController extends Controller
                 ];
             }
         }
-        
+
         $totalPengeluaran = $expenses->sum('jumlah');
-        
+
         // Piutang
         $piutangDedicated = $saldoAwal->piutang_dedicated ?? 0;
         $piutangHomeNet = $saldoAwal->piutang_homenet ?? 0;
         $totalPiutang = $piutangDedicated + $piutangHomeNet;
-        
+
         // Compile data
         $data = [
             'label' => Carbon::createFromDate($tahun, $bulan, 1)->locale('id')->isoFormat('MMMM YYYY'),
@@ -670,12 +682,12 @@ class LedgerController extends Controller
             ],
             'totalPiutang' => $totalPiutang,
         ];
-        
+
         $filename = 'Rugi_Laba_' . Carbon::createFromDate($tahun, $bulan, 1)->format('F_Y') . '.xlsx';
-        
+
         return Excel::download(new PembukuanTotalExport($data, $bulan, $tahun), $filename);
     }
-    
+
     /**
      * Get Dedicated income from Tagihan table
      * Finds tagihan where paket nama contains "dedicated" or "DAD" and status is "Lunas"
@@ -688,19 +700,19 @@ class LedgerController extends Controller
             ->orWhere('nama_paket', 'LIKE', '%dadicated%')
             ->orWhere('nama_paket', 'LIKE', '%dad%')
             ->pluck('id');
-        
+
         // Get tagihan with dedicated paket that were PAID (lunas) in the period
         // Using tanggal_pembayaran to filter by when payment was made
         $paidDedicatedTagihan = Tagihan::whereIn('paket_id', $dedicatedPaketIds)
             ->where('status_pembayaran', 'Lunas')
             ->whereBetween('tanggal_pembayaran', [$startDate, $endDate])
             ->get();
-        
+
         // Get total count of dedicated tagihan in the period (regardless of payment status)
         $allDedicatedTagihan = Tagihan::whereIn('paket_id', $dedicatedPaketIds)
             ->whereBetween('tanggal_pembayaran', [$startDate, $endDate])
             ->get();
-        
+
         // Calculate totals
         $kotor = 0;
         foreach ($paidDedicatedTagihan as $tagihan) {
@@ -708,10 +720,10 @@ class LedgerController extends Controller
                 $kotor += $tagihan->paket->harga;
             }
         }
-        
+
         return [
             'kotor' => $kotor,
-            'potongan' => 0, 
+            'potongan' => 0,
             'jumlah_lunas' => $paidDedicatedTagihan->count(),
             'jumlah_total' => $allDedicatedTagihan->count(),
         ];
@@ -729,19 +741,19 @@ class LedgerController extends Controller
             ->orWhere('nama_paket', 'LIKE', '%dadicated%')
             ->orWhere('nama_paket', 'LIKE', '%dad%')
             ->pluck('id');
-        
+
         // Get tagihan with NON-dedicated paket that were PAID (lunas) in the period
         // Using tanggal_pembayaran to filter by when payment was made
         $paidHomeNetTagihan = Tagihan::whereNotIn('paket_id', $dedicatedPaketIds)
             ->where('status_pembayaran', 'Lunas')
             ->whereBetween('tanggal_pembayaran', [$startDate, $endDate])
             ->get();
-        
+
         // Get total count of home net tagihan in the period (regardless of payment status)
         $allHomeNetTagihan = Tagihan::whereNotIn('paket_id', $dedicatedPaketIds)
             ->whereBetween('tanggal_pembayaran', [$startDate, $endDate])
             ->get();
-        
+
         // Calculate totals
         $kotor = 0;
         foreach ($paidHomeNetTagihan as $tagihan) {
@@ -749,10 +761,10 @@ class LedgerController extends Controller
                 $kotor += $tagihan->paket->harga;
             }
         }
-        
+
         return [
             'kotor' => $kotor,
-            'potongan' => 0, 
+            'potongan' => 0,
             'jumlah_lunas' => $paidHomeNetTagihan->count(),
             'jumlah_total' => $allHomeNetTagihan->count(),
         ];
@@ -760,11 +772,11 @@ class LedgerController extends Controller
 
     private function processMonthlyData($incomes, $expenses)
     {
-        $groupedIncomes = $incomes->groupBy(function($val) {
+        $groupedIncomes = $incomes->groupBy(function ($val) {
             return Carbon::parse($val->tanggal_masuk)->format('Y-m');
         });
 
-        $groupedExpenses = $expenses->groupBy(function($val) {
+        $groupedExpenses = $expenses->groupBy(function ($val) {
             return Carbon::parse($val->tanggal_keluar)->format('Y-m');
         });
 
@@ -773,7 +785,7 @@ class LedgerController extends Controller
         $monthlyData = [];
         $saldoAkumulasi = 0;
 
-        foreach($allMonths as $month) {
+        foreach ($allMonths as $month) {
             $monthIncomes = $groupedIncomes->get($month, collect());
             $monthExpenses = $groupedExpenses->get($month, collect());
 
@@ -798,7 +810,7 @@ class LedgerController extends Controller
 
             $pengeluaranLainnya = $monthExpenses->whereNotIn('kode_akun', ['202', '203'])
                 ->groupBy('kode_akun')
-                ->map(function($group) {
+                ->map(function ($group) {
                     return [
                         'kode' => $group->first()->kode_akun,
                         'nama' => $group->first()->nama_akun,
@@ -816,7 +828,7 @@ class LedgerController extends Controller
             $saldoBersih = $totalPemasukan - $totalPengeluaran;
 
             $monthlyData[$month] = [
-                'label' => Carbon::parse($month.'-01')->locale('id')->isoFormat('MMMM YYYY'),
+                'label' => Carbon::parse($month . '-01')->locale('id')->isoFormat('MMMM YYYY'),
                 'saldoAwal' => $saldoAkumulasi,
                 'omset' => [
                     'dedicated' => $omsetDedicated,

@@ -7,13 +7,16 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    @include('content.apps.Customer.partials.disable-zoom')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Profile - {{ $user->nama_lengkap ?? 'Pelanggan' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
     <style>
         * {
@@ -291,6 +294,9 @@
             margin-bottom: 8px;
             text-decoration: none;
             color: #0f172a;
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            text-align: left;
         }
 
         .menu-item:hover {
@@ -325,10 +331,136 @@
             color: #22c55e;
         }
 
-        .menu-text {
+        .notification-setting {
+            cursor: default;
+        }
+
+        .notification-copy {
             flex: 1;
+            min-width: 0;
+        }
+
+        .menu-text {
             font-size: 0.9rem;
             font-weight: 600;
+        }
+
+        .notification-status {
+            margin-top: 2px;
+            font-size: 0.74rem;
+            font-weight: 500;
+            color: #94a3b8;
+            line-height: 1.35;
+        }
+
+        .mui-switch {
+            position: relative;
+            display: inline-flex;
+            width: 52px;
+            height: 32px;
+            flex-shrink: 0;
+        }
+
+        .mui-switch input {
+            width: 0;
+            height: 0;
+            opacity: 0;
+        }
+
+        .mui-switch-track {
+            position: absolute;
+            inset: 0;
+            border-radius: 999px;
+            background: #cbd5e1;
+            transition: background 0.2s ease, opacity 0.2s ease;
+            box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+        }
+
+        .mui-switch-thumb {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.24);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .mui-switch input:checked + .mui-switch-track {
+            background: #22c55e;
+        }
+
+        .mui-switch input:checked + .mui-switch-track .mui-switch-thumb {
+            transform: translateX(20px);
+        }
+
+        .mui-switch input:focus-visible + .mui-switch-track {
+            outline: 3px solid rgba(34, 197, 94, 0.22);
+            outline-offset: 2px;
+        }
+
+        .mui-switch input:disabled + .mui-switch-track {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .notification-blur-container.swal2-container {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .notification-result-popup {
+            width: min(92vw, 360px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+            border-radius: 24px !important;
+            background: rgba(255, 255, 255, 0.92) !important;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22) !important;
+            padding: 22px !important;
+        }
+
+        .notification-result {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            text-align: center;
+        }
+
+        .notification-result-icon {
+            width: 58px;
+            height: 58px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.85rem;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+        }
+
+        .notification-result-icon.success {
+            background: linear-gradient(135deg, #22c55e, #14b8a6);
+        }
+
+        .notification-result-icon.muted {
+            background: linear-gradient(135deg, #64748b, #334155);
+        }
+
+        .notification-result-title {
+            margin: 2px 0 0;
+            color: #0f172a;
+            font-size: 1.08rem;
+            font-weight: 800;
+        }
+
+        .notification-result-text {
+            margin: 0;
+            max-width: 280px;
+            color: #64748b;
+            font-size: 0.86rem;
+            line-height: 1.45;
         }
 
         .menu-arrow {
@@ -431,6 +563,94 @@
             background: #0f172a;
             border-radius: 0 0 3px 3px;
         }
+
+        /* ========== SWEETALERT TAILWIND STYLING ========== */
+        .swal2-container.swal2-backdrop-show {
+            background: rgba(15, 23, 42, 0.5) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+        }
+
+        .swal-tailwind-backdrop {
+            background: rgba(15, 23, 42, 0.5) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+        }
+
+        .swal-tailwind-popup {
+            border-radius: 1.5rem !important;
+            border: 1px solid rgba(226, 232, 240, 0.9) !important;
+            background: #ffffff !important;
+            padding: 2rem !important;
+            box-shadow: 0 25px 70px rgba(15, 23, 42, 0.22) !important;
+            max-width: 380px !important;
+        }
+
+        .swal-tailwind-popup .swal2-title {
+            font-size: 1.35rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            margin-top: 0.5rem !important;
+            letter-spacing: -0.02em !important;
+        }
+
+        .swal-tailwind-popup .swal2-html-container {
+            font-size: 0.95rem !important;
+            line-height: 1.6 !important;
+            color: #64748b !important;
+            margin-top: 0.75rem !important;
+        }
+
+        .swal-tailwind-popup .swal2-actions {
+            margin-top: 1.75rem !important;
+            gap: 0.75rem !important;
+            width: 100% !important;
+            justify-content: stretch !important;
+        }
+
+        .swal-tailwind-confirm {
+            flex: 1 !important;
+            border-radius: 0.75rem !important;
+            border: 0 !important;
+            padding: 0.75rem 1.25rem !important;
+            font-weight: 700 !important;
+            color: #ffffff !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15) !important;
+            font-family: 'Inter', sans-serif !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .swal-tailwind-confirm-danger {
+            background: #ef4444 !important;
+        }
+        .swal-tailwind-confirm-danger:hover {
+            background: #dc2626 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.25) !important;
+        }
+
+        .swal-tailwind-cancel {
+            flex: 1 !important;
+            border-radius: 0.75rem !important;
+            border: 0 !important;
+            background: #f1f5f9 !important;
+            padding: 0.75rem 1.25rem !important;
+            font-weight: 700 !important;
+            color: #334155 !important;
+            transition: all 0.2s ease !important;
+            font-family: 'Inter', sans-serif !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .swal-tailwind-cancel:hover {
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
+            transform: translateY(-1px) !important;
+        }
     </style>
 </head>
 
@@ -500,6 +720,21 @@
                         <span class="menu-text">FAQ & Bantuan</span>
                         <i class="bi bi-chevron-right menu-arrow"></i>
                     </a>
+                    <div class="menu-item notification-setting" id="btn-enable-fcm" role="button" tabindex="0">
+                        <div class="menu-icon green"><i class="bi bi-bell-fill"></i></div>
+                        <div class="notification-copy">
+                            <div class="menu-text">Notifikasi Tagihan</div>
+                            <div class="notification-status" id="fcm-status-text">
+                                {{ $user->fcm_token ? 'Aktif di perangkat ini' : 'Aktifkan untuk tagihan dan info terbaru' }}
+                            </div>
+                        </div>
+                        <label class="mui-switch" for="fcm-switch" aria-label="Aktifkan notifikasi tagihan">
+                            <input type="checkbox" id="fcm-switch" {{ $user->fcm_token ? 'checked' : '' }}>
+                            <span class="mui-switch-track">
+                                <span class="mui-switch-thumb"></span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- Logout -->
@@ -510,36 +745,78 @@
                     </button>
                 </div>
 
-                <div class="app-version">Billing JMK v1.0   PT Jernih Multi Komunikasi</div>
+                <div class="app-version">Billing JMK v1.0 � PT Jernih Multi Komunikasi</div>
             </div>
         </div>
 
         @include('content.apps.Customer.tagihan.bottom-navbar', ['active' => 'profile'])
+        @include('content.apps.partials.firebase-messaging', ['user' => $user])
 
         <script>
             document.getElementById('btn-logout').addEventListener('click', () => {
                 Swal.fire({
                     title: 'Yakin Ingin Keluar?',
-                    html: `?? <strong>Peringatan:</strong><br><span style="font-size: 0.9rem; color: #64748b;">Jika Anda keluar, Anda <b>tidak akan menerima notifikasi</b> tagihan baru dan pengingat jatuh tempo secara realtime. Tetap login untuk selalu update informasi tagihan Anda.</span>`,
+                    html: `<div class="text-center"><span style="font-size: 0.95rem; line-height: 1.5; color: #64748b;">Jika Anda keluar, Anda <b>tidak akan menerima notifikasi</b> tagihan baru dan pengingat jatuh tempo secara realtime. Tetap login untuk selalu update informasi tagihan Anda.</span></div>`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonText: 'Ya, Tetap Keluar',
                     cancelButtonText: 'Batal, Tetap Login',
-                    confirmButtonColor: '#dc2626',
-                    cancelButtonColor: '#0f172a',
+                    customClass: {
+                        container: 'swal-tailwind-backdrop',
+                        popup: 'swal-tailwind-popup',
+                        confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                        cancelButton: 'swal-tailwind-cancel'
+                    },
+                    showClass: {
+                        popup: 'animate__animated animate__fadeInUp animate__faster'
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__fadeOutDown animate__faster'
+                    },
+                    buttonsStyling: false,
                     reverseButtons: true,
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        Swal.fire({ title: 'Keluar...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                         fetch('/customer/logout', {
                             method: 'POST',
                             headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
                         }).then(r => {
                             if (r.ok) {
-                                Swal.fire({ title: 'Berhasil!', text: 'Anda telah keluar', icon: 'success', timer: 1500, showConfirmButton: false })
-                                    .then(() => window.location.href = '/');
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    text: 'Anda telah keluar dari akun',
+                                    icon: 'success',
+                                    timer: 1500,
+                                    showConfirmButton: false,
+                                    customClass: {
+                                        container: 'swal-tailwind-backdrop',
+                                        popup: 'swal-tailwind-popup'
+                                    },
+                                    showClass: {
+                                        popup: 'animate__animated animate__fadeInUp animate__faster'
+                                    },
+                                    hideClass: {
+                                        popup: 'animate__animated animate__fadeOutDown animate__faster'
+                                    }
+                                }).then(() => window.location.href = '/');
                             } else throw new Error();
-                        }).catch(() => Swal.fire({ title: 'Error', text: 'Gagal keluar', icon: 'error', confirmButtonColor: '#dc2626' }));
+                        }).catch(() => Swal.fire({
+                            title: 'Gagal!',
+                            text: 'Gagal keluar dari akun. Silakan coba lagi.',
+                            icon: 'error',
+                            customClass: {
+                                container: 'swal-tailwind-backdrop',
+                                popup: 'swal-tailwind-popup',
+                                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger'
+                            },
+                            buttonsStyling: false,
+                            showClass: {
+                                popup: 'animate__animated animate__fadeInUp animate__faster'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__fadeOutDown animate__faster'
+                            }
+                        }));
                     }
                 });
             });
@@ -580,6 +857,243 @@
                         html: steps,
                         confirmButtonText: 'Oke, saya coba'
                     });
+                });
+            }
+
+            async function waitForFirebaseMessaging() {
+                if (typeof window.enableFirebaseMessaging === 'function') {
+                    return;
+                }
+
+                await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        window.removeEventListener('firebase-messaging-loaded', onReady);
+                        reject(new Error('Firebase Messaging timeout.'));
+                    }, 5000);
+
+                    function onReady() {
+                        clearTimeout(timeout);
+                        resolve();
+                    }
+
+                    window.addEventListener('firebase-messaging-loaded', onReady, { once: true });
+                });
+            }
+
+            const enableFcmBtn = document.getElementById('btn-enable-fcm');
+            const enableFcmSwitch = document.getElementById('fcm-switch');
+            const fcmStatusText = document.getElementById('fcm-status-text');
+
+            function setFcmSwitchLoading(isLoading) {
+                if (!enableFcmSwitch) return;
+                enableFcmSwitch.disabled = isLoading;
+            }
+
+            function markFcmEnabled() {
+                if (enableFcmSwitch) {
+                    enableFcmSwitch.checked = true;
+                }
+                if (fcmStatusText) {
+                    fcmStatusText.textContent = 'Aktif di perangkat ini';
+                }
+            }
+
+            function markFcmDisabled(message = 'Aktifkan untuk tagihan dan info terbaru') {
+                if (enableFcmSwitch) {
+                    enableFcmSwitch.checked = false;
+                }
+                if (fcmStatusText) {
+                    fcmStatusText.textContent = message;
+                }
+            }
+
+            function showNotificationResult(type) {
+                const isEnabled = type === 'enabled';
+
+                Swal.fire({
+                    html: `
+                        <div class="notification-result">
+                            <div class="notification-result-icon ${isEnabled ? 'success' : 'muted'}">
+                                <i class="bi ${isEnabled ? 'bi-bell-fill' : 'bi-bell-slash-fill'}"></i>
+                            </div>
+                            <div>
+                                <h3 class="notification-result-title">
+                                    ${isEnabled ? 'Notifikasi berhasil diaktifkan' : 'Notifikasi dinonaktifkan'}
+                                </h3>
+                                <p class="notification-result-text">
+                                    ${isEnabled
+                                        ? 'Info tagihan dan pengumuman akan dikirim ke perangkat ini.'
+                                        : 'Token Firebase dan SID Webpushr sudah dihapus dari database.'}
+                                </p>
+                            </div>
+                        </div>
+                    `,
+                    showConfirmButton: false,
+                    timer: 1800,
+                    timerProgressBar: true,
+                    backdrop: 'rgba(15, 23, 42, 0.32)',
+                    customClass: {
+                        container: 'notification-blur-container',
+                        popup: 'notification-result-popup'
+                    }
+                });
+            }
+
+            async function deleteFcmTokenFallback() {
+                const endpoint = window.firebaseMessagingConfig?.deleteTokenEndpoint;
+                if (!endpoint) {
+                    throw new Error('Endpoint hapus token belum tersedia.');
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal menonaktifkan notifikasi.');
+                }
+            }
+
+            async function activateFirebaseNotification() {
+                if (!('Notification' in window)) {
+                    markFcmDisabled('Browser ini belum mendukung notifikasi');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Browser belum mendukung notifikasi',
+                        confirmButtonColor: '#0f172a'
+                    });
+                    return;
+                }
+
+                if (fcmStatusText) {
+                    fcmStatusText.textContent = 'Mengaktifkan notifikasi...';
+                }
+
+                setFcmSwitchLoading(true);
+
+                try {
+
+                    await waitForFirebaseMessaging();
+                    const token = await window.enableFirebaseMessaging();
+
+                    if (token) {
+                        markFcmEnabled();
+                        showNotificationResult('enabled');
+                        return;
+                    }
+
+                    if (Notification.permission === 'denied') {
+                        markFcmDisabled('Izin notifikasi diblokir di browser');
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Notifikasi Diblokir',
+                            html: 'Buka pengaturan situs di browser, ubah izin <b>Notifikasi</b> menjadi <b>Izinkan</b>, lalu refresh halaman ini.',
+                            confirmButtonText: 'Mengerti'
+                        });
+                        return;
+                    }
+
+                    markFcmDisabled('Izin notifikasi belum diberikan');
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Notifikasi belum aktif',
+                        confirmButtonColor: '#0f172a'
+                    });
+                } catch (error) {
+                    console.error('[FCM] Gagal aktivasi:', error);
+                    markFcmDisabled(error?.message || 'Aktivasi notifikasi gagal');
+                    Swal.fire({
+                        icon: 'error',
+                        title: error?.message || 'Aktivasi notifikasi gagal',
+                        confirmButtonColor: '#0f172a'
+                    });
+                } finally {
+                    setFcmSwitchLoading(false);
+                }
+            }
+
+            async function deactivateFirebaseNotification() {
+                if (fcmStatusText) {
+                    fcmStatusText.textContent = 'Menonaktifkan notifikasi...';
+                }
+
+                setFcmSwitchLoading(true);
+
+                try {
+                    try {
+                        await waitForFirebaseMessaging();
+                    } catch (error) {
+                        console.warn('[FCM] Firebase script belum siap, lanjut hapus token via endpoint.', error);
+                    }
+
+                    if (typeof window.disableFirebaseMessaging === 'function') {
+                        await window.disableFirebaseMessaging();
+                    } else {
+                        await deleteFcmTokenFallback();
+                        localStorage.setItem('firebase_messaging_disabled', 'true');
+                        localStorage.removeItem('last_firebase_fcm_token');
+                        localStorage.removeItem('firebase_messaging_config_signature');
+                        localStorage.removeItem('firebase_messaging_browser_state_reset_signature');
+                    }
+
+                    markFcmDisabled();
+                    showNotificationResult('disabled');
+                } catch (error) {
+                    console.error('[FCM] Gagal nonaktif:', error);
+                    markFcmEnabled();
+                    Swal.fire({
+                        icon: 'error',
+                        title: error?.message || 'Gagal menonaktifkan notifikasi',
+                        confirmButtonColor: '#0f172a'
+                    });
+                } finally {
+                    setFcmSwitchLoading(false);
+                }
+            }
+
+            if (enableFcmBtn) {
+                enableFcmBtn.addEventListener('click', (event) => {
+                    if (event.target.closest('.mui-switch')) {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    if (enableFcmSwitch?.checked) {
+                        deactivateFirebaseNotification();
+                    } else {
+                        activateFirebaseNotification();
+                    }
+                });
+
+                enableFcmBtn.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    if (enableFcmSwitch?.checked) {
+                        deactivateFirebaseNotification();
+                    } else {
+                        activateFirebaseNotification();
+                    }
+                });
+            }
+
+            if (enableFcmSwitch) {
+                enableFcmSwitch.addEventListener('change', () => {
+                    if (enableFcmSwitch.checked) {
+                        activateFirebaseNotification();
+                    } else {
+                        deactivateFirebaseNotification();
+                    }
                 });
             }
         </script>

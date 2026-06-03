@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Redis;
 use App\Http\Controllers\WebviewKwitansiController;
 
 use App\Http\Controllers\TagihanReadController;
+use App\Http\Controllers\SystemLogController;
 
 use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\MobileTagihanController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\DirecturMarketingController;
 use App\Http\Controllers\LaporanHarianController;
 use App\Http\Controllers\KasRegistrasiController;
 use App\Http\Controllers\KaryawanHomeController;
+use App\Http\Controllers\CustomerFeedbackController;
 
 use App\Http\Controllers\RekeningController;
 use App\Http\Controllers\AbsensiController;
@@ -76,6 +78,34 @@ Route::middleware('web')->group(function () {
 Route::get('/', function () {
     return redirect()->route('users.member');
 });
+
+Route::get('/customer/media-proxy', function (Request $request) {
+    $url = (string) $request->query('url', '');
+    $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+    $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+    $allowedHosts = [
+        'layanan.beningmedia.co.id',
+        'layanan.jernih.net.id',
+    ];
+
+    abort_unless(in_array($scheme, ['http', 'https'], true), 400);
+    abort_unless(in_array($host, $allowedHosts, true), 403);
+
+    $response = Http::timeout(12)
+        ->retry(1, 200)
+        ->withHeaders(['User-Agent' => 'JMK-PWA-MediaProxy/1.0'])
+        ->get($url);
+
+    abort_unless($response->successful(), 404);
+
+    $contentType = $response->header('Content-Type', 'application/octet-stream');
+    abort_unless(str_starts_with($contentType, 'image/'), 415);
+
+    return response($response->body(), 200)
+        ->header('Content-Type', $contentType)
+        ->header('Cache-Control', 'public, max-age=86400');
+})->name('customer.media.proxy');
+
 // Maintenance Route
 // Route::get('/maintenance', function () {
 //     return view('content.apps.maintenance');
@@ -86,6 +116,7 @@ Route::get('/', function () {
 //     return redirect()->route('maintenance');
 // });
 
+// locale
 // locale
 Route::get('/lang/{locale}', [LanguageController::class, 'swap']);
 
@@ -112,7 +143,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.welcome');
 });
 
+Route::middleware(['auth', 'role:administrator'])
+    ->prefix('dashboard/admin/console')
+    ->name('system-log.')
+    ->group(function () {
+        Route::get('/pushjob', [SystemLogController::class, 'index'])
+            ->name('index');
 
+        Route::get('/pushjob/tail', [SystemLogController::class, 'tail'])
+            ->name('tail');
+    });
 
 Route::prefix('/pelanggan/jernihnet')->group(function () {
 
@@ -125,10 +165,10 @@ Route::prefix('/pelanggan/jernihnet')->group(function () {
     });
 
     // Route yang sudah login customer
-    Route::middleware('auth:customer')->group(function () {
-        Route::get('/dashboard/tagihan', [TagihanController::class, 'index'])
-            ->name('customer.tagihan.home');
-    });
+  //  Route::middleware('auth:customer')->group(function () {
+    //    Route::get('/dashboard/tagihan', [TagihanController::class, 'index'])
+      //      ->name('customer.tagihan.home');
+    // });
 });
 // layout
 Route::get('/layouts/collapsed-menu', [CollapsedMenu::class, 'index'])->name('layouts-collapsed-menu');
@@ -155,6 +195,8 @@ Route::middleware(['auth', 'role:administrator,admin,verifikasi'])->group(functi
     Route::get('/dashboard/admin/employees/{id}', [EmployeeController::class, 'edit'])->name('employees.edit');
     Route::put('/dashboard/admin/employees/{id}', [EmployeeController::class, 'update'])->name('employees.update');
     Route::delete('/dashboard/admin/employees/{id}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+    Route::post('/dashboard/admin/employees/bulk-delete', [EmployeeController::class, 'bulkDestroy'])->name('employees.bulkDestroy');
+
     // Route POST untuk proses import
     Route::post('/dashboard/admin/employees/import-excel', [EmployeeController::class, 'importExcel'])->name('karyawan.excel');
 
@@ -175,6 +217,7 @@ Route::middleware(['auth', 'role:administrator,admin,verifikasi'])->group(functi
         Route::get('/tagihan/data', [TagihanController::class, 'getData'])->name('tagihan.data');
         Route::put('/{id}/update', [TagihanController::class, 'update'])->name('tagihan.update');
         Route::post('/konfirmasi/{id}', [TagihanController::class, 'konfirmasiBayar']);
+        Route::post('/{id}/update-lunas', [TagihanController::class, 'updateLunas'])->name('tagihan.lunas.update');
         Route::post('/tagihan/store', [TagihanController::class, 'store'])->name('tagihan.store');
         Route::post('/{id}/bayar', [TagihanController::class, 'updateStatus'])->name('tagihan.bayar');
         Route::delete('/tagihan/{id}', [TagihanController::class, 'destroy'])->name('tagihan.destroy');
@@ -190,6 +233,7 @@ Route::middleware(['auth', 'role:administrator,admin,verifikasi'])->group(functi
         Route::post('/broadcast/store', [TagihanController::class, 'massStore'])->name('tagihan.broadcast.store'); // Point to massStore which supports JSON & Batching
         Route::get('/export-belum-lunas', [TagihanController::class, 'exportBelumLunas'])->name('tagihan.export.belumlunas');
 
+        Route::get('/export-tanggal-bayar', [TagihanController::class, 'exportTanggalBayar'])->name('tagihan.export.tanggal_bayar');
 
 	// Status Baca Tagihan
         Route::get('/status-baca', [TagihanReadController::class, 'index'])->name('tagihan.read.status');
@@ -389,24 +433,27 @@ Route::middleware(['auth', 'role:karyawan'])->group(function () {
 
  });
 
-Route::middleware(['auth:customer','customer_status'])->group(function () {
+
+Route::middleware(['auth:customer', 'customer_status'])->group(function () {
     Route::get('dashboard/customer/tagihan/home', [CustomerTagihanController::class, 'indexHome'])->name('customer.tagihan.home');
     Route::get('dashboard/customer/tagihan/selesai', [CustomerTagihanController::class, 'selesai'])->name('customer.tagihan.lunas');
+    Route::get('dashboard/customer/kwitansi/{id}/preview', [CustomerTagihanController::class, 'previewKwitansi'])->name('customer.kwitansi.preview');
+
     Route::get('dashboard/customer/tagihan', [CustomerTagihanController::class, 'index'])->name('customer.tagihan');
     Route::get('dashboard/customer/tagihan/json', [CustomerTagihanController::class, 'getTagihanJson'])->name('customer.tagihan.json');
     Route::get('dashboard/customer/tagihan/selesai/json', [CustomerTagihanController::class, 'getInvoiceJson'])->name('customer.tagihan.selesai.json');
     Route::put('dashboard/customer/tagihan/{id}', [CustomerTagihanController::class, 'update'])
         ->name('customer.tagihan.update');
     Route::get('/customer/tagihan/{id}', [CustomerTagihanController::class, 'show'])->name('customer.tagihan.show');
-    
+
     // Chat pelanggan dengan admin
     Route::get('dashboard/customer/chat', [ChatController::class, 'user'])->name('customer.chat');
 
 
- // Chat pelanggan dengan Admin untuk Billing (terpisah dari CS)
+    // Chat pelanggan dengan Admin untuk Billing (terpisah dari CS)
     Route::get('dashboard/customer/chat-billing', [ChatController::class, 'customerBillingChat'])->name('customer.chat.billing');
 
- // Profile Customer
+    // Profile Customer
     Route::get('dashboard/customer/profile', [CustomerTagihanController::class, 'profile'])->name('customer.profile');
 
     // Riwayat Pembayaran
@@ -415,9 +462,13 @@ Route::middleware(['auth:customer','customer_status'])->group(function () {
     // FAQ / Bantuan
     Route::get('dashboard/customer/faq', [CustomerTagihanController::class, 'faq'])->name('customer.faq');
 
+    // Informasi / Pemberitahuan / Promo
+    Route::get('dashboard/customer/informasi', [CustomerTagihanController::class, 'informasi'])->name('customer.informasi');
 
-});
-// Admin Billing Chat API endpoints (for customer and admin)
+    Route::get('dashboard/customer/feedback', [CustomerFeedbackController::class, 'create'])->name('customer.feedback.create');
+    Route::post('dashboard/customer/feedback', [CustomerFeedbackController::class, 'store'])->name('customer.feedback.store');
+
+});// Admin Billing Chat API endpoints (for customer and admin)
 Route::middleware('auth:web,customer')->prefix('admin-chat')->group(function () {
     Route::get('/messages/{userId?}', [ChatController::class, 'getAdminChatMessages'])->name('admin.chat.messages');
     Route::post('/send', [ChatController::class, 'sendAdminChat'])->name('admin.chat.send');
@@ -505,19 +556,29 @@ Route::post('/dashboard/admin/tagihan/mass-store', [TagihanController::class, 'm
 
 // news rekeknig
 
+
 Route::get('/dashboard/admin/rekenings', [RekeningController::class, 'index'])->name('rekenings.index');
 Route::get('/dashboard/admin/add/rekenings', [RekeningController::class, 'create'])->name('rekenings.add');
 Route::post('/dashboard/admin/rekenings', [RekeningController::class, 'store'])->name('rekenings.create');
+Route::post('/dashboard/admin/rekenings/bulk-delete', [RekeningController::class, 'bulkDestroy'])->name('rekenings.bulkDestroy');
 Route::get('/dashboard/admin/rekenings/{id}/edit', [RekeningController::class, 'edit'])->name('rekenings.edit');
 Route::put('/dashboard/admin/rekenings/{id}', [RekeningController::class, 'update'])->name('rekenings.update');
 Route::delete('/dashboard/admin/rekenings/{id}', [RekeningController::class, 'destroy'])->name('rekenings.destroy');
 
+
 Route::post('/pelanggan/{nomerid}/update-sid', [\App\Http\Controllers\PelangganController::class, 'updateSid'])
+    ->middleware('auth:customer');
+
+Route::post('/pelanggan/{nomerid}/update-fcm-token', [\App\Http\Controllers\PelangganController::class, 'updateFcmToken'])
+    ->middleware('auth:customer');
+
+Route::post('/pelanggan/{nomerid}/delete-fcm-token', [\App\Http\Controllers\PelangganController::class, 'deleteFcmToken'])
     ->middleware('auth:customer');
 
 Route::get('/install', function () {
     return view('content/apps/install');
 });
+
 
 // Route::get('/customer/webview-auth', [WebViewController::class, 'loginWithToken']);
 
@@ -534,6 +595,7 @@ Route::prefix('/dashboard/admin/barangs')->group(function () {
 Route::middleware(['auth', 'role:administrator,admin'])->prefix('dashboard/admin/kas-registrasi')->group(function () {
     Route::get('/', [KasRegistrasiController::class, 'index'])->name('kas-registrasi.index');
     Route::post('/store', [KasRegistrasiController::class, 'store'])->name('kas-registrasi.store');
+    Route::post('/bulk-delete', [KasRegistrasiController::class, 'bulkDestroy'])->name('kas-registrasi.bulkDestroy');
     Route::get('/{id}', [KasRegistrasiController::class, 'show'])->name('kas-registrasi.show');
     Route::put('/{id}', [KasRegistrasiController::class, 'update'])->name('kas-registrasi.update');
     Route::delete('/{id}', [KasRegistrasiController::class, 'destroy'])->name('kas-registrasi.destroy');
@@ -608,7 +670,7 @@ Route::middleware('auth:web,customer')->group(function () {
     Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unreadCount');
 });
 
- Route::middleware('auth:web,customer')->group(function () {
+ 
 
 Route::get('/kwitansi/preview/{tagihan_id}', 'App\Http\Controllers\KwitansiController@preview')
     ->name('kwitansi.preview');
@@ -616,7 +678,7 @@ Route::get('/kwitansi/preview/{tagihan_id}', 'App\Http\Controllers\KwitansiContr
 Route::get('/kwitansi/download/{tagihan_id}', 'App\Http\Controllers\KwitansiController@download')
     ->name('kwitansi.download');
 
-});
+ 
  
 // Verifikasi keaslian kwitansi (anti-pemalsuan) - akses publik via link QR signed
 Route::get('/kwitansi/verify/{tagihan_id}', [KwitansiController::class, 'verify'])
@@ -631,13 +693,18 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/push-notification/broadcast', [PushNotificationController::class, 'broadcast'])
         ->name('tagihan.push');
 
+    Route::post('/push-notification/broadcast-all', [PushNotificationController::class, 'broadcastAll'])
+        ->name('push.notification.broadcast.all');
+
     Route::post('/push-notification/broadcast-info', [PushNotificationController::class, 'broadcastInfo'])
         ->name('push.notification.broadcast.info');
 
     Route::get('/push-notification/all-tagihan-ids', [PushNotificationController::class, 'getAllTagihanIds'])
         ->name('push.notification.all.ids');
-});
 
+    Route::get('/push-notification/broadcast/{batchId}/progress', [PushNotificationController::class, 'broadcastProgress'])
+        ->name('push.notification.progress');
+});
 Route::middleware(['auth'])->prefix('/dashboard/admin/salary')->name('gaji.')->group(function () {
     Route::get('/', [GajiController::class, 'index'])->name('index');
     Route::get('/create', [GajiController::class, 'create'])->name('create');
@@ -722,13 +789,20 @@ Route::middleware(['auth'])->group(function () {
     Route::post('dashboard/admin/iklan', [IklanController::class, 'store'])
         ->name('iklan.store');
 
-      // Update iklan
+    // Update iklan
     Route::get('dashboard/admin/iklan/{id}/edit', [IklanController::class, 'edit'])
         ->name('iklan.edit');
+
+    Route::put('dashboard/admin/iklan/{id}', [IklanController::class, 'update'])
+        ->name('iklan.update');
 
     // Kirim iklan (OneSignal)
     Route::post('dashboard/admin/iklan/{id}/send', [IklanController::class, 'send'])
         ->name('iklan.send');
+
+    // Progress kirim iklan realtime
+    Route::get('dashboard/admin/iklan/{id}/progress', [IklanController::class, 'progress'])
+        ->name('iklan.progress');
 
     // Hapus iklan
     Route::delete('dashboard/admin/iklan/{id}', [IklanController::class, 'destroy'])
@@ -793,21 +867,21 @@ Route::get('/test-redis', function () {
  
 Route::prefix('mobile/customer')->middleware(['webview.token'])
     ->group(function () {
-        Route::get('/tagihan', [MobileTagihanController::class, 'index'])->name('mobile.tagihan.index');
-        Route::get('/tagihan/home', [MobileTagihanController::class, 'indexHome'])->name('mobile.tagihan.home');
-        Route::get('/tagihan/kwitansi', [MobileTagihanController::class, 'selesai'])->name('mobile.tagihan.selesai');
-        Route::get('/tagihan/summary', [MobileTagihanController::class, 'summaryJson']);
-        Route::get('/tagihan/{id}', [MobileTagihanController::class, 'show'])->name('mobile.tagihan.show');
-        Route::get('/kwitansi', [WebviewKwitansiController::class, 'index'])->name('webview.kwitansi.index');
-        Route::get('/kwitansi/{id}/preview', [WebviewKwitansiController::class, 'preview'])->name('webview.kwitansi.preview');
-        Route::get('/kwitansi/{id}/download', [WebviewKwitansiController::class, 'download'])->name('webview.kwitansi.download');
-        Route::get('/chat', [ChatController::class, 'user'])->name('customer.chat');     
-        Route::get('/pelanggan/chat', [ChatController::class, 'pelanggan'])->name('chat.pelanggan');
-    Route::get('/chat/messages/{userId?}', [ChatController::class, 'getMessages'])->name('chat.messages');
-    Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
-    Route::get('/chat/users', [ChatController::class, 'getUserList'])->name('chat.users');
-    Route::post('/chat/mark-read/{userId}', [ChatController::class, 'markRead'])->name('chat.markRead');
-    Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unreadCount');
+        Route::get('/tagihan', [MobileTagihanController::class, 'index'])->name('mobile.tagihan.index.mobile');
+        Route::get('/tagihan/home', [MobileTagihanController::class, 'indexHome'])->name('mobile.tagihan.home.mobile');
+        Route::get('/tagihan/kwitansi', [MobileTagihanController::class, 'selesai'])->name('mobile.tagihan.selesai.mobile');
+        Route::get('/tagihan/summary', [MobileTagihanController::class, 'summaryJson.mobile']);
+        Route::get('/tagihan/{id}', [MobileTagihanController::class, 'show'])->name('mobile.tagihan.show.mobile');
+        Route::get('/kwitansi', [WebviewKwitansiController::class, 'index'])->name('webview.kwitansi.index.mobile');
+        Route::get('/kwitansi/{id}/preview', [WebviewKwitansiController::class, 'preview'])->name('webview.kwitansi.preview.mobile');
+        Route::get('/kwitansi/{id}/download', [WebviewKwitansiController::class, 'download'])->name('webview.kwitansi.download.mobile');
+        Route::get('/chat', [ChatController::class, 'user'])->name('customer.chat.mobile');     
+        Route::get('/pelanggan/chat', [ChatController::class, 'pelanggan'])->name('chat.pelanggan.mobile');
+    Route::get('/chat/messages/{userId?}', [ChatController::class, 'getMessages'])->name('chat.messages.mobile');
+    Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send.mobile');
+    Route::get('/chat/users', [ChatController::class, 'getUserList'])->name('chat.users.mobile');
+    Route::post('/chat/mark-read/{userId}', [ChatController::class, 'markRead'])->name('chat.markRead.mobile');
+    Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unreadCount.mobile');
 
 });
 

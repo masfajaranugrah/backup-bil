@@ -7,7 +7,8 @@ use Illuminate\Support\Str;
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+@include('content.apps.Customer.partials.disable-zoom')
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Home - Dashboard</title>
 
@@ -646,259 +647,278 @@ body {
     font-size: 1.125rem;
 }
 
-/* ========== CUSTOM SWEETALERT2 MODAL STYLING - BLACK & WHITE MODERN ========== */
-.swal2-popup.custom-modal {
-    border-radius: 24px !important;
-    padding: 0 !important;
+/* ========== CUSTOM SWEETALERT2 MODAL - GLASSMORPHISM PREMIUM ========== */
+/* ========== GLOBAL SWEETALERT2 OVERRIDE - GLASSMORPHISM PREMIUM ========== */
+.swal2-popup {
+    border-radius: 28px !important;
+    padding: 36px 24px 24px !important;
     width: 90% !important;
-    max-width: 420px !important;
-    box-shadow: 0 25px 80px rgba(0,0,0,0.5) !important;
+    max-width: 380px !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12), 0 8px 24px rgba(15, 23, 42, 0.04) !important;
     font-family: 'Inter', sans-serif !important;
     overflow: hidden !important;
-    border: 1px solid #2d2d2d !important;
 }
 
-.swal2-popup.custom-modal .swal2-html-container {
-    margin: 0 !important;
+.swal2-popup .swal2-title {
+    font-size: 1.375rem !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 8px !important;
     padding: 0 !important;
 }
 
-.modal-content-wrapper {
-    position: relative;
-    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0a0a0a 100%);
-    padding: 48px 28px 32px;
-    color: white;
-    overflow: hidden;
+.swal2-popup .swal2-html-container {
+    font-size: 0.875rem !important;
+    color: #475569 !important;
+    line-height: 1.6 !important;
+    margin: 16px 0 24px !important;
+    padding: 0 !important;
 }
 
-/* Minimalist Background Accents */
-.bg-circle {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0.03;
-    background: white;
+.swal2-backdrop-show {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    background: rgba(15, 23, 42, 0.45) !important;
 }
 
-.bg-circle-1 {
-    width: 300px;
-    height: 300px;
-    top: -150px;
-    right: -150px;
-    border: 2px solid rgba(255,255,255,0.1);
-}
-
-.bg-circle-2 {
-    width: 200px;
-    height: 200px;
-    bottom: -100px;
-    left: -100px;
-    border: 1px solid rgba(255,255,255,0.08);
-}
-
-.bg-circle-3 {
-    width: 120px;
-    height: 120px;
-    top: 40%;
-    left: -60px;
-    border: 1px solid rgba(255,255,255,0.05);
-}
-
-/* Clean Icon Container */
-.icon-container {
-    position: relative;
-    width: 88px;
-    height: 88px;
-    margin: 0 auto 28px;
-    z-index: 2;
-}
-
-.icon-bg {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: rgba(255,255,255,0.08);
-    border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.15);
-    animation: pulseClean 3s ease-in-out infinite;
-}
-
-.icon-main {
-    position: absolute;
+/* Glassmorphism Icon Badge */
+.glass-icon-wrap {
     width: 72px;
     height: 72px;
-    top: 8px;
-    left: 8px;
-    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
     border-radius: 50%;
+    background: rgba(15, 23, 42, 0.05);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4);
+}
+
+.glass-icon-wrap i {
+    color: #0f172a !important;
+    font-size: 1.75rem;
+}
+
+.glass-modal-title {
+    font-size: 1.375rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+}
+
+.glass-modal-text {
+    font-size: 0.875rem;
+    color: #475569;
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+
+.glass-features-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.glass-feature-tag {
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 12px;
+    padding: 10px 14px;
+    flex: 1;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
-    box-shadow: 0 4px 20px rgba(255,255,255,0.2);
-    animation: bounceClean 1.2s ease-in-out;
+    gap: 6px;
 }
 
-.icon-main i {
-    color: #0f0f0f !important;
+/* SweetAlert2 Standard Icons Override */
+.swal2-icon {
+    border-width: 3px !important;
+    margin: 0 auto 20px !important;
+    transform: scale(0.9);
 }
 
-@keyframes pulseClean {
-    0%, 100% {
-        transform: scale(1);
-        opacity: 0.15;
-    }
-    50% {
-        transform: scale(1.08);
-        opacity: 0.08;
-    }
+.swal2-icon.swal2-warning {
+    border-color: #f59e0b !important;
+    color: #f59e0b !important;
+}
+.swal2-icon.swal2-warning .swal2-icon-content {
+    font-size: 3rem !important;
+    color: #f59e0b !important;
 }
 
-@keyframes bounceClean {
-    0%, 100% { transform: translateY(0) scale(1); }
-    30% { transform: translateY(-8px) scale(1.02); }
-    60% { transform: translateY(-4px) scale(0.98); }
+.swal2-icon.swal2-success {
+    border-color: #10b981 !important;
+}
+.swal2-icon.swal2-success [class^=swal2-success-line] {
+    background-color: #10b981 !important;
+}
+.swal2-icon.swal2-success .swal2-success-ring {
+    border: 3px solid rgba(16, 185, 129, 0.2) !important;
 }
 
-/* Modern Typography */
-.modal-title {
-    font-size: 1.875rem;
-    font-weight: 800;
-    margin-bottom: 12px;
-    text-align: center;
-    position: relative;
-    z-index: 2;
-    letter-spacing: -0.03em;
-    color: #ffffff;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+.swal2-icon.swal2-error {
+    border-color: #ef4444 !important;
+}
+.swal2-icon.swal2-error [class^=swal2-x-mark-line] {
+    background-color: #ef4444 !important;
 }
 
-.modal-subtitle {
-    font-size: 1.0625rem;
-    font-weight: 400;
-    text-align: center;
-    color: #c4c4c4;
-    position: relative;
-    z-index: 2;
-    line-height: 1.6;
-    letter-spacing: -0.01em;
+/* Buttons styling */
+.swal2-actions {
+    margin-top: 16px !important;
+    width: 100% !important;
+    gap: 8px !important;
 }
 
-/* Clean Feature Cards */
-.feature-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-top: 28px;
-    position: relative;
-    z-index: 2;
-}
-
-.feature-card {
-    background: rgba(255,255,255,0.06);
-    backdrop-filter: blur(10px);
-    border-radius: 14px;
-    padding: 20px 16px;
-    text-align: center;
-    border: 1px solid rgba(255,255,255,0.12);
-    transition: all 0.3s ease;
-}
-
-.feature-card:hover {
-    background: rgba(255,255,255,0.1);
-    border-color: rgba(255,255,255,0.2);
-    transform: translateY(-2px);
-}
-
-.feature-icon {
-    font-size: 2rem;
-    margin-bottom: 10px;
-    filter: grayscale(0);
-}
-
-.feature-text {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: #e8e8e8;
-    letter-spacing: -0.01em;
-}
-
-/* Minimalist Badge */
-.notification-badge {
-    display: inline-block;
-    background: rgba(255,255,255,0.95);
-    color: #0f0f0f;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    padding: 8px 18px;
-    border-radius: 24px;
-    margin-top: 8px;
-    letter-spacing: -0.01em;
-    box-shadow: 0 4px 16px rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.2);
-}
-
-/* Modern Button Styling */
-.swal2-confirm.custom-btn {
-    background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%) !important;
-    color: #0f0f0f !important;
+.swal2-confirm.swal2-styled {
+    background: #0f172a !important;
+    color: #ffffff !important;
     font-weight: 700 !important;
-    font-size: 1.0625rem !important;
-    padding: 16px 36px !important;
+    font-size: 0.9375rem !important;
+    padding: 12px 24px !important;
+    border-radius: 12px !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2) !important;
+    transition: all 0.2s ease !important;
+    margin: 0 !important;
+    flex: 1;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px;
+}
+
+.swal2-confirm.swal2-styled:hover {
+    background: #1e293b !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25) !important;
+}
+
+.swal2-cancel.swal2-styled {
+    background: transparent !important;
+    color: #64748b !important;
+    font-weight: 600 !important;
+    font-size: 0.9375rem !important;
+    padding: 12px 24px !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    transition: all 0.2s ease !important;
+    margin: 0 !important;
+    flex: 1;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px;
+}
+
+.swal2-cancel.swal2-styled:hover {
+    background: rgba(15, 23, 42, 0.04) !important;
+    border-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+/* Backward compatibility for custom classes */
+.swal2-confirm.custom-btn {
+    background: #0f172a !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 0.9375rem !important;
+    padding: 14px 24px !important;
     border-radius: 14px !important;
-    border: 1px solid rgba(255,255,255,0.3) !important;
-    box-shadow: 0 6px 24px rgba(255,255,255,0.2) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    margin-top: 28px !important;
-    letter-spacing: -0.01em !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25) !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px;
+    width: 100% !important;
+    margin-top: 8px !important;
 }
 
 .swal2-confirm.custom-btn:hover {
-    transform: translateY(-3px) !important;
-    box-shadow: 0 10px 32px rgba(255,255,255,0.3) !important;
-    background: linear-gradient(135deg, #ffffff 0%, #efefef 100%) !important;
+    background: #1e293b !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.3) !important;
 }
 
-.swal2-confirm.custom-btn:active {
-    transform: translateY(-1px) !important;
+/* Modern Custom Spinner for Loading Modals */
+.modern-spinner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: conic-gradient(from 180deg at 50% 50%, rgba(59, 130, 246, 0) 0deg, #3b82f6 360deg);
+    -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 6px), #000 0);
+    mask: radial-gradient(farthest-side, #0000 calc(100% - 6px), #000 0);
+    animation: modern-spin 0.8s infinite linear;
+    margin: 0 auto 20px auto;
+}
+@keyframes modern-spin {
+    to { transform: rotate(1turn); }
+}
+
+/* Force-hide cancel button inside custom-modal popups */
+.custom-modal .swal2-cancel {
+    display: none !important;
 }
 
 .swal2-cancel.custom-cancel-btn {
-    background: rgba(255,255,255,0.08) !important;
-    color: #e8e8e8 !important;
+    background: transparent !important;
+    color: #64748b !important;
     font-weight: 600 !important;
-    font-size: 1rem !important;
-    padding: 16px 32px !important;
+    font-size: 0.9375rem !important;
+    padding: 14px 24px !important;
     border-radius: 14px !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    box-shadow: none !important;
-    transition: all 0.3s ease !important;
-    margin-top: 28px !important;
-    margin-right: 12px !important;
-    letter-spacing: -0.01em !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px;
+    width: 100% !important;
+    margin-top: 8px !important;
 }
 
 .swal2-cancel.custom-cancel-btn:hover {
-    background: rgba(255,255,255,0.15) !important;
-    border-color: rgba(255,255,255,0.3) !important;
-    transform: translateY(-2px) !important;
+    background: rgba(15, 23, 42, 0.04) !important;
+    border-color: rgba(15, 23, 42, 0.2) !important;
 }
 
 .swal2-close {
-    color: rgba(255,255,255,0.7) !important;
+    color: rgba(15, 23, 42, 0.4) !important;
     font-size: 2rem !important;
     opacity: 1 !important;
-    transition: all 0.3s ease !important;
-    width: 36px !important;
-    height: 36px !important;
-    background: rgba(255,255,255,0.08) !important;
-    border-radius: 50% !important;
+    transition: all 0.25s ease !important;
 }
+        position: absolute !important;
+        top: 14px !important;
+        right: 14px !important;
+        z-index: 20 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 36px !important;
+        height: 36px !important;
+        background: rgba(15, 23, 42, 0.05) !important;
+        border-radius: 50% !important;
+    }
 
-.swal2-close:hover {
-    color: #ffffff !important;
-    background: rgba(255,255,255,0.15) !important;
-    transform: rotate(90deg) scale(1.1) !important;
-}
+    .swal2-close:hover {
+        color: #0f172a !important;
+        background: rgba(15, 23, 42, 0.1) !important;
+        transform: rotate(90deg) scale(1.1) !important;
+    }
 
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -1345,31 +1365,12 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 
-<!-- WebPushr SDK -->
+@include('content.apps.partials.firebase-messaging', ['user' => $user])
+
 <script>
-(function(w,d,s,id){
-    if(typeof w.webpushr!=='undefined') return;
-    w.webpushr=w.webpushr||function(){(w.webpushr.q=w.webpushr.q||[]).push(arguments)};
-    var js,fjs=d.getElementsByTagName(s)[0];
-    js=d.createElement(s); js.id=id; js.async=1;
-    js.src="https://cdn.webpushr.com/app.min.js";
-    fjs.parentNode.insertBefore(js,fjs);
-}(window,document,'script','webpushr-js'));
-
-webpushr('setup',{
-    'key':'BA6E203ONU9JRrWFSTUFepnOgRg7JZ0hZKGtfZ_nT_WWOzRCvjlF9BJT8hvmA_Rvbl_W4NbpYiy7SDwoQKK6g2M'
-});
-
-// ========== WEBPUSHR READY CALLBACK ==========
-window._webpushrScriptReady = function() {
-    console.log('? WebPushr SDK is ready!');
-    checkNotificationStatus();
-};
-
 // ========== NOTIFICATION MANAGEMENT ==========
 const nomerid = "{{ $user->nomer_id }}";
 const DEVICE_ID_KEY = 'device_notification_id';
-const LAST_SID_KEY = 'last_subscriber_id';
 
 function getDeviceId() {
     let deviceId = localStorage.getItem(DEVICE_ID_KEY);
@@ -1381,60 +1382,18 @@ function getDeviceId() {
     return deviceId;
 }
 
-function updateSubscriberId(forceUpdate = false) {
-    const deviceId = getDeviceId();
-    let retryCount = 0;
-    const maxRetries = 5;
-
-    function attemptFetchSID() {
-        webpushr('fetch_id', function(sid) {
-            if (sid) {
-                const lastSID = localStorage.getItem(LAST_SID_KEY);
-                if (forceUpdate || sid !== lastSID) {
-                    console.log('?? Updating SID to server...');
-                    $.ajax({
-                        url: '/pelanggan/' + nomerid + '/update-sid',
-                        method: 'POST',
-                        data: {
-                            sid: sid,
-                            device_id: deviceId,
-                            _token: '{{ csrf_token() }}'
-                        },
-                        success: function(response) {
-                            console.log('? SID berhasil diupdate!');
-                            localStorage.setItem(LAST_SID_KEY, sid);
-                            showSuccessToast();
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('? Gagal update SID:', error);
-                            if (retryCount < 3) {
-                                retryCount++;
-                                setTimeout(() => updateSubscriberId(forceUpdate), 2000);
-                            }
-                        }
-                    });
-                }
-            } else {
-                if (retryCount < maxRetries) {
-                    retryCount++;
-                    setTimeout(attemptFetchSID, 1000);
-                }
-            }
-        });
-    }
-    attemptFetchSID();
-}
-
 function checkNotificationStatus() {
     if (!('Notification' in window)) return;
     const permission = Notification.permission;
     const deviceId = getDeviceId();
-    const hasAskedBefore = localStorage.getItem('notification_asked_' + deviceId);
+    const hasAskedBefore = localStorage.getItem('firebase_notification_asked_' + deviceId);
+    const isDisabled = localStorage.getItem('firebase_messaging_disabled') === 'true';
 
     if (permission === 'granted') {
-        const forceUpdate = !hasAskedBefore;
-        setTimeout(() => updateSubscriberId(forceUpdate), 1500);
-    } else if (permission === 'default' && !hasAskedBefore) {
+        if (typeof window.syncFirebaseMessaging === 'function') {
+            setTimeout(() => window.syncFirebaseMessaging(), 800);
+        }
+    } else if (permission === 'default' && !hasAskedBefore && !isDisabled) {
         setTimeout(() => showCustomPermissionPopup(), 3000);
     }
 }
@@ -1443,60 +1402,43 @@ function showCustomPermissionPopup() {
     const deviceId = getDeviceId();
     Swal.fire({
         html: `
-            <div class="modal-content-wrapper">
-                <div class="bg-circle bg-circle-1"></div>
-                <div class="bg-circle bg-circle-2"></div>
-                <div class="bg-circle bg-circle-3"></div>
-                <div class="icon-container">
-                    <div class="icon-bg"></div>
-                    <div class="icon-main">
-                        <i class="bi bi-bell-fill"></i>
+            <div class="text-center">
+                <!-- Icon Bell Glass -->
+                <div class="glass-icon-wrap">
+                    <i class="bi bi-bell-fill"></i>
+                </div>
+                <h3 class="glass-modal-title">Aktifkan Notifikasi</h3>
+                <p class="glass-modal-text">
+                    Izinkan notifikasi agar Anda mendapatkan pemberitahuan realtime saat ada tagihan baru atau pengingat jatuh tempo langsung ke perangkat Anda.
+                </p>
+                <div class="glass-features-row">
+                    <div class="glass-feature-tag">
+                        <i class="bi bi-lightning-charge-fill" style="color: #f59e0b;"></i> Tagihan Baru
                     </div>
-                </div>
-                <div class="modal-title">Aktifkan Notifikasi?</div>
-                <div class="modal-subtitle">
-                    Dapatkan pemberitahuan instan untuk tagihan baru dan update pembayaran Anda
-                </div>
-                <div style="text-align: center; margin-top: 16px;">
-                    <small style="opacity: 0.8; font-size: 0.85rem;">
-                        <i class="bi bi-shield-check"></i> Device baru terdeteksi
-                    </small>
-                </div>
-                <div class="feature-cards">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="bi bi-lightning-charge-fill"></i>
-                        </div>
-                        <div class="feature-text">Update Realtime</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="bi bi-alarm-fill"></i>
-                        </div>
-                        <div class="feature-text">Pengingat Tagihan</div>
+                    <div class="glass-feature-tag">
+                        <i class="bi bi-alarm-fill" style="color: #3b82f6;"></i> Pengingat Tagihan
                     </div>
                 </div>
             </div>
         `,
-        confirmButtonText: '<i class="bi bi-check-circle-fill" style="margin-right: 6px;"></i> Ya, Aktifkan',
-        showCancelButton: true,
-        cancelButtonText: '<i class="bi bi-x-circle" style="margin-right: 6px;"></i> Nanti Saja',
+        confirmButtonText: '<i class="bi bi-check-circle-fill" style="margin-right: 6px;"></i> Iya, Saya Mau',
+        showCancelButton: false,
         customClass: {
             popup: 'custom-modal',
             confirmButton: 'custom-btn',
-            cancelButton: 'custom-cancel-btn'
+            cancelButton: 'd-none'
         },
         showClass: {
-            popup: 'animate__animated animate__zoomIn animate__faster'
+            popup: 'animate__animated animate__fadeInUp animate__faster'
         },
         hideClass: {
-            popup: 'animate__animated animate__zoomOut animate__faster'
+            popup: 'animate__animated animate__fadeOutDown animate__faster'
         },
         allowOutsideClick: false,
         showCloseButton: true,
-        backdrop: 'rgba(0,0,0,0.6)'
+        backdrop: 'rgba(15,23,42,0.45)'
     }).then((result) => {
-        localStorage.setItem('notification_asked_' + deviceId, 'true');
+        localStorage.setItem('firebase_notification_asked_' + deviceId, 'true');
         if (result.isConfirmed) {
             requestBrowserPermission();
         }
@@ -1505,25 +1447,35 @@ function showCustomPermissionPopup() {
 
 function requestBrowserPermission() {
     Swal.fire({
-        title: 'Mohon Tunggu',
-        text: 'Memproses permintaan notifikasi...',
+        html: `
+            <div class="text-center">
+                <div class="modern-spinner"></div>
+                <h3 class="glass-modal-title" style="margin-bottom: 8px;">Mohon Tunggu</h3>
+                <p class="glass-modal-text" style="margin-bottom: 0;">Memproses permintaan notifikasi...</p>
+            </div>
+        `,
         allowOutsideClick: false,
         allowEscapeKey: false,
-        didOpen: () => Swal.showLoading()
+        showConfirmButton: false,
+        showCancelButton: false,
+        customClass: {
+            popup: 'custom-modal'
+        }
     });
 
-    Notification.requestPermission().then(function(permission) {
-        if (permission === 'granted') {
-            Swal.close();
-            Swal.fire({
-                title: 'Mengaktifkan Notifikasi',
-                text: 'Menyimpan pengaturan...',
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                didOpen: () => Swal.showLoading()
-            });
-            setTimeout(() => updateSubscriberId(true), 2000);
-        } else if (permission === 'denied') {
+    waitForFirebaseMessaging().then(function() {
+        if (typeof window.enableFirebaseMessaging !== 'function') {
+            throw new Error('Firebase Messaging belum siap.');
+        }
+
+        return window.enableFirebaseMessaging();
+    }).then(function(token) {
+        if (token) {
+            showSuccessToast();
+            return;
+        }
+
+        if (Notification.permission === 'denied') {
             Swal.fire({
                 icon: 'warning',
                 title: 'Notifikasi Diblokir',
@@ -1535,14 +1487,50 @@ function requestBrowserPermission() {
                 `,
                 confirmButtonText: 'Mengerti'
             });
+            return;
         }
+
+        Swal.fire({
+            icon: 'info',
+            title: 'Notifikasi Belum Aktif',
+            text: 'Izin notifikasi belum diberikan.',
+            confirmButtonText: 'Mengerti'
+        });
+	    }).catch(function(error) {
+	        console.error('Firebase notification failed:', error);
+	        Swal.fire({
+	            icon: 'error',
+	            title: 'Gagal Mengaktifkan',
+	            text: error?.message || 'Notifikasi belum bisa diaktifkan. Coba refresh halaman lalu ulangi.',
+	            confirmButtonText: 'Mengerti'
+	        });
+	    });
+}
+
+function waitForFirebaseMessaging() {
+    if (typeof window.enableFirebaseMessaging === 'function') {
+        return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            window.removeEventListener('firebase-messaging-loaded', onReady);
+            reject(new Error('Firebase Messaging timeout.'));
+        }, 5000);
+
+        function onReady() {
+            clearTimeout(timeout);
+            resolve();
+        }
+
+        window.addEventListener('firebase-messaging-loaded', onReady, { once: true });
     });
 }
 
 function showSuccessToast() {
     Swal.fire({
         icon: 'success',
-        title: 'Akun Aktif!',
+        title: 'Notifikasi Aktif!',
         timer: 3000,
         showConfirmButton: false,
         position: 'top-end',
@@ -1554,8 +1542,8 @@ setInterval(function() {
     const currentPermission = Notification.permission;
     const lastPermission = localStorage.getItem('last_permission_status');
     if (lastPermission && lastPermission !== currentPermission) {
-        if (currentPermission === 'granted') {
-            updateSubscriberId(true);
+        if (currentPermission === 'granted' && typeof window.syncFirebaseMessaging === 'function') {
+            window.syncFirebaseMessaging();
         }
     }
     localStorage.setItem('last_permission_status', currentPermission);
@@ -1658,14 +1646,11 @@ function checkForNewNotifications() {
 $(document).ready(function(){
     console.log('?? Aplikasi dimulai');
     console.log('?? User Nomer ID:', nomerid);
-
-    if (typeof webpushr !== 'undefined') {
-        console.log('? Menunggu WebPushr SDK ready...');
-    }
+    checkNotificationStatus();
 
     // Polling untuk tagihan baru (setiap jam 12 siang)
-    setTimeout(checkForNewNotifications, 3000);
-setInterval(checkForNewNotifications, 21600000);
+    // setTimeout(checkForNewNotifications, 3000);
+    // setInterval(checkForNewNotifications, 21600000);
 });
 </script>
 

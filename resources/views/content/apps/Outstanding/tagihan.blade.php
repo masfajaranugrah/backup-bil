@@ -4,6 +4,7 @@
 
 @section('vendor-style')
 @vite([
+  'resources/css/app.css',
   'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
   'resources/assets/vendor/libs/select2/select2.scss',
@@ -347,6 +348,41 @@
   overflow-y: auto;
 }
 
+#detailModal .modal-body,
+[id^="modalEditTagihan-"] .modal-body {
+  max-height: none;
+}
+
+#modalTambahTagihan .modal-content,
+[id^="modalEditTagihan-"] .modal-content,
+#modalMassTagihan .modal-content {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#modalTambahTagihan form,
+[id^="modalEditTagihan-"] form,
+#modalMassTagihan form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+#modalTambahTagihan .modal-body,
+[id^="modalEditTagihan-"] .modal-body,
+#modalMassTagihan .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  max-height: none;
+}
+
+#modalTambahTagihan .modal-footer,
+[id^="modalEditTagihan-"] .modal-footer,
+#modalMassTagihan .modal-footer {
+  flex-shrink: 0;
+}
+
 .modal-footer {
   padding: 1.5rem;
   border-top: 1px solid #e4e4e7;
@@ -374,31 +410,58 @@
   border-spacing: 0;
 }
 
-.table thead th {
-  background: #f8fafc;
-  border: none;
-  padding: 1rem;
-  font-weight: 600;
-  color: #18181b;
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
+.modern-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-.table tbody tr {
+.modern-table thead th {
+  background: #f8fafc;
+  border: none;
+  padding: 1.1rem 0.95rem !important;
+  font-weight: 800;
+  color: #667085;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  white-space: nowrap;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.modern-table tbody tr {
   transition: var(--transition);
 }
 
-.table tbody tr:not(.empty-state-row):hover {
+.modern-table tbody tr:not(.empty-state-row):hover {
   background: #f4f4f5;
 }
 
-.table tbody td {
-  padding: 1rem;
-  border-bottom: 1px solid #e4e4e7;
+.modern-table tbody td {
+  padding: 0.85rem 0.95rem;
+  border-bottom: 1px dashed #d8e1ec;
   vertical-align: middle;
   color: #18181b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modern-table th:first-child,
+.modern-table td:first-child {
+  text-align: center;
+}
+
+.modern-table th:last-child,
+.modern-table td:last-child {
+  text-align: center;
+  overflow: visible;
+}
+
+.modern-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 /* Empty State */
@@ -579,53 +642,67 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
+  padding: 0.85rem 1.1rem;
   border-top: 1px solid #e4e4e7;
-  background: #fafafa;
+  background: #fff;
   border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
-.pagination {
+.pagination-wrapper .pagination {
   margin: 0;
-  gap: 0.5rem;
+  flex-wrap: nowrap;
+  gap: 0.15rem;
 }
 
-.pagination .page-item .page-link {
+.pagination-wrapper .page-link {
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
   border-radius: 50% !important;
-  width: 40px;
-  height: 40px;
   padding: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e4e4e7;
-  color: #18181b;
+  border: 0 !important;
+  color: #1f2937 !important;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.pagination-wrapper .mui-pagination {
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.pagination-wrapper .mui-pagination .page-link.page-nav-icon {
+  font-size: 1.1rem;
   font-weight: 600;
-  background-color: #fff;
-  margin: 0 2px;
-  transition: all 0.3s ease;
+  line-height: 1;
 }
 
-.pagination .page-item .page-link:hover {
-  background-color: #18181b;
-  border-color: #18181b;
-  color: #fafafa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(24, 24, 27, 0.2);
+.pagination-wrapper .mui-pagination .page-item.active .page-link {
+  background: #1f2933 !important;
+  color: #fff !important;
 }
 
-.pagination .page-item.active .page-link {
-  background-color: #18181b !important;
-  border-color: #18181b !important;
-  color: #fafafa !important;
-  box-shadow: 0 4px 12px rgba(24, 24, 27, 0.4);
+.pagination-wrapper .mui-pagination .page-link:hover {
+  background: rgba(31, 41, 51, 0.06) !important;
+  color: #111827 !important;
 }
 
-.pagination .page-item.disabled .page-link {
-  background-color: #f4f4f5;
-  border-color: #e4e4e7;
-  color: #a1a1aa;
-  cursor: not-allowed;
+.pagination-wrapper .mui-pagination .page-item.disabled .page-link {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+}
+
+.pagination-wrapper .mui-pagination .pagination-ellipsis .page-link {
+  color: #64748b !important;
+  letter-spacing: 0;
 }
 
 .pagination-info {
@@ -638,8 +715,14 @@
 .dataTables_info,
 .dataTables_paginate,
 .dataTables_length,
-.dataTables_filter {
+.dataTables_filter,
+.dataTables_scrollHead,
+.dataTables_scrollFoot {
   display: none !important;
+}
+
+.dataTables_scrollBody {
+  border: 0 !important;
 }
 
 /* Hide default Laravel pagination results text */
@@ -684,6 +767,244 @@ nav[role="navigation"] > div > p {
   color: #71717a !important;
 }
 
+/* Custom Checkbox */
+.outstanding-checkbox {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+.outstanding-checkbox:checked {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+.outstanding-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 7px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.outstanding-selection-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 0;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.outstanding-selection-toolbar.active {
+  display: flex;
+}
+
+.outstanding-selection-toolbar .selected-text {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.outstanding-selection-toolbar .delete-selected-btn {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.outstanding-selection-toolbar .delete-selected-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.action-btn {
+  border: 0;
+  background: transparent;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.action-btn:hover {
+  background: #eef2f7;
+  color: #475569;
+}
+
+.outstanding-table-wrap {
+  overflow: visible !important;
+}
+
+.outstanding-table-wrap .dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+.outstanding-table-wrap .dropdown-menu {
+  z-index: 1200;
+}
+
+.tagihan-action-menu {
+  position: absolute !important;
+  top: 50% !important;
+  right: calc(100% + 14px) !important;
+  left: auto !important;
+  transform: translateY(-50%) !important;
+  min-width: 250px;
+  padding: 10px;
+  border: 1px solid #d7e2ee;
+  border-radius: 22px;
+  background: linear-gradient(110deg, #fff4f2 0%, #edf7ff 100%);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.14);
+}
+
+.tagihan-action-menu::after {
+  content: '';
+  position: absolute;
+  right: -9px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-top: 1px solid #d7e2ee;
+  border-right: 1px solid #d7e2ee;
+  background: #f2f8ff;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.tagihan-action-menu .dropdown-item {
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+  gap: 12px;
+}
+
+.tagihan-action-menu .dropdown-item:hover,
+.tagihan-action-menu .dropdown-item:focus {
+  background: rgba(255, 255, 255, 0.78);
+  color: #1e293b;
+}
+
+.tagihan-action-menu .danger-action,
+.tagihan-action-menu .danger-action:hover,
+.tagihan-action-menu .danger-action:focus {
+  color: #ff3b30;
+}
+
+.outstanding-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  transform: translateY(20px);
+  background: #061533;
+  color: #fff;
+  border-radius: 34px;
+  padding: 16px 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1rem;
+  z-index: 2100;
+  opacity: 0;
+  transition: all 0.25s ease;
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.25);
+}
+
+.outstanding-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.swal-outstanding-delete {
+  width: min(90vw, 420px) !important;
+  border-radius: 20px !important;
+  padding: 2rem 1.5rem 1.5rem !important;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.18) !important;
+  border: none !important;
+}
+
+.swal-outstanding-delete .swal2-title {
+  color: #18181b !important;
+  font-weight: 700 !important;
+  font-size: 1.3rem !important;
+  line-height: 1.3 !important;
+  margin-top: 0.2rem !important;
+}
+
+.swal-outstanding-confirm {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 0.65rem 1.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 15px rgba(239,68,68,0.35) !important;
+  transition: all 0.2s !important;
+  margin: 0 0.35rem !important;
+  min-width: unset !important;
+  min-height: unset !important;
+}
+
+.swal-outstanding-confirm:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  box-shadow: 0 6px 20px rgba(239,68,68,0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.swal-outstanding-cancel {
+  background: #f4f4f5 !important;
+  color: #52525b !important;
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 12px !important;
+  padding: 0.65rem 1.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  transition: all 0.2s !important;
+  margin: 0 0.35rem !important;
+  min-width: unset !important;
+  min-height: unset !important;
+}
+
+.swal-outstanding-cancel:hover {
+  background: #e4e4e7 !important;
+  color: #18181b !important;
+}
+
+.swal2-html-container.swal-outstanding-html {
+  color: #52525b !important;
+  font-size: 0.9rem !important;
+  line-height: 1.6 !important;
+  margin-top: 0.2rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -708,6 +1029,103 @@ nav[role="navigation"] > div > p {
     text-align: center;
   }
 }
+
+/* Dense Padding Toggle */
+.datatables-users.is-dense thead th {
+  padding: 0.5rem 0.75rem !important;
+}
+.datatables-users.is-dense tbody td {
+  padding: 0.5rem 0.75rem !important;
+}
+
+.datatables-users thead th {
+  padding-top: 1.1rem !important;
+  padding-bottom: 1.1rem !important;
+}
+
+.datatables-users tbody td strong {
+  font-weight: 700;
+  color: #5b6276;
+}
+
+.datatables-users tbody .badge.bg-label-dark {
+  border: 1px solid #d1d5db;
+  background: #f3f4f6 !important;
+  color: #2b2f3a !important;
+  font-weight: 700;
+}
+
+.datatables-users tbody code {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 230px;
+  justify-content: center;
+  letter-spacing: 0.01em;
+}
+
+.datatables-users tbody .badge.bg-danger,
+.datatables-users tbody .badge.bg-warning,
+.datatables-users tbody .badge.bg-success,
+.datatables-users tbody .badge.bg-secondary {
+  background: #eef2f7 !important;
+  border: 0 !important;
+  color: #49556b !important;
+  font-weight: 700;
+  border-radius: 12px !important;
+  padding: 0.55rem 1.05rem !important;
+}
+
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #9ca3af;
+  border-radius: 7px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.dense-toggle-wrap input[type="checkbox"]:checked {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+
+.dense-toggle-wrap input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 7px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Hide DataTables Sorting Arrows */
+.table thead th.sorting::before,
+.table thead th.sorting::after,
+.table thead th.sorting_asc::before,
+.table thead th.sorting_asc::after,
+.table thead th.sorting_desc::before,
+.table thead th.sorting_desc::after {
+  display: none !important;
+  content: none !important;
+}
+.table thead th {
+  cursor: default !important;
+}
+
 </style>
 @endsection
 
@@ -734,7 +1152,107 @@ document.addEventListener("DOMContentLoaded", function () {
         $('.loading-overlay').fadeOut(300);
     }
 
+    function showOutstandingToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'outstanding-toast';
+        toast.innerHTML = `<i class="ri-checkbox-circle-line" style="color:#6ee7b7;font-size:1.35rem;"></i><span>${message}</span>`;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 250);
+        }, 2600);
+    }
+
+    function updateOutstandingSelection() {
+        const $all = $('.outstanding-checkbox');
+        const $checked = $('.outstanding-checkbox:checked');
+        const selectedCount = $checked.length;
+        $('#outstandingSelectedCount').text(`${selectedCount} dipilih`);
+        $('#outstandingSelectionToolbar').toggleClass('active', selectedCount > 0);
+        $('#selectAllOutstanding').prop('checked', $all.length > 0 && selectedCount === $all.length);
+    }
+
+    $('#selectAllOutstanding').on('change', function () {
+        $('.outstanding-checkbox').prop('checked', this.checked);
+        updateOutstandingSelection();
+    });
+
+    $(document).on('change', '.outstanding-checkbox', updateOutstandingSelection);
+
+    $('#outstandingBulkDeleteBtn').on('click', async function () {
+        const $checked = $('.outstanding-checkbox:checked');
+        const total = $checked.length;
+        if (!total) return;
+
+        const result = await Swal.fire({
+            title: 'Hapus Outstanding?',
+            html: `Yakin ingin menghapus <strong>${total}</strong> data outstanding?<br><span style="color:#6b7280;font-size:0.875rem;">Data tidak dapat dikembalikan.</span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            cancelButtonText: 'Batal',
+            confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
+            reverseButtons: true,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            buttonsStyling: false,
+            customClass: {
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup swal-outstanding-delete',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                cancelButton: 'swal-tailwind-cancel',
+                htmlContainer: 'swal-outstanding-html'
+            }
+        });
+
+        if (!result.isConfirmed) return;
+
+        showLoading();
+        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+        let successCount = 0;
+
+        for (const checkbox of $checked.toArray()) {
+            const $row = $(checkbox).closest('tr');
+            const deleteUrl = $row.data('delete-url');
+            if (!deleteUrl) continue;
+
+            try {
+                await $.ajax({
+                    url: deleteUrl,
+                    method: 'POST',
+                    data: { _token: csrfToken, _method: 'DELETE' },
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' }
+                });
+                $row.remove();
+                successCount++;
+            } catch (e) {}
+        }
+
+        hideLoading();
+        $('#selectAllOutstanding').prop('checked', false);
+        updateOutstandingSelection();
+        if (successCount > 0) {
+            showOutstandingToast(`${successCount} data berhasil di delete.`);
+        }
+    });
+
     const formatDate = d => d.toISOString().split('T')[0];
+    const denseToggleOutstanding = document.getElementById('densePaddingToggleOutstanding');
+    const outstandingTable = document.querySelector('.modern-table');
+    if (denseToggleOutstanding && outstandingTable) {
+        const savedDense = localStorage.getItem('dense_outstanding_tagihan') === '1';
+        denseToggleOutstanding.checked = savedDense;
+        outstandingTable.classList.toggle('is-dense', savedDense);
+        denseToggleOutstanding.addEventListener('change', function () {
+            const isDense = denseToggleOutstanding.checked;
+            outstandingTable.classList.toggle('is-dense', isDense);
+            localStorage.setItem('dense_outstanding_tagihan', isDense ? '1' : '0');
+        });
+    }
+
+    @if(session('success'))
+        showOutstandingToast(@json(session('success')));
+    @endif
 
     // ========================================
     // FLATPICKR INITIALIZATION
@@ -875,39 +1393,7 @@ document.addEventListener("DOMContentLoaded", function () {
         $('#pelangganSelect').select2('open');
     });
 
-    // ========================================
-    // DATATABLES - TANPA SEARCH & PAGINATION
-    // ========================================
-    const $table = $('.datatables-users');
-    if ($table.length) {
-        const hasData = $table.find('tbody tr').not('.empty-state-row').length > 0;
-
-        if (hasData) {
-            try {
-                $table.DataTable({
-                    paging: false,
-                    lengthChange: false,
-                    searching: false,
-                    ordering: true,
-                    info: false,
-                    scrollX: true,
-                    autoWidth: false,
-                    dom: 'rt',
-                    columnDefs: [
-                        { orderable: false, targets: [0, -1] },
-                        { width: '80px', targets: 0 },
-                        { width: '100px', targets: 1 }
-                    ],
-                    language: {
-                        emptyTable: "Tidak ada data tersedia",
-                        zeroRecords: "Tidak ada data yang sesuai"
-                    }
-                });
-            } catch (error) {
-                console.warn('DataTables initialization error:', error);
-            }
-        }
-    }
+    // Tabel Outstanding memakai server-side pagination; DataTables scrollX membuat header duplikat.
 
     // ========================================
     // AUTO SUBMIT ON FILTER CHANGE
@@ -932,84 +1418,27 @@ document.addEventListener("DOMContentLoaded", function () {
         const form = this;
 
         Swal.fire({
-            title: 'Konfirmasi Penghapusan',
-            html: '<p class="mb-0">Yakin ingin menghapus tagihan ini?<br><strong class="text-danger">Data tidak dapat dikembalikan!</strong></p>',
+            title: 'Hapus Outstanding?',
+            html: 'Yakin ingin menghapus tagihan ini?<br><span style="color:#6b7280;font-size:0.875rem;">Data tidak dapat dikembalikan.</span>',
             icon: 'warning',
             showCancelButton: true,
-            showConfirmButton: true,
-            showDenyButton: false,
-            confirmButtonColor: '#f5365c',
-            cancelButtonColor: '#8898aa',
-            confirmButtonText: '<i class="ri-delete-bin-line me-1"></i>Hapus',
             cancelButtonText: 'Batal',
+            confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
             allowOutsideClick: false,
             allowEscapeKey: false,
             reverseButtons: true,
+            buttonsStyling: false,
             customClass: {
-                confirmButton: 'btn btn-danger me-2',
-                cancelButton: 'btn btn-secondary'
-            },
-            buttonsStyling: false
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup swal-outstanding-delete',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                cancelButton: 'swal-tailwind-cancel',
+                htmlContainer: 'swal-outstanding-html'
+            }
         }).then((result) => {
             if (result.isConfirmed) {
                 showLoading();
                 setTimeout(() => form.submit(), 500);
-            }
-        });
-    });
-
-    // ========================================
-    // KONFIRMASI PEMBAYARAN
-    // ========================================
-    $(document).on('click', '.btn-konfirmasi', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const id = $(this).data('id');
-        const nama = $(this).data('nama');
-
-        Swal.fire({
-            title: 'Konfirmasi Pembayaran',
-            html: `<p class="mb-0">Apakah <strong>${nama}</strong> sudah membayar?</p>`,
-            icon: 'question',
-            showCancelButton: true,
-            showConfirmButton: true,
-            confirmButtonColor: '#2dce89',
-            cancelButtonColor: '#8898aa',
-            confirmButtonText: '<i class="ri-check-line me-1"></i>Ya, Lunas',
-            cancelButtonText: 'Batal',
-            buttonsStyling: true,
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                showLoading();
-
-                $.post(`/dashboard/admin/tagihan/${id}/bayar`, {
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                })
-                .done(resp => {
-                    hideLoading();
-                    if (resp.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil!',
-                            text: 'Pembayaran berhasil dikonfirmasi',
-                            timer: 1500,
-                            showConfirmButton: false,
-                            allowOutsideClick: false
-                        }).then(() => location.reload());
-                    }
-                })
-                .fail(() => {
-                    hideLoading();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal',
-                        text: 'Terjadi kesalahan server',
-                        confirmButtonText: 'OK'
-                    });
-                });
             }
         });
     });
@@ -1039,13 +1468,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const $row = $(this).closest('tr');
 
         // Ambil data dari table cells
-        const nomorId = $row.find('.badge.bg-label-dark').text().trim();
-        const namaLengkap = $row.find('td:nth-child(3) strong').text().trim();
-        const noWhatsapp = $row.find('code').text().trim().replace(/\D/g, '');
-        const noWhatsappDisplay = $row.find('code').text().trim();
-        const status = $row.find('td:nth-child(5) .badge').text().trim();
-        const paket = $row.find('td:nth-child(6) .badge').text().trim();
-        const harga = $row.find('td:nth-child(7) strong').text().trim();
+        const nomorId = $row.data('nomor-id') || $row.find('.badge.bg-label-dark').text().trim();
+        const namaLengkap = $row.data('nama') || $row.find('strong').first().text().trim();
+        const noWhatsappDisplay = $row.data('whatsapp') || $row.find('code').text().trim();
+        const noWhatsapp = String(noWhatsappDisplay).replace(/\D/g, '');
+        const status = $row.data('status-label') || $row.find('td .badge').last().text().trim();
+        const paket = $row.data('paket') || '-';
+        const harga = $row.data('harga') || '-';
 
         // Data dari attribute
         const alamat = $row.data('alamat') || '-';
@@ -1249,12 +1678,12 @@ document.addEventListener("DOMContentLoaded", function () {
   <!-- ========================================= -->
   <!-- DAFTAR TAGIHAN -->
   <!-- ========================================= -->
-  <div class="card border-0 shadow-sm">
+<div class="card border-0 shadow-sm">
     <div class="card-header-custom">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
           <h4 class="mb-1 fw-bold">
-            <i class="ri-file-list-3-line me-2"></i>Daftar Tagihan Outstanding
+            Daftar Tagihan Outstanding
           </h4>
           <p class="mb-0 opacity-75 small">Kelola seluruh tagihan pelanggan secara efisien.</p>
         </div>
@@ -1275,18 +1704,32 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
 
     <div class="card-body p-0">
-      <div class="table-responsive p-3">
-        <table class="datatables-users table table-hover nowrap" style="width: 100%;">
+      <div class="table-responsive outstanding-table-wrap p-3">
+        <div class="outstanding-selection-toolbar" id="outstandingSelectionToolbar">
+          <span class="selected-text" id="outstandingSelectedCount">0 dipilih</span>
+          <button type="button" class="delete-selected-btn" id="outstandingBulkDeleteBtn" title="Hapus data dipilih">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </div>
+        <table class="datatables-users modern-table" style="width: 100%;">
+          <colgroup>
+            <col style="width:64px;">
+            <col style="width:14%;">
+            <col style="width:29%;">
+            <col style="width:27%;">
+            <col style="width:20%;">
+            <col style="width:86px;">
+          </colgroup>
           <thead>
             <tr>
-              <th><i class="ri-eye-line me-1"></i>Detail</th>
-              <th><i class="ri-barcode-line me-1"></i>No. ID</th>
-              <th><i class="ri-user-3-line me-1"></i>Nama</th>
-              <th><i class="ri-whatsapp-line me-1"></i>No. WA</th>
-              <th><i class="ri-shield-check-line me-1"></i>Status</th>
-              <th><i class="ri-box-3-line me-1"></i>Paket</th>
-              <th><i class="ri-money-dollar-circle-line me-1"></i>Harga</th>
-              <th><i class="ri-settings-3-line me-1"></i>Actions</th>
+              <th style="width: 64px;">
+                <input type="checkbox" class="outstanding-checkbox" id="selectAllOutstanding" aria-label="Pilih semua">
+              </th>
+              <th>NO. ID</th>
+              <th>NAMA</th>
+              <th>NO. WA</th>
+              <th>STATUS</th>
+              <th>ACTIONS</th>
             </tr>
           </thead>
           <tbody>
@@ -1312,6 +1755,14 @@ document.addEventListener("DOMContentLoaded", function () {
               $buktiUrl = !empty($item['bukti_pembayaran']) ? asset('storage/kwitansi/' . $item['bukti_pembayaran']) : '';
             @endphp
             <tr
+              data-tagihan-id="{{ $item['id'] }}"
+              data-nomor-id="{{ $item['nomer_id'] }}"
+              data-nama="{{ $item['nama_lengkap'] }}"
+              data-whatsapp="{{ $item['no_whatsapp'] }}"
+              data-status-label="{{ ucfirst($status ?: '-') }}"
+              data-paket="{{ $item['paket']['nama_paket'] ?? '-' }}"
+              data-harga="Rp {{ number_format($item['paket']['harga'] ?? 0, 0, ',', '.') }}"
+              data-delete-url="{{ route('tagihan.destroy', $item['id']) }}"
               data-alamat="{{ $alamatLengkap }}"
               data-kecamatan="{{ $item['kecamatan'] ?? '-' }}"
               data-kabupaten="{{ $item['kabupaten'] ?? '-' }}"
@@ -1322,17 +1773,15 @@ document.addEventListener("DOMContentLoaded", function () {
               data-catatan="{{ $item['catatan'] ?? '-' }}"
               data-bukti="{{ $buktiUrl }}"
             >
-              <td>
-                <button class="btn btn-sm btn-icon btn-outline-primary btn-detail" title="Lihat Detail">
-                  <i class="ri-eye-line"></i>
-                </button>
+              <td style="width: 64px;">
+                <input type="checkbox" class="outstanding-checkbox" value="{{ $item['id'] }}" aria-label="Pilih {{ $item['nama_lengkap'] }}">
               </td>
               <td><span class="badge bg-label-dark">{{ $item['nomer_id'] }}</span></td>
               <td><strong>{{ $item['nama_lengkap'] }}</strong></td>
               <td>
                 <a href="https://wa.me/{{ $item['no_whatsapp'] }}" target="_blank" class="text-decoration-none">
                   <code style="background: #18181b; padding: 6px 12px; border-radius: 6px; font-size: 0.875rem; font-weight: 600; color: #fafafa;">
-                    <i class="ri-whatsapp-line me-1"></i>{{ $item['no_whatsapp'] }}
+                    <span class="material-symbols-rounded me-1" style="font-size:1rem;vertical-align:text-bottom;">sms</span>{{ $item['no_whatsapp'] }}
                   </code>
                 </a>
               </td>
@@ -1343,34 +1792,37 @@ document.addEventListener("DOMContentLoaded", function () {
                 </span>
               </td>
               <td>
-                <span class="badge bg-label-info">
-                  <i class="ri-box-line me-1"></i>{{ $item['paket']['nama_paket'] ?? '-' }}
-                </span>
-              </td>
-              <td><strong>Rp {{ number_format($item['paket']['harga'] ?? 0, 0, ',', '.') }}</strong></td>
-              <td>
-                <div class="d-flex gap-2">
-                  <button type="button"
-                    class="btn btn-sm btn-outline-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalEditTagihan-{{ $item['id'] }}"
-                    title="Edit">
-                    <i class="ri-edit-2-line"></i>
+                <div class="dropdown">
+                  <button class="action-btn" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
+                    <span class="material-symbols-rounded">more_vert</span>
                   </button>
-
-                  <form action="{{ route('tagihan.destroy', $item['id']) }}" method="POST" class="delete-form d-inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
-                      <i class="ri-delete-bin-line"></i>
-                    </button>
-                  </form>
+                  <ul class="dropdown-menu dropdown-menu-end tagihan-action-menu">
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center btn-detail" href="javascript:void(0);">
+                        <span class="material-symbols-rounded" style="font-size:1.2rem;">visibility</span> Detail
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#modalEditTagihan-{{ $item['id'] }}">
+                        <span class="material-symbols-rounded" style="font-size:1.2rem;">edit</span> Edit
+                      </a>
+                    </li>
+                    <li>
+                      <form action="{{ route('tagihan.destroy', $item['id']) }}" method="POST" class="delete-form m-0 p-0">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="dropdown-item danger-action d-flex align-items-center w-100 border-0 bg-transparent text-start">
+                          <span class="material-symbols-rounded" style="font-size:1.2rem;">delete</span> Delete
+                        </button>
+                      </form>
+                    </li>
+                  </ul>
                 </div>
               </td>
             </tr>
             @empty
             <tr class="empty-state-row">
-              <td colspan="8" class="text-center">
+              <td colspan="6" class="text-center">
                 <div class="empty-state-content">
                   <div class="mb-3">
                     <i class="ri-inbox-line" style="font-size: 4rem; color: #ddd;"></i>
@@ -1415,30 +1867,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     @if($tagihans->count() > 0)
       <div class="pagination-wrapper">
-        <div class="pagination-info">
-          Menampilkan <strong>{{ $tagihans->firstItem() ?? 0 }}</strong> - <strong>{{ $tagihans->lastItem() ?? 0 }}</strong>
-          dari <strong>{{ $tagihans->total() }}</strong> tagihan
-        </div>
+        <label class="dense-toggle-wrap mb-0">
+          <input type="checkbox" id="densePaddingToggleOutstanding">
+          <span>Dense padding</span>
+        </label>
         <div>
-          @if($tagihans->hasPages())
-            {{-- Jika ada lebih dari 1 halaman, tampilkan pagination Laravel --}}
-            {{ $tagihans->appends(request()->query())->onEachSide(1)->links('pagination::bootstrap-5') }}
-          @else
-            {{-- Jika hanya 1 halaman, tampilkan tombol halaman 1 saja --}}
-            <nav>
-              <ul class="pagination mb-0">
-                <li class="page-item disabled">
-                  <span class="page-link">&lsaquo;</span>
-                </li>
-                <li class="page-item active">
-                  <span class="page-link">1</span>
-                </li>
-                <li class="page-item disabled">
-                  <span class="page-link">&rsaquo;</span>
-                </li>
-              </ul>
-            </nav>
-          @endif
+          {{ $tagihans->appends(request()->query())->onEachSide(1)->links('pagination.mui') }}
         </div>
       </div>
     @endif
@@ -1447,18 +1881,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
 {{-- MODAL DETAIL --}}
 <div class="modal fade" id="detailModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-primary py-4">
-        <h5 class="modal-title text-white fw-bold">
-          <i class="ri-information-line me-2"></i>Detail Pelanggan
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1); opacity: 1;"></button>
-      </div>
+  <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+    <div class="modal-content border-0">
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-4 z-3" style="background-color: white; padding: 1rem; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" data-bs-dismiss="modal"></button>
       <div class="modal-body">
         <!-- Content will be inserted via JavaScript -->
       </div>
-
     </div>
   </div>
 </div>
@@ -1468,7 +1896,7 @@ document.addEventListener("DOMContentLoaded", function () {
 <!-- MODAL: TAMBAH TAGIHAN -->
 <!-- ========================================= -->
 <div class="modal fade" id="modalTambahTagihan" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+  <div class="modal-dialog modal-fullscreen">
     <div class="modal-content">
       <form action="{{ route('tagihan.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
@@ -1646,7 +2074,7 @@ document.addEventListener("DOMContentLoaded", function () {
 <!-- ========================================= -->
 @foreach($tagihans as $tagihan)
 <div class="modal fade" id="modalEditTagihan-{{ $tagihan['id'] }}" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-dialog modal-fullscreen">
     <div class="modal-content">
       <form action="{{ route('tagihan.update', $tagihan['id']) }}" method="POST" enctype="multipart/form-data">
         @csrf
@@ -1707,7 +2135,7 @@ document.addEventListener("DOMContentLoaded", function () {
 <!-- MODAL: MASS TAGIHAN -->
 <!-- ========================================= -->
 <div class="modal fade" id="modalMassTagihan" tabindex="-1">
-  <div class="modal-dialog modal-md modal-dialog-centered">
+  <div class="modal-dialog modal-fullscreen">
     <div class="modal-content">
       <form action="{{ route('tagihan.massStore') }}" method="POST">
         @csrf
@@ -1763,4 +2191,3 @@ document.addEventListener("DOMContentLoaded", function () {
   </div>
 </div>
 @endsection
-

@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+@include('content.apps.Customer.partials.disable-zoom')
 <title>FAQ & Bantuan</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -286,7 +287,7 @@ body {
             </div>
             <div class="faq-answer">
                 <div class="faq-answer-inner">
-                    Verifikasi pembayaran biasanya memerlukan waktu <b>1–24 jam kerja</b>. Anda akan mendapat notifikasi segera setelah pembayaran diverifikasi. Jika lebih dari 24 jam belum diverifikasi, silakan hubungi admin via Chat.
+                    Verifikasi pembayaran biasanya memerlukan waktu <b>1ï¿½24 jam kerja</b>. Anda akan mendapat notifikasi segera setelah pembayaran diverifikasi. Jika lebih dari 24 jam belum diverifikasi, silakan hubungi admin via Chat.
                 </div>
             </div>
         </div>
@@ -305,10 +306,10 @@ body {
             <div class="faq-answer">
                 <div class="faq-answer-inner">
                     Coba langkah berikut:<br>
-                    1. <b>Restart router</b> — cabut kabel power, tunggu 30 detik, lalu pasang kembali<br>
+                    1. <b>Restart router</b> ï¿½ cabut kabel power, tunggu 30 detik, lalu pasang kembali<br>
                     2. <b>Periksa jumlah perangkat</b> yang terhubung ke WiFi<br>
                     3. <b>Pindah ke dekat router</b> untuk sinyal yang lebih kuat<br>
-                    4. <b>Cek kabel</b> — pastikan tidak ada kabel yang rusak atau kendur<br><br>
+                    4. <b>Cek kabel</b> ï¿½ pastikan tidak ada kabel yang rusak atau kendur<br><br>
                     Jika masih lambat, hubungi kami via Chat untuk pengecekan lebih lanjut.
                 </div>
             </div>
@@ -325,7 +326,7 @@ body {
                     1. <b>Cabut kabel power</b> router dari stop kontak<br>
                     2. Tunggu <b>30 detik</b><br>
                     3. <b>Pasang kembali</b> kabel power<br>
-                    4. Tunggu 1–2 menit hingga lampu indikator menyala normal<br>
+                    4. Tunggu 1ï¿½2 menit hingga lampu indikator menyala normal<br>
                     5. Coba koneksi kembali
                 </div>
             </div>

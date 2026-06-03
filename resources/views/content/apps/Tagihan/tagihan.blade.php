@@ -4,6 +4,7 @@
 
 @section('vendor-style')
 @vite([
+  'resources/css/app.css',
   'resources/assets/vendor/libs/select2/select2.scss',
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
   'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
@@ -37,7 +38,7 @@
 .dayContainer {
   width: 100% !important;
 }
-.flatpickr-months .flatpickr-prev-month, 
+.flatpickr-months .flatpickr-prev-month,
 .flatpickr-months .flatpickr-next-month {
   top: 0 !important;
   padding: 10px !important;
@@ -81,6 +82,58 @@
 .flatpickr-calendar.broadcast-date-picker .flatpickr-days,
 .flatpickr-calendar.broadcast-date-picker .dayContainer {
   width: 100% !important;
+}
+
+#modalMassTagihan .modal-content {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+#modalMassTagihan .modal-body {
+  flex: 1 1 auto;
+  max-height: none;
+  overflow: hidden;
+}
+
+#modalMassTagihan .broadcast-layout {
+  min-height: 0 !important;
+  height: 100%;
+}
+
+#modalMassTagihan .broadcast-main {
+  position: relative;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#modalMassTagihan .broadcast-config {
+  border-top: 0 !important;
+}
+
+#modalMassTagihan .broadcast-progress-card {
+  width: min(560px, 100%);
+  margin: auto;
+}
+
+#modalMassTagihan .broadcast-progress-percent {
+  color: #0f172a !important;
+  font-size: 1.05rem;
+}
+
+.swal-broadcast-progress {
+  width: min(92vw, 480px) !important;
+  border-radius: 18px !important;
+}
+
+.swal-broadcast-progress .progress {
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.swal-broadcast-progress .progress-bar {
+  transition: width 0.25s ease;
 }
 
 .light-style .flatpickr-calendar, .light-style .flatpickr-days{
@@ -500,7 +553,7 @@
 .text-muted {
   color: #71717a !important;
 }
- 
+
 /* Form Controls */
 .form-select, .form-control {
   border-radius: 8px;
@@ -586,6 +639,178 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.75rem;
+}
+
+/* Create Tagihan Modal - fullscreen modern form */
+#modalTambahTagihan .tagihan-create-dialog {
+  margin: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  min-height: 100dvh !important;
+}
+
+#modalTambahTagihan .tagihan-create-modal {
+  height: 100dvh;
+  min-height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(255, 255, 255, 1)),
+    #ffffff;
+  box-shadow: none;
+}
+
+#modalTambahTagihan .tagihan-create-modal form {
+  height: 100dvh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#modalTambahTagihan .tagihan-create-header {
+  position: relative;
+  top: 0;
+  z-index: 4;
+  min-height: 66px;
+  padding: 0.78rem clamp(1rem, 2vw, 1.65rem);
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.92)),
+    #0f172a !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+#modalTambahTagihan .tagihan-create-title {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  color: #ffffff !important;
+}
+
+#modalTambahTagihan .tagihan-create-title-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+  font-size: 1.35rem;
+}
+
+#modalTambahTagihan .tagihan-create-title small {
+  display: block;
+  margin-top: 0.08rem;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+#modalTambahTagihan .tagihan-create-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none !important;
+  padding: 0.75rem clamp(0.85rem, 1.6vw, 1.35rem) !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#modalTambahTagihan .tagihan-create-form-grid {
+  --bs-gutter-x: 0.75rem;
+  --bs-gutter-y: 0.45rem;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0.8rem;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.88), rgba(255,255,255,0.62)),
+    #ffffff;
+  box-shadow: 0 22px 64px rgba(15, 23, 42, 0.08);
+}
+
+#modalTambahTagihan .tagihan-create-body h6 {
+  margin: 0.24rem 0 0.08rem !important;
+  padding: 0.45rem 0.7rem;
+  border-radius: 12px;
+  color: #0f172a !important;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+}
+
+#modalTambahTagihan .form-label {
+  margin-bottom: 0.24rem;
+  color: #334155 !important;
+  font-size: 0.76rem;
+  font-weight: 700 !important;
+}
+
+#modalTambahTagihan .form-control,
+#modalTambahTagihan .form-select,
+#modalTambahTagihan .select2-container .select2-selection {
+  min-height: 38px;
+  padding-top: 0.42rem;
+  padding-bottom: 0.42rem;
+  border-radius: 12px !important;
+  border: 1px solid #dbe3ef !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+#modalTambahTagihan .form-control.bg-light,
+#modalTambahTagihan .form-select.bg-light {
+  background-color: #f8fafc !important;
+  color: #475569;
+}
+
+#modalTambahTagihan textarea.form-control {
+  min-height: 58px;
+}
+
+#modalTambahTagihan .input-group-text {
+  border-color: #dbe3ef;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  border-radius: 14px;
+}
+
+#modalTambahTagihan .input-group .form-control {
+  min-height: 38px;
+}
+
+#modalTambahTagihan .tagihan-create-footer {
+  position: relative;
+  bottom: 0;
+  z-index: 4;
+  margin-top: 0;
+  padding: 0.68rem clamp(1rem, 2vw, 1.65rem);
+  border-top: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+#modalTambahTagihan .tagihan-create-footer .btn {
+  min-width: 150px;
+  min-height: 40px;
+  border-radius: 999px;
+}
+
+@media (max-width: 991.98px) {
+  #modalTambahTagihan .tagihan-create-body {
+    overflow-y: auto;
+  }
+
+  #modalTambahTagihan .tagihan-create-modal,
+  #modalTambahTagihan .tagihan-create-modal form {
+    height: auto;
+    min-height: 100dvh;
+  }
 }
 
 /* Fullscreen detail modal tanpa ruang footer kosong */
@@ -833,7 +1058,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-top: 1px solid #f0f0f0;
+  border-top: 0;
   background: transparent;
   border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
@@ -969,13 +1194,13 @@
 
 .pagination-wrapper .mui-pagination {
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.45rem;
 }
 
 .pagination-wrapper .mui-pagination .page-link {
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
   margin: 0 !important;
   padding: 0 !important;
   border: 0 !important;
@@ -983,7 +1208,7 @@
   background: transparent !important;
   color: #1f2937 !important;
   box-shadow: none !important;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
@@ -1071,6 +1296,57 @@ nav[role="navigation"] > div > p {
 <style>
 /* Force hide SweetAlert deny button */
 .swal2-deny, .swal2-styled.swal2-deny { display: none !important; }
+
+/* ========== TAGIHAN DELETE MODAL ========== */
+.swal-tagihan-popup {
+  border-radius: 20px !important;
+  padding: 2rem 1.5rem 1.5rem !important;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.18) !important;
+  border: none !important;
+  width: min(90vw, 420px) !important;
+}
+.swal-tagihan-popup .swal2-title {
+  font-size: 1.3rem !important;
+  font-weight: 700 !important;
+  color: #18181b !important;
+}
+.swal-tagihan-popup .swal2-html-container {
+  color: #52525b !important;
+  font-size: 0.9rem !important;
+  line-height: 1.6 !important;
+}
+.swal-tagihan-confirm {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 0.65rem 1.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 15px rgba(239,68,68,0.35) !important;
+  transition: all 0.2s !important;
+  margin: 0 0.35rem !important;
+}
+.swal-tagihan-confirm:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  box-shadow: 0 6px 20px rgba(239,68,68,0.45) !important;
+  transform: translateY(-1px) !important;
+}
+.swal-tagihan-cancel {
+  background: #f4f4f5 !important;
+  color: #52525b !important;
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 12px !important;
+  padding: 0.65rem 1.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  transition: all 0.2s !important;
+  margin: 0 0.35rem !important;
+}
+.swal-tagihan-cancel:hover {
+  background: #e4e4e7 !important;
+  color: #18181b !important;
+}
 </style>
 <script>
 // Data rekening untuk dropdown verifikasi (rendered by Blade, used in JS)
@@ -1084,16 +1360,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const value = String(raw || '').trim();
         if (!value || value === '-') return '';
 
-        // Jika sudah berupa full URL yang valid (http/https) → ekstrak filename saja
-        try {
-            const parsed = new URL(value);
-            // Adalah URL absolut – ambil bagian filename dari pathname
-            const fileName = parsed.pathname.split('/').filter(Boolean).pop();
-            if (fileName && fileName !== '-') {
-                return `${buktiBaseUrl}/${encodeURIComponent(fileName)}`;
-            }
-        } catch (e) {
-            // Bukan URL absolut, lanjut proses sebagai path relatif / filename
+        // Jika sudah full URL (http/https), pakai langsung (jangan rewrite domain)
+        if (/^https?:\/\//i.test(value)) {
+            return value;
         }
 
         // Tangani path relatif seperti "bukti_pembayaran/filename.jpg"
@@ -1161,6 +1430,57 @@ document.addEventListener("DOMContentLoaded", function () {
         counterEl.textContent = `${next} RECORDS FOUND`;
     }
 
+    function decrementRecordsCounterBy(total) {
+        const counterEl = document.querySelector('.toolbar-top .text-muted');
+        if (!counterEl) return;
+        const match = counterEl.textContent.match(/\d+/);
+        if (!match) return;
+        const current = parseInt(match[0], 10);
+        if (Number.isNaN(current)) return;
+        const next = Math.max(0, current - total);
+        counterEl.textContent = `${next} RECORDS FOUND`;
+    }
+
+    function setRowData($row, key, value) {
+        if (!$row.length || value === undefined || value === null) return;
+        $row.attr(`data-${key}`, value);
+        $row.data(key.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()), value);
+    }
+
+    function updateTagihanRowFromResponse(tagihanId, data) {
+        const $row = $(`tr[data-tagihan-id="${tagihanId}"]`);
+        if (!$row.length) return;
+
+        const d = data || {};
+        const paketNama = d.paket_nama || $row.attr('data-paket') || '-';
+        const hargaFormatted = d.harga_formatted || $row.attr('data-harga') || '-';
+        const kecepatanText = d.kecepatan ? `${d.kecepatan} Mbps` : ($row.attr('data-kecepatan') || '-');
+        const tanggalMulaiFormatted = d.tanggal_mulai_formatted || $row.attr('data-tanggal-mulai') || '-';
+        const tanggalBerakhirFormatted = d.tanggal_berakhir_formatted || $row.attr('data-jatuh-tempo') || '-';
+        const catatan = d.catatan || '-';
+
+        setRowData($row, 'paket-id', d.paket_id || $row.attr('data-paket-id') || '');
+        setRowData($row, 'paket', paketNama);
+        setRowData($row, 'harga', hargaFormatted);
+        setRowData($row, 'kecepatan', kecepatanText);
+        setRowData($row, 'tanggal-mulai', tanggalMulaiFormatted);
+        setRowData($row, 'jatuh-tempo', tanggalBerakhirFormatted);
+        setRowData($row, 'tanggal-mulai-raw', d.tanggal_mulai || $row.attr('data-tanggal-mulai-raw') || '');
+        setRowData($row, 'tanggal-berakhir-raw', d.tanggal_berakhir || $row.attr('data-tanggal-berakhir-raw') || '');
+        setRowData($row, 'catatan', catatan);
+
+        const $nameCell = $row.find('td').eq(2);
+        let $meta = $nameCell.find('.tagihan-row-meta');
+        if (!$meta.length) {
+            $meta = $('<div class="tagihan-row-meta text-muted small mt-1"></div>');
+            $nameCell.append($meta);
+        }
+        $meta.text(`${paketNama} | ${hargaFormatted} | Jatuh tempo ${tanggalBerakhirFormatted}`);
+
+        $row.addClass('row-selected');
+        setTimeout(() => $row.removeClass('row-selected'), 1200);
+    }
+
     function showBottomToast(message, type = 'success') {
         const toast = document.createElement('div');
         const isError = type === 'error';
@@ -1193,10 +1513,24 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         setTimeout(() => {
             toast.style.opacity = '0';
-            toast.style.transform = 'translateY(10px)';
+            toast.style.transform = 'translateY(-10px)';
             setTimeout(() => toast.remove(), 220);
         }, 3200);
     }
+
+    const pendingTagihanToast = sessionStorage.getItem('tagihan_success_toast');
+    if (pendingTagihanToast) {
+        sessionStorage.removeItem('tagihan_success_toast');
+        showBottomToast(pendingTagihanToast, 'success');
+    }
+
+    @if(session('success'))
+        showBottomToast(@json(session('success')), 'success');
+    @endif
+
+    @if(session('error'))
+        showBottomToast(@json(session('error')), 'error');
+    @endif
 
     // ========================================
     // HELPER FUNCTIONS
@@ -1243,6 +1577,11 @@ document.addEventListener("DOMContentLoaded", function () {
             event.preventDefault();
             $('#filterForm').submit();
         }
+    });
+
+    const searchIcon = document.querySelector('#tagihanSearchControl .control-icon');
+    searchIcon?.addEventListener('click', function () {
+        $('#filterForm').submit();
     });
 
     if (window.matchMedia('(max-width: 767.98px)').matches) {
@@ -1317,7 +1656,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return {
                     q: params.term,
                     page: params.page || 1,
-                    filter_no_tagihan: 1 // Filter pelanggan yang belum punya tagihan
+                    tanggal_mulai: $('#tanggal_mulai').val()
                 };
             },
             processResults: function(data, params) {
@@ -1329,7 +1668,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 };
             },
-            cache: true
+            cache: false
         },
         language: {
             inputTooShort: function() {
@@ -1396,17 +1735,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (tglMulai) {
         tglMulai.addEventListener('change', function () {
-            // Recalculate tanggal_berakhir jika ada pelanggan yang dipilih
-            const selectedData = $('#pelangganSelect').select2('data');
-            if (selectedData && selectedData.length > 0 && selectedData[0].id) {
-                const data = selectedData[0];
-                if (data.masa) {
-                    const startDate = new Date($('#tanggal_mulai').val());
-                    const endDate = new Date(startDate);
-                    endDate.setDate(startDate.getDate() + parseInt(data.masa));
-                    $('#tanggal_berakhir').val(formatDate(endDate));
-                }
-            }
+            $('#pelangganSelect').empty().trigger('change');
+            fillFields(null);
         });
     }
 
@@ -1470,24 +1800,24 @@ document.addEventListener("DOMContentLoaded", function () {
         const namaPelanggan = ($row.data('nama') || '').toString().trim();
 
         return Swal.fire({
-            title: 'Konfirmasi Penghapusan',
-            html: '<p class="mb-0">Yakin ingin menghapus tagihan ini?<br><strong class="text-danger">Data tidak dapat dikembalikan!</strong></p>',
+            title: 'Hapus Tagihan?',
+            html: `<p class="mb-0">Yakin ingin menghapus tagihan <strong>${namaPelanggan || 'ini'}</strong>?<br><span style="color:#6b7280;font-size:0.875rem;">Data tidak dapat dikembalikan.</span></p>`,
             icon: 'warning',
             showCancelButton: true,
             showConfirmButton: true,
             showDenyButton: false,
-            confirmButtonColor: '#f5365c',
-            cancelButtonColor: '#8898aa',
-            confirmButtonText: '<i class="ri-delete-bin-line me-1"></i>Hapus',
+            confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
             cancelButtonText: 'Batal',
             allowOutsideClick: false,
             allowEscapeKey: false,
             reverseButtons: true,
+            buttonsStyling: false,
             customClass: {
-                confirmButton: 'btn btn-danger me-2',
-                cancelButton: 'btn btn-secondary'
-            },
-            buttonsStyling: false
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                cancelButton: 'swal-tailwind-cancel'
+            }
         }).then((result) => {
             if (result.isConfirmed) {
                 showLoading();
@@ -1580,26 +1910,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
-                const d = resp.data || {};
-                const tanggalBerakhir = d.tanggal_berakhir_formatted || '-';
-                const catatan = d.catatan || '-';
-                const paketNama = d.paket_nama || $row.attr('data-paket') || '-';
-                const hargaFormatted = d.harga_formatted || $row.attr('data-harga') || '-';
-                const kecepatanText = d.kecepatan ? `${d.kecepatan} Mbps` : ($row.attr('data-kecepatan') || '-');
-
-                // Update isi row realtime
-                $row.attr('data-jatuh-tempo', tanggalBerakhir);
-                $row.attr('data-catatan', catatan);
-                $row.attr('data-paket', paketNama);
-                $row.attr('data-harga', hargaFormatted);
-                $row.attr('data-kecepatan', kecepatanText);
-                if (d.paket_id) {
-                    $row.attr('data-paket-id', d.paket_id);
-                }
-
-                $row.find('td:nth-child(3) .date-cell').html(`${tanggalBerakhir}<span class="time"></span>`);
-                $row.find('td:nth-child(2) .product-info span').text(`ID: ${$row.attr('data-nomor-id') || '-'} | ${paketNama}`);
-                $row.find('td:nth-child(5)').text(hargaFormatted);
+                updateTagihanRowFromResponse(tagihanId, resp.data || {});
 
                 // Tutup modal
                 const modalEl = form.closest('.modal');
@@ -1653,8 +1964,10 @@ document.addEventListener("DOMContentLoaded", function () {
             cancelButtonText: 'Batal',
             buttonsStyling: false,
             customClass: {
-                confirmButton: 'btn btn-sm me-2',
-                cancelButton: 'btn btn-sm btn-secondary'
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-success',
+                cancelButton: 'swal-tailwind-cancel'
             },
             allowOutsideClick: false,
             allowEscapeKey: true,
@@ -1770,15 +2083,17 @@ document.addEventListener("DOMContentLoaded", function () {
         $('.pelanggan-item').each(function() {
             const $item = $(this);
             const nama = String($item.attr('data-nama') || '').toLowerCase();
-            const nomerId = String($item.attr('data-nomer-id') || '').toLowerCase();
-            const wa = String($item.attr('data-wa') || '').toLowerCase();
+            const nomerId = String($item.attr('data-nomer-id') || $item.attr('data-nomor-id') || '').toLowerCase();
+            const wa = String($item.attr('data-wa') || $item.attr('data-whatsapp') || '').toLowerCase();
 
             // Normalize search term (hapus spasi, dash, dll untuk nomor)
-            const normalizedSearch = searchTerm.replace(/[\s\-+]/g, '');
-            const normalizedWa = wa.replace(/[\s\-+]/g, '');
+            const normalizedSearch = searchTerm.replace(/[\s.\-+/]/g, '');
+            const normalizedNomerId = nomerId.replace(/[\s.\-+/]/g, '');
+            const normalizedWa = wa.replace(/[\s.\-+/]/g, '');
 
             if (nama.includes(searchTerm) ||
                 nomerId.includes(searchTerm) ||
+                normalizedNomerId.includes(normalizedSearch) ||
                 wa.includes(searchTerm) ||
                 normalizedWa.includes(normalizedSearch)) {
                 $item.show();
@@ -1795,7 +2110,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Jika tidak ada hasil, tampilkan pesan
         if (visibleCount === 0) {
-            $('#pelangganList').append('<div id="noResultMessage" class="text-center py-3 text-muted"><i class="ri-search-line me-1"></i>Tidak ada hasil ditemukan</div>');
+            $('#pelangganList, .modern-table tbody').first().append('<tr id="noResultMessage"><td colspan="6" class="text-center py-3 text-muted"><i class="ri-search-line me-1"></i>Tidak ada hasil ditemukan</td></tr>');
         }
     });
 
@@ -1822,7 +2137,11 @@ document.addEventListener("DOMContentLoaded", function () {
     function updateSelectedCount() {
         const count = $('.pelanggan-checkbox:checked').length;
         $('#selectedCount').text(count + ' dipilih');
+        $('#selectionToolbar').toggleClass('active', count > 0);
         $('#submitCount').text(count);
+
+        $('.pelanggan-item').removeClass('row-selected');
+        $('.pelanggan-checkbox:checked').closest('.pelanggan-item').addClass('row-selected');
 
         // Disable submit jika tidak ada yang dipilih
         if (count === 0) {
@@ -1830,6 +2149,92 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
             $('#btnSubmitMass').prop('disabled', false).removeClass('opacity-50');
         }
+    }
+
+    $('#clearSelectionBtn').on('click', async function() {
+        const selectedRows = $('.pelanggan-checkbox:checked').closest('.pelanggan-item');
+        const totalSelected = selectedRows.length;
+
+        if (totalSelected === 0) {
+            showBottomToast('Belum ada data yang dipilih.', 'error');
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: 'Hapus Data Terpilih?',
+            html: `<p class="mb-0">Yakin ingin menghapus <strong>${totalSelected}</strong> tagihan terpilih?<br><span style="color:#6b7280;font-size:0.875rem;">Data tidak dapat dikembalikan.</span></p>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            allowOutsideClick: false,
+            buttonsStyling: false,
+            customClass: {
+                container: 'swal-tailwind-backdrop',
+                popup: 'swal-tailwind-popup',
+                confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                cancelButton: 'swal-tailwind-cancel'
+            }
+        });
+
+        if (!result.isConfirmed) return;
+
+        showLoading();
+        const csrfToken = $('meta[name="csrf-token"]').attr('content') || '';
+        let successCount = 0;
+
+        for (const row of selectedRows.toArray()) {
+            const $row = $(row);
+            const actionUrl = $row.find('form.delete-form').attr('action');
+            if (!actionUrl) continue;
+
+            try {
+                await $.ajax({
+                    url: actionUrl,
+                    method: 'POST',
+                    data: {
+                        _token: csrfToken,
+                        _method: 'DELETE'
+                    },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                $row.remove();
+                successCount++;
+            } catch (error) {
+                // Lanjutkan delete lainnya walau ada yang gagal
+            }
+        }
+
+        hideLoading();
+
+        $('#selectAllPelanggan').prop('checked', false);
+        updateSelectedCount();
+        updateSelectAllState();
+
+        if (successCount > 0) {
+            decrementRecordsCounterBy(successCount);
+            showBottomToast(`${successCount} data berhasil di delete.`, 'success');
+        } else {
+            showBottomToast('Tidak ada data yang berhasil di delete.', 'error');
+        }
+    });
+
+    const denseToggle = document.getElementById('densePaddingToggle');
+    const tableEl = document.querySelector('.modern-table');
+    if (denseToggle && tableEl) {
+        const savedDense = localStorage.getItem('tagihan_dense_padding') === '1';
+        denseToggle.checked = savedDense;
+        tableEl.classList.toggle('is-dense', savedDense);
+
+        denseToggle.addEventListener('change', function() {
+            const isDense = denseToggle.checked;
+            tableEl.classList.toggle('is-dense', isDense);
+            localStorage.setItem('tagihan_dense_padding', isDense ? '1' : '0');
+        });
     }
 
     // ========================================
@@ -1913,14 +2318,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     </div>
                     <h3 class="fw-bold text-center mb-1" style="color: #1e293b;">${namaLengkap}</h3>
                     <p class="text-muted text-center mb-4 fs-5">${nomorId}</p>
-                    
+
                     <span class="badge ${statusClass} rounded-pill px-4 py-2 mb-5 fs-6 shadow-sm">
                         <i class="ri-${statusIcon}-line me-1"></i> ${status.toUpperCase()}
                     </span>
 
                     <div class="w-100 mt-2">
                         <div class="d-flex align-items-center mb-4 p-3 bg-white rounded-3 shadow-sm border">
-                            <div class="bg-light p-3 rounded shadow-sm me-3"><i class="ri-whatsapp-line text-success fs-3"></i></div>
+                            <div class="bg-light p-3 rounded shadow-sm me-3">
+                                <span class="wa-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 32 32" focusable="false">
+                                        <path d="M16.04 3C8.86 3 3.02 8.82 3.02 15.98c0 2.29.61 4.53 1.76 6.5L3 29l6.69-1.75a13 13 0 0 0 6.35 1.62h.01c7.18 0 13.02-5.82 13.02-12.98C29.07 8.82 23.22 3 16.04 3Zm0 23.67h-.01a10.8 10.8 0 0 1-5.5-1.5l-.39-.23-3.97 1.04 1.06-3.86-.25-.4a10.72 10.72 0 0 1-1.65-5.74c0-5.95 4.85-10.79 10.82-10.79 2.89 0 5.61 1.13 7.65 3.16a10.7 10.7 0 0 1 3.17 7.64c0 5.94-4.86 10.78-10.93 10.78Zm5.94-8.08c-.33-.16-1.93-.95-2.23-1.06-.3-.11-.52-.16-.73.16-.22.33-.84 1.06-1.03 1.28-.19.22-.38.25-.71.08-.33-.16-1.38-.51-2.63-1.62-.97-.86-1.63-1.93-1.82-2.26-.19-.33-.02-.5.14-.67.15-.15.33-.38.49-.57.16-.19.22-.33.33-.55.11-.22.05-.41-.03-.57-.08-.16-.73-1.75-1-2.4-.26-.62-.53-.54-.73-.55h-.62c-.22 0-.57.08-.87.41-.3.33-1.14 1.12-1.14 2.72s1.17 3.15 1.33 3.37c.16.22 2.3 3.5 5.57 4.91.78.34 1.39.54 1.86.69.78.25 1.49.21 2.05.13.63-.09 1.93-.79 2.2-1.55.27-.76.27-1.42.19-1.55-.08-.14-.3-.22-.63-.38Z"/>
+                                    </svg>
+                                </span>
+                            </div>
                             <div>
                                 <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">WhatsApp</small>
                                 <a href="https://wa.me/${noWhatsapp}" target="_blank" class="text-dark fw-bold text-decoration-none fs-5">${noWhatsappDisplay}</a>
@@ -1948,7 +2359,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <div class="max-w-4xl mx-auto py-4">
                         <h2 class="fw-bold mb-2 text-dark">Ringkasan Tagihan</h2>
                         <p class="text-muted mb-5 fs-5">Rincian paket layanan dan status penagihan pelanggan.</p>
-                        
+
                         <div class="row g-4 mb-5">
                             <div class="col-md-6">
                                 <div class="card border-0 shadow-sm h-100 rounded-4" style="background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 6px solid #3b82f6 !important;">
@@ -1973,20 +2384,20 @@ document.addEventListener("DOMContentLoaded", function () {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <div class="card border-0 shadow-sm h-100 rounded-4" style="background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%); border-left: 6px solid #ef4444 !important;">
                                     <div class="card-body p-4 p-xl-5">
                                         <div class="d-flex justify-content-between align-items-start mb-4">
                                             <div>
-                                                <p class="text-danger fw-bold mb-1 text-uppercase" style="letter-spacing: 1px;">Jatuh Tempo</p>
+                                                <p class="text-danger fw-bold mb-1 text-uppercase" style="letter-spacing: 1px;">Tanggal Tagihan</p>
                                                 <h3 class="fw-bold mb-0 text-dark">${jatuhTempo}</h3>
                                             </div>
                                             <div class="bg-white p-3 rounded-circle shadow-sm"><i class="ri-calendar-event-line text-danger fs-2"></i></div>
                                         </div>
                                         <div class="d-flex align-items-center gap-4 mt-5">
                                             <div>
-                                                <small class="text-muted d-block mb-1 text-uppercase fw-bold">Tanggal Mulai</small>
+                                                <small class="text-muted d-block mb-1 text-uppercase fw-bold">Tanggal Tagihan</small>
                                                 <span class="fw-bold fs-4 text-dark">${tanggalMulai}</span>
                                             </div>
                                         </div>
@@ -2209,7 +2620,7 @@ document.addEventListener("DOMContentLoaded", function () {
       justify-content: space-between;
       align-items: flex-end;
       gap: 1.25rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
       flex-wrap: wrap;
     }
 
@@ -2246,10 +2657,70 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     .tagihan-page-actions {
-      display: flex;
-      align-items: center;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.65rem;
-      flex-wrap: wrap;
+      width: 100%;
+      margin: 0 0 1.25rem 0;
+      padding: 0.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.84);
+      box-shadow: 0 18px 46px rgba(15, 23, 42, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .tagihan-page-actions .tagihan-header-btn {
+      width: 100%;
+      height: 52px;
+      min-height: 50px;
+      padding: 0 1rem;
+      border: 0;
+      border-radius: 17px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      font-weight: 800;
+      font-size: 0.95rem;
+      letter-spacing: 0;
+      text-decoration: none;
+      box-shadow: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .tagihan-page-actions .tagihan-header-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .tagihan-page-actions .tagihan-add-btn {
+      background: #0f172a !important;
+      color: #ffffff !important;
+      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.18);
+    }
+
+    .tagihan-page-actions .tagihan-add-btn:hover {
+      background: #1e293b !important;
+      color: #ffffff !important;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.22);
+    }
+
+    .tagihan-page-actions .tagihan-broadcast-btn {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+
+    .tagihan-page-actions .tagihan-broadcast-btn:hover {
+      background: #f8fafc !important;
+      color: #0f172a !important;
+    }
+
+    @media (max-width: 991.98px) {
+      .tagihan-page-actions {
+        grid-template-columns: 1fr;
+      }
     }
 
     .tagihan-grid-card {
@@ -2280,6 +2751,14 @@ document.addEventListener("DOMContentLoaded", function () {
       flex-wrap: wrap;
     }
 
+    .tagihan-toolbar-right {
+      padding: 0.35rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      background: #f8fafc;
+      gap: 0.35rem;
+    }
+
     .tagihan-control {
       position: relative;
       min-width: 260px;
@@ -2298,6 +2777,13 @@ document.addEventListener("DOMContentLoaded", function () {
       transform: translateY(-50%);
       color: #64748b;
       z-index: 2;
+      cursor: pointer;
+      transition: color 0.15s ease, transform 0.15s ease;
+    }
+
+    .tagihan-control .control-icon:hover {
+      color: #0f172a;
+      transform: translateY(-50%) scale(1.08);
     }
 
     .tagihan-control .control-chevron {
@@ -2344,22 +2830,29 @@ document.addEventListener("DOMContentLoaded", function () {
     .tagihan-tool-btn {
       border: 0;
       background: transparent;
-      color: #252b35;
-      min-height: 42px;
-      padding: 0.6rem 0.75rem;
-      border-radius: 8px;
+      color: #475569;
+      min-height: 40px;
+      padding: 0.55rem 0.85rem;
+      border-radius: 12px;
       display: inline-flex;
       align-items: center;
       gap: 0.45rem;
-      font-weight: 700;
+      font-weight: 800;
+      font-size: 0.86rem;
       cursor: pointer;
-      transition: background 0.16s ease, color 0.16s ease;
+      transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
     }
 
     .tagihan-tool-btn:hover,
     .tagihan-tool-btn.is-active {
-      background: #f4f4f5;
-      color: #18181b;
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .tagihan-tool-btn .material-symbols-rounded {
+      font-size: 1.12rem;
     }
 
     .tagihan-filter-panel {
@@ -2570,7 +3063,70 @@ document.addEventListener("DOMContentLoaded", function () {
     .modern-table tr:hover td {
       background: #fcfcfd;
     }
-    
+
+    .selection-toolbar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      background: #e7f0fb;
+      border-bottom: 1px solid #d6e4f3;
+      padding: 0.85rem 1.25rem;
+    }
+    .selection-toolbar.active {
+      display: flex;
+    }
+    .selection-toolbar .selected-text {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 1rem;
+    }
+    .selection-toolbar .clear-btn {
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .selection-toolbar .clear-btn:hover {
+      background: #dbe8f6;
+      color: #1e293b;
+    }
+    .modern-table tr.row-selected td {
+      background: #edf4fd !important;
+    }
+
+    .modern-table.is-dense th {
+      padding: 0.7rem 1rem;
+    }
+
+    .modern-table.is-dense td {
+      padding: 0.65rem 1rem;
+    }
+
+    .modern-table.is-dense .product-avatar {
+      width: 40px;
+      height: 40px;
+      font-size: 1rem;
+    }
+
+    .dense-toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .dense-toggle-wrap input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #0f172a;
+    }
+
     /* Product / Customer Item */
     .product-cell {
       display: flex;
@@ -2763,17 +3319,20 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       .tagihan-page-actions,
-      .tagihan-page-actions .btn {
+      .tagihan-page-actions .btn,
+      .tagihan-page-actions .tagihan-header-btn {
         width: 100%;
+        margin-left: 0;
       }
 
       .tagihan-page-actions {
         gap: 0.75rem;
       }
 
-      .tagihan-page-actions .btn {
+      .tagihan-page-actions .btn,
+      .tagihan-page-actions .tagihan-header-btn {
         justify-content: center !important;
-        min-height: 46px;
+        min-height: 48px;
         white-space: nowrap;
       }
 
@@ -2975,15 +3534,15 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       .modern-table td:nth-child(4)::before {
-        content: 'Status Bayar';
+        content: '';
       }
 
       .modern-table td:nth-child(5)::before {
-        content: 'Tagihan';
+        content: '';
       }
 
       .modern-table td:nth-child(6)::before {
-        content: 'Status';
+        content: '';
       }
 
       .modern-table td:nth-child(7)::before {
@@ -3068,8 +3627,8 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       .pagination-wrapper .page-link {
-        min-width: 34px;
-        height: 34px;
+        min-width: 30px;
+        height: 30px;
         font-size: 0.82rem;
       }
     }
@@ -3153,7 +3712,7 @@ document.addEventListener("DOMContentLoaded", function () {
         max-width: calc(100vw - 1.2rem);
       }
     }
-    
+
     /* Custom Checkbox */
     .custom-check {
       appearance: none;
@@ -3180,6 +3739,114 @@ document.addEventListener("DOMContentLoaded", function () {
       border-width: 0 2px 2px 0;
       transform: rotate(45deg);
     }
+
+    .wa-link {
+      color: #050505;
+      font-weight: 500;
+    }
+
+    .wa-link:hover {
+      color: #128c7e;
+    }
+
+    .wa-icon {
+      width: 20px;
+      height: 20px;
+      flex: 0 0 20px;
+      color: #22c55e;
+      display: inline-flex;
+    }
+
+    .wa-icon svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      fill: currentColor;
+    }
+
+    .tagihan-page-shell .pagination-wrapper {
+      padding: 0 !important;
+      border-top: 0 !important;
+      background: transparent !important;
+      justify-content: flex-end !important;
+    }
+
+    .tagihan-page-shell .pagination-wrapper nav {
+      width: auto !important;
+      display: inline-flex !important;
+    }
+
+    .tagihan-page-shell .pagination-wrapper .pagination.mui-pagination {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+      flex-wrap: nowrap !important;
+      gap: 0.35rem !important;
+      margin: 0 !important;
+    }
+
+    .tagihan-page-shell .pagination-wrapper .pagination.mui-pagination .page-item {
+      width: 34px !important;
+      min-width: 34px !important;
+      max-width: 34px !important;
+      height: 34px !important;
+      min-height: 34px !important;
+      max-height: 34px !important;
+      flex: 0 0 34px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    .tagihan-page-shell .pagination-wrapper .pagination.mui-pagination .page-link {
+      width: 34px !important;
+      min-width: 34px !important;
+      max-width: 34px !important;
+      height: 34px !important;
+      min-height: 34px !important;
+      max-height: 34px !important;
+      aspect-ratio: 1 / 1 !important;
+      border-radius: 50% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      line-height: 1 !important;
+      font-size: 0.78rem !important;
+      font-weight: 800 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+    }
+
+    .tagihan-page-shell .pagination-wrapper .pagination.mui-pagination .page-item.active .page-link {
+      background: #111827 !important;
+      color: #ffffff !important;
+      box-shadow: 0 8px 18px rgba(17, 24, 39, 0.18) !important;
+    }
+
+    .tagihan-page-shell .pagination-wrapper .pagination.mui-pagination .pagination-ellipsis .page-link {
+      background: transparent !important;
+      box-shadow: none !important;
+      font-size: 0.8rem !important;
+    }
+
+    @media (max-width: 768px) {
+      .tagihan-page-shell .pagination-wrapper .pagination.mui-pagination .page-item,
+      .tagihan-page-shell .pagination-wrapper .pagination.mui-pagination .page-link {
+        width: 30px !important;
+        min-width: 30px !important;
+        max-width: 30px !important;
+        height: 30px !important;
+        min-height: 30px !important;
+        max-height: 30px !important;
+        flex-basis: 30px !important;
+        font-size: 0.72rem !important;
+      }
+    }
   </style>
 
   <!-- Header Section -->
@@ -3196,14 +3863,17 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
         <p class="text-muted m-0" style="font-size: 0.92rem;">Kelola seluruh tagihan pelanggan secara efisien dan akurat.</p>
       </div>
-      <div class="tagihan-page-actions">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahTagihan">
-          <span class="material-symbols-rounded" style="font-size:1.1rem;">add</span> Tambah Tagihan
-        </button>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMassTagihan">
-          <span class="material-symbols-rounded" style="font-size:1.1rem;">groups</span> Tagihan Massal
-        </button>
-      </div>
+    </div>
+
+    <div class="tagihan-page-actions">
+      <button type="button" class="tagihan-header-btn tagihan-add-btn" data-bs-toggle="modal" data-bs-target="#modalTambahTagihan">
+        <span class="material-symbols-rounded" style="font-size:1.2rem;">add</span>
+        <span>Tambah Tagihan Baru</span>
+      </button>
+      <button type="button" class="tagihan-header-btn tagihan-broadcast-btn" data-bs-toggle="modal" data-bs-target="#modalMassTagihan">
+        <span class="material-symbols-rounded" style="font-size:1.2rem;">groups</span>
+        <span>Tagihan Massal</span>
+      </button>
     </div>
 
   <form method="GET" action="{{ route('tagihan.get') }}" id="filterForm">
@@ -3220,10 +3890,10 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
         <div class="tagihan-toolbar-right">
           <button type="button" class="tagihan-tool-btn" title="Columns">
-            <span class="material-symbols-rounded">view_column</span> Columns
+            <span class="material-symbols-rounded">view_column</span> Kolom
           </button>
           <button type="button" class="tagihan-tool-btn {{ request('search') || request('periode') || request('harga_paket') ? 'is-active' : '' }}" id="toggleTagihanFilters" aria-expanded="false" aria-controls="tagihanFilterPanel">
-            <span class="material-symbols-rounded">filter_alt</span> Filters
+            <span class="material-symbols-rounded">filter_alt</span> Filter
           </button>
           <button type="button" id="btnExportBelumLunas" class="tagihan-tool-btn" title="Export belum lunas">
             <span class="material-symbols-rounded">download</span> Export
@@ -3264,38 +3934,34 @@ document.addEventListener("DOMContentLoaded", function () {
           @endif
         </div>
       </div>
-
-      <div class="toolbar-top" style="padding: 0.85rem 1.25rem; border-bottom: 1px solid #eef2f7; background:#f8fafc;">
-        <div class="d-flex align-items-center gap-3">
-          <span class="fw-bold text-dark" style="font-size: 0.86rem; text-transform: uppercase;">Status Bayar</span>
-          <div class="vr" style="height: 22px; color: #dbe3ec;"></div>
-          <span class="text-muted" style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase;">
-            {{ $tagihans->total() }} Records Found
-          </span>
-        </div>
-      </div>
+    </form>
 
       <!-- Table -->
       <div style="overflow-x: auto;">
+        <div class="selection-toolbar" id="selectionToolbar">
+          <span class="selected-text" id="selectedCount">0 dipilih</span>
+          <button type="button" class="clear-btn" id="clearSelectionBtn" title="Bersihkan pilihan">
+            <span class="material-symbols-rounded">delete</span>
+          </button>
+        </div>
         <table class="modern-table">
           <thead>
             <tr>
               <th style="width: 50px; text-align: center;"><input type="checkbox" class="custom-check" id="selectAllPelanggan"></th>
-              <th>Customer / Paket</th>
-              <th>Jatuh Tempo</th>
-              <th>Status Bayar</th>
-              <th>Tagihan</th>
-              <th>Status</th>
-              <th style="width: 50px; text-align: center;">Actions</th>
+              <th>NO. ID</th>
+              <th>NAMA</th>
+              <th>NO. WA</th>
+              <th aria-label="Status pembayaran"></th>
+              <th style="width: 50px; text-align: center;">ACTIONS</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="pelangganList">
             @forelse($tagihans as $item)
             @php
               $status = strtolower($item['status_pembayaran'] ?? '');
               $isLunas = $status == 'lunas';
               $isProsesVerifikasi = $status == 'proses_verifikasi';
-              
+
               // Colors for Avatar based on string length to simulate variety
               $colors = ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899'];
               $colorIdx = strlen($item['nama_lengkap']) % count($colors);
@@ -3312,10 +3978,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
               $buktiRaw = trim((string)($item['bukti_pembayaran'] ?? ''));
               if ($buktiRaw !== '' && $buktiRaw !== '-') {
-                $buktiFile = basename(parse_url($buktiRaw, PHP_URL_PATH) ?: $buktiRaw);
-                $buktiUrl = ($buktiFile && $buktiFile !== '-') 
-                  ? asset('storage/bukti_pembayaran/' . $buktiFile)
-                  : '';
+                if (str_starts_with($buktiRaw, 'http://') || str_starts_with($buktiRaw, 'https://')) {
+                  $buktiUrl = $buktiRaw;
+                } else {
+                  $buktiPath = str_starts_with($buktiRaw, 'storage/') ? substr($buktiRaw, 8) : ltrim($buktiRaw, '/');
+                  $buktiUrl = asset('storage/' . $buktiPath);
+                }
               } else {
                 $buktiUrl = '';
               }
@@ -3331,9 +3999,12 @@ document.addEventListener("DOMContentLoaded", function () {
             <tr class="pelanggan-item"
               data-tagihan-id="{{ $item['id'] }}"
               data-nomor-id="{{ $item['nomer_id'] ?? '-' }}"
+              data-nomer-id="{{ $item['nomer_id'] ?? '-' }}"
               data-nama="{{ $item['nama_lengkap'] ?? '-' }}"
               data-whatsapp="{{ $item['no_whatsapp'] ?? '-' }}"
+              data-wa="{{ $item['no_whatsapp'] ?? '-' }}"
               data-status="{{ $statusLabel }}"
+              data-paket-id="{{ $item['paket']['id'] ?? '' }}"
               data-paket="{{ $item['paket']['nama_paket'] ?? '-' }}"
               data-harga="{{ $hargaFormatted }}"
               data-alamat="{{ $alamatLengkap ?: '-' }}"
@@ -3342,32 +4013,30 @@ document.addEventListener("DOMContentLoaded", function () {
               data-provinsi="{{ $item['provinsi'] ?? '-' }}"
               data-kecepatan="{{ $item['paket']['kecepatan'] ?? '-' }} Mbps"
               data-tanggal-mulai="{{ $tanggalMulaiFormatted }}"
+              data-tanggal-mulai-raw="{{ $item['tanggal_mulai'] ?? '' }}"
               data-jatuh-tempo="{{ $jatuhTempoFormatted }}"
+              data-tanggal-berakhir-raw="{{ $item['tanggal_berakhir'] ?? '' }}"
               data-catatan="{{ $item['catatan'] ?? '-' }}"
               data-bukti="{{ $buktiUrl }}">
               <td><input type="checkbox" class="custom-check pelanggan-checkbox" value="{{ $item['id'] }}"></td>
               <td>
-                <div class="product-cell">
-                  <div class="product-info">
-                    <h6>{{ $item['nama_lengkap'] }}</h6>
-                    <span>ID: {{ $item['nomer_id'] ?? '-' }} | {{ $item['paket']['nama_paket'] ?? '-' }}</span>
-                  </div>
+                <span class="badge bg-label-dark">{{ $item['nomer_id'] ?? '-' }}</span>
+              </td>
+              <td>
+                <strong>{{ $item['nama_lengkap'] }}</strong>
+                <div class="tagihan-row-meta text-muted small mt-1">
+                  {{ $item['paket']['nama_paket'] ?? '-' }} | {{ $hargaFormatted }} | Jatuh tempo {{ $jatuhTempoFormatted }}
                 </div>
               </td>
               <td>
-                <div class="date-cell">
-                  {{ $item['tanggal_berakhir'] ? \Carbon\Carbon::parse($item['tanggal_berakhir'])->translatedFormat('d M Y') : '-' }}
-                  <span class="time">{{ $item['tanggal_berakhir'] ? \Carbon\Carbon::parse($item['tanggal_berakhir'])->translatedFormat('h:i a') : '' }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="stock-bar-container">
-                  <div class="stock-bar" style="width: {{ $stockWidth }}; background: {{ $stockColor }};"></div>
-                </div>
-                <span class="stock-text">{{ $stockText }}</span>
-              </td>
-              <td class="price-cell">
-                {{ $hargaFormatted }}
+                <a href="https://wa.me/{{ preg_replace('/\D/', '', $item['no_whatsapp'] ?? '') }}" target="_blank" class="wa-link text-decoration-none d-flex align-items-center gap-2">
+                    <span class="wa-icon" aria-hidden="true">
+                      <svg viewBox="0 0 32 32" focusable="false">
+                        <path d="M16.04 3C8.86 3 3.02 8.82 3.02 15.98c0 2.29.61 4.53 1.76 6.5L3 29l6.69-1.75a13 13 0 0 0 6.35 1.62h.01c7.18 0 13.02-5.82 13.02-12.98C29.07 8.82 23.22 3 16.04 3Zm0 23.67h-.01a10.8 10.8 0 0 1-5.5-1.5l-.39-.23-3.97 1.04 1.06-3.86-.25-.4a10.72 10.72 0 0 1-1.65-5.74c0-5.95 4.85-10.79 10.82-10.79 2.89 0 5.61 1.13 7.65 3.16a10.7 10.7 0 0 1 3.17 7.64c0 5.94-4.86 10.78-10.93 10.78Zm5.94-8.08c-.33-.16-1.93-.95-2.23-1.06-.3-.11-.52-.16-.73.16-.22.33-.84 1.06-1.03 1.28-.19.22-.38.25-.71.08-.33-.16-1.38-.51-2.63-1.62-.97-.86-1.63-1.93-1.82-2.26-.19-.33-.02-.5.14-.67.15-.15.33-.38.49-.57.16-.19.22-.33.33-.55.11-.22.05-.41-.03-.57-.08-.16-.73-1.75-1-2.4-.26-.62-.53-.54-.73-.55h-.62c-.22 0-.57.08-.87.41-.3.33-1.14 1.12-1.14 2.72s1.17 3.15 1.33 3.37c.16.22 2.3 3.5 5.57 4.91.78.34 1.39.54 1.86.69.78.25 1.49.21 2.05.13.63-.09 1.93-.79 2.2-1.55.27-.76.27-1.42.19-1.55-.08-.14-.3-.22-.63-.38Z"/>
+                      </svg>
+                    </span>
+                    <span>{{ $item['no_whatsapp'] ?? '-' }}</span>
+                </a>
               </td>
               <td>
                 <span class="status-pill {{ $statusPillClass }}">
@@ -3381,23 +4050,8 @@ document.addEventListener("DOMContentLoaded", function () {
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end tagihan-action-menu">
                     <li>
-                      <a class="dropdown-item d-flex align-items-center btn-detail" href="javascript:void(0);"
-                        data-nomor-id="{{ $item['nomer_id'] ?? '-' }}"
-                        data-nama="{{ $item['nama_lengkap'] ?? '-' }}"
-                        data-whatsapp="{{ $item['no_whatsapp'] ?? '-' }}"
-                        data-status="{{ $statusLabel }}"
-                        data-paket="{{ $item['paket']['nama_paket'] ?? '-' }}"
-                        data-harga="{{ $hargaFormatted }}"
-                        data-alamat="{{ $alamatLengkap ?: '-' }}"
-                        data-kecamatan="{{ $item['kecamatan'] ?? '-' }}"
-                        data-kabupaten="{{ $item['kabupaten'] ?? '-' }}"
-                        data-provinsi="{{ $item['provinsi'] ?? '-' }}"
-                        data-kecepatan="{{ $item['paket']['kecepatan'] ?? '-' }} Mbps"
-                        data-tanggal-mulai="{{ $tanggalMulaiFormatted }}"
-                        data-jatuh-tempo="{{ $jatuhTempoFormatted }}"
-                        data-catatan="{{ $item['catatan'] ?? '-' }}"
-                        data-bukti="{{ $buktiUrl }}">
-                        <span class="material-symbols-rounded" style="font-size:1.25rem;">visibility</span> Detail
+                      <a class="dropdown-item d-flex align-items-center btn-detail" href="javascript:void(0);">
+                        <span class="material-symbols-rounded" style="font-size:1.25rem;">visibility</span> Lihat Detail
                       </a>
                     </li>
                     @if(!$isLunas)
@@ -3427,7 +4081,7 @@ document.addEventListener("DOMContentLoaded", function () {
             </tr>
             @empty
             <tr>
-              <td colspan="7" class="text-center py-5">
+              <td colspan="6" class="text-center py-5">
                 <span class="material-symbols-rounded" style="font-size: 3rem; color: #cbd5e1;">inbox</span>
                 <h6 class="mt-3 text-muted">Tidak ada data tagihan.</h6>
               </td>
@@ -3436,19 +4090,19 @@ document.addEventListener("DOMContentLoaded", function () {
           </tbody>
         </table>
       <!-- Pagination Footer -->
-      <div class="d-flex justify-content-between align-items-center px-4 py-3" style="border-top: 1px solid #f1f5f9; background: #ffffff;">
+      <div class="d-flex justify-content-between align-items-center px-4 py-3" style="background: #ffffff;">
         <div class="d-flex align-items-center gap-4">
-          <span class="text-muted" style="font-size: 0.8125rem;">
-            Showing {{ $tagihans->firstItem() ?? 0 }}-{{ $tagihans->lastItem() ?? 0 }} of {{ $tagihans->total() }}
-          </span>
+          <label class="dense-toggle-wrap mb-0">
+            <input type="checkbox" id="densePaddingToggle">
+            <span>Dense padding</span>
+          </label>
         </div>
         <div class="pagination-wrapper">
-          {{ $tagihans->appends(request()->query())->links('vendor.pagination.tagihan-compact') }}
+          {{ $tagihans->appends(request()->query())->onEachSide(1)->links('pagination.mui') }}
         </div>
       </div>
     </div>
     </div>
-  </form>
 </div>
 
 
@@ -3470,20 +4124,24 @@ document.addEventListener("DOMContentLoaded", function () {
 <!-- MODAL: TAMBAH TAGIHAN -->
 <!-- ========================================= -->
 <div class="modal fade" id="modalTambahTagihan" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
+  <div class="modal-dialog modal-fullscreen tagihan-create-dialog">
+    <div class="modal-content tagihan-create-modal">
       <form action="{{ route('tagihan.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
 
-        <div class="modal-header bg-primary">
-          <h5 class="modal-title text-white fw-bold">
-            <i class="ri-add-circle-line me-2"></i>Tambah Tagihan Baru
+        <div class="modal-header bg-primary tagihan-create-header">
+          <h5 class="modal-title tagihan-create-title fw-bold">
+            <span class="tagihan-create-title-icon"><i class="ri-add-circle-line"></i></span>
+            <span>
+              Tambah Tagihan Baru
+              <small>Lengkapi pelanggan, paket, dan periode tagihan dalam satu layar.</small>
+            </span>
           </h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
 
-        <div class="modal-body">
-          <div class="row g-3">
+        <div class="modal-body tagihan-create-body">
+          <div class="row g-3 tagihan-create-form-grid">
             <!-- Pilih Pelanggan -->
             <div class="col-12">
               <label class="form-label fw-semibold">Pilih Pelanggan <span class="text-danger">*</span></label>
@@ -3608,7 +4266,7 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
 
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Tanggal Mulai <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold">Tanggal Tagihan <span class="text-danger">*</span></label>
               <input type="date" id="tanggal_mulai" name="tanggal_mulai" class="form-control" required>
             </div>
 
@@ -3617,12 +4275,12 @@ document.addEventListener("DOMContentLoaded", function () {
               <input type="date" id="tanggal_berakhir" name="tanggal_berakhir" class="form-control bg-light" readonly required>
             </div>
 
-            <div class="col-12">
+            <div class="col-md-6">
               <label class="form-label">Catatan (Opsional)</label>
-              <textarea class="form-control" id="catatan" name="catatan" rows="3" placeholder="Tambahkan catatan jika diperlukan..."></textarea>
+              <textarea class="form-control" id="catatan" name="catatan" rows="2" placeholder="Tambahkan catatan jika diperlukan..."></textarea>
             </div>
 
-            <div class="col-12">
+            <div class="col-md-6">
               <label class="form-label">Upload Bukti Pembayaran (Opsional)</label>
               <input type="file" name="bukti_pembayaran" class="form-control" accept="image/*,.pdf">
               <small class="text-muted">Format: JPG, PNG, PDF | Max: 2MB</small>
@@ -3630,7 +4288,7 @@ document.addEventListener("DOMContentLoaded", function () {
           </div>
         </div>
 
-        <div class="modal-footer">
+        <div class="modal-footer tagihan-create-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             <i class="ri-close-line me-1"></i>Batal
           </button>
@@ -3682,7 +4340,7 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
 
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Tanggal Mulai</label>
+              <label class="form-label fw-semibold">Tanggal Tagihan</label>
               <input type="text" name="tanggal_mulai" class="form-control flatpickr-edit-start" value="{{ $tagihan['tanggal_mulai'] }}" required>
             </div>
 
@@ -3724,52 +4382,56 @@ document.addEventListener("DOMContentLoaded", function () {
 <!-- ========================================= -->
 <div class="modal fade" id="modalMassTagihan" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-fullscreen modal-dialog-scrollable m-0">
-    <div class="modal-content border-0 shadow-lg" style="border-radius: 0; overflow: hidden;">
-      
-      <!-- Modern Header -->
-      <div class="modal-header border-0 py-4 px-5" style="background: linear-gradient(135deg, #18181b 0%, #27272a 100%);">
-        <div>
-            <h4 class="modal-title fw-bold text-white mb-1">
-            <i class="ri-rocket-line me-2 text-warning"></i>Generator Tagihan Massal
-            </h4>
-            <p class="text-white-50 mb-0 small">Buat tagihan untuk banyak pelanggan sekaligus dengan cepat dan aman.</p>
+    <div class="modal-content tw-border-0 tw-bg-slate-50 tw-shadow-2xl" style="border-radius: 0; overflow: hidden;">
+
+      <div class="modal-header tw-border-0 tw-bg-slate-950 tw-px-8 tw-py-6 md:tw-px-10">
+        <div class="tw-flex tw-items-center tw-gap-4">
+            <div class="tw-flex tw-h-12 tw-w-12 tw-items-center tw-justify-center tw-rounded-2xl tw-bg-amber-400 tw-text-slate-950 tw-shadow-lg tw-shadow-amber-400/20">
+                <i class="ri-rocket-line tw-text-2xl"></i>
+            </div>
+            <div>
+                <h4 class="modal-title tw-mb-1 tw-text-xl tw-font-extrabold tw-tracking-normal tw-text-white md:tw-text-2xl" style="color: #ffffff !important;">
+                    Generator Tagihan Massal
+                </h4>
+                <p class="tw-mb-0 tw-text-sm tw-text-slate-300">Buat tagihan untuk banyak pelanggan sekaligus dengan cepat dan aman.</p>
+            </div>
         </div>
-        <button type="button" class="btn btn-icon btn-sm btn-dark rounded-circle text-white-50 hover-white" data-bs-dismiss="modal">
-            <i class="ri-close-line fs-5"></i>
+        <button type="button" class="tw-inline-flex tw-h-10 tw-w-10 tw-items-center tw-justify-center tw-rounded-full tw-border tw-border-white/10 tw-bg-white/10 tw-text-slate-200 tw-transition hover:tw-bg-white hover:tw-text-slate-950" data-bs-dismiss="modal" aria-label="Tutup">
+            <i class="ri-close-line tw-text-xl"></i>
         </button>
       </div>
 
-      <div class="modal-body p-0">
-        <div class="d-flex flex-column flex-lg-row h-100" style="min-height: calc(100vh - 120px);">
-            
+      <div class="modal-body tw-p-0">
+        <div class="broadcast-layout d-flex flex-column flex-lg-row h-100" style="min-height: calc(100vh - 120px);">
+
             <!-- Sidebar / Mode Selection -->
-            <div class="col-lg-3 bg-light border-end p-4">
-                <label class="small fw-bold text-uppercase text-muted mb-3 tracking-wide">Pilih Metode</label>
-                
-                <div class="d-grid gap-3">
-                    <label class="mode-card p-3 rounded-3 border bg-white cursor-pointer position-relative active-mode" id="labelModeAll">
+            <div class="col-lg-3 tw-border-r tw-border-slate-200 tw-bg-white tw-p-5 md:tw-p-6">
+                <label class="tw-mb-4 tw-block tw-text-xs tw-font-bold tw-uppercase tw-tracking-[0.2em] tw-text-slate-400">Pilih Metode</label>
+
+                <div class="tw-grid tw-gap-3">
+                    <label class="mode-card tw-relative tw-cursor-pointer tw-rounded-2xl tw-border tw-border-slate-200 tw-bg-white tw-p-4 tw-shadow-sm tw-transition active-mode" id="labelModeAll">
                         <input type="radio" name="broadcastMode" value="all" class="d-none" checked>
-                        <div class="d-flex align-items-center mb-2">
-                            <div class="icon-box bg-success-subtle text-success rounded-circle p-2 me-3">
-                                <i class="ri-broadcast-line fs-5"></i>
+                        <div class="tw-mb-3 tw-flex tw-items-center">
+                            <div class="tw-mr-3 tw-flex tw-h-11 tw-w-11 tw-items-center tw-justify-center tw-rounded-xl tw-bg-emerald-50 tw-text-emerald-600">
+                                <i class="ri-broadcast-line tw-text-xl"></i>
                             </div>
-                            <h6 class="fw-bold mb-0 text-dark">Broadcast Semua</h6>
+                            <h6 class="tw-mb-0 tw-text-sm tw-font-extrabold tw-text-slate-900">Broadcast Semua</h6>
                         </div>
-                        <p class="small text-muted mb-0 lh-sm">
+                        <p class="tw-mb-0 tw-text-sm tw-leading-5 tw-text-slate-500">
                             Generate tagihan otomatis untuk setiap pelanggan yang eligible.
                         </p>
                         <div class="active-indicator"></div>
                     </label>
 
-                    <label class="mode-card p-3 rounded-3 border bg-white cursor-pointer position-relative" id="labelModeManual">
+                    <label class="mode-card tw-relative tw-cursor-pointer tw-rounded-2xl tw-border tw-border-slate-200 tw-bg-white tw-p-4 tw-shadow-sm tw-transition" id="labelModeManual">
                         <input type="radio" name="broadcastMode" value="manual" class="d-none">
-                        <div class="d-flex align-items-center mb-2">
-                            <div class="icon-box bg-primary-subtle text-primary rounded-circle p-2 me-3">
-                                <i class="ri-checkbox-multiple-line fs-5"></i>
+                        <div class="tw-mb-3 tw-flex tw-items-center">
+                            <div class="tw-mr-3 tw-flex tw-h-11 tw-w-11 tw-items-center tw-justify-center tw-rounded-xl tw-bg-sky-50 tw-text-sky-600">
+                                <i class="ri-checkbox-multiple-line tw-text-xl"></i>
                             </div>
-                            <h6 class="fw-bold mb-0 text-dark">Pilih Manual</h6>
+                            <h6 class="tw-mb-0 tw-text-sm tw-font-extrabold tw-text-slate-900">Pilih Manual</h6>
                         </div>
-                        <p class="small text-muted mb-0 lh-sm">
+                        <p class="tw-mb-0 tw-text-sm tw-leading-5 tw-text-slate-500">
                             Cari dan pilih pelanggan spesifik secara manual.
                         </p>
                         <div class="active-indicator"></div>
@@ -3778,34 +4440,34 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
 
             <!-- Content Area -->
-            <div class="col-lg-9 p-5 position-relative">
-                
+            <div class="broadcast-main col-lg-9 tw-relative tw-bg-slate-50 tw-p-5 md:tw-p-8 xl:tw-p-10">
+
                 <!-- SECTION: ALL -->
                 <div id="sectionAll" class="mode-section animate__animated animate__fadeIn">
-                    <div class="text-center py-5">
-                       <div class="mb-4">
-                            <div class="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-circle" style="width: 80px; height: 80px;">
-                                <i class="ri-user-star-line fs-1"></i>
+                    <div class="tw-py-8 tw-text-center md:tw-py-12">
+                       <div class="tw-mb-6">
+                            <div class="tw-inline-flex tw-h-20 tw-w-20 tw-items-center tw-justify-center tw-rounded-3xl tw-bg-amber-100 tw-text-amber-600 tw-shadow-soft">
+                                <i class="ri-user-star-line tw-text-4xl"></i>
                             </div>
                        </div>
-                       
-                       <h3 class="fw-bold text-dark mb-2">Siap untuk Broadcast?</h3>
-                       <p class="text-muted w-75 mx-auto mb-4">
-                            Sistem akan memindai <span class="fw-bold text-dark">semua pelanggan</span> yang belum memiliki tagihan di bulan ini.
+
+                       <h3 class="tw-mb-2 tw-text-2xl tw-font-extrabold tw-tracking-normal tw-text-slate-950 md:tw-text-3xl">Siap untuk Broadcast?</h3>
+                       <p class="tw-mx-auto tw-mb-6 tw-max-w-2xl tw-text-sm tw-leading-6 tw-text-slate-500 md:tw-text-base">
+                            Sistem akan memindai <span class="tw-font-bold tw-text-slate-900">semua pelanggan</span> yang belum memiliki tagihan pada periode yang dipilih.
                        </p>
 
-                       <div class="card bg-dark bg-gradient text-white border-0 d-inline-block px-5 py-3 rounded-4 shadow-lg mb-3">
-                            <h1 class="display-4 fw-bold mb-0" id="broadcastCount">
+                       <div class="tw-mb-4 tw-inline-block tw-rounded-3xl tw-bg-slate-950 tw-px-10 tw-py-5 tw-text-white tw-shadow-2xl tw-shadow-slate-950/20">
+                            <h1 class="tw-mb-0 tw-text-5xl tw-font-extrabold tw-leading-none tw-tracking-normal" id="broadcastCount">
                                 <span class="spinner-border spinner-border-sm"></span>
                             </h1>
-                            <span class="text-white small text-uppercase spacing-2">Pelanggan Approve</span>
+                            <span class="tw-mt-2 tw-block tw-text-xs tw-font-bold tw-uppercase tw-tracking-[0.18em] tw-text-slate-300">Siap Diproses</span>
                        </div>
 
-                       <div class="d-flex flex-wrap justify-content-center gap-2">
-                           <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
-                               Siap dikirim: <strong id="broadcastEligibleCount">-</strong>
+                       <div class="tw-flex tw-flex-wrap tw-justify-center tw-gap-2">
+                           <span class="tw-rounded-full tw-border tw-border-emerald-200 tw-bg-emerald-50 tw-px-4 tw-py-2 tw-text-sm tw-font-semibold tw-text-emerald-700">
+                               Eligible: <strong id="broadcastEligibleCount">-</strong>
                            </span>
-                           <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2">
+                           <span class="tw-rounded-full tw-border tw-border-amber-200 tw-bg-amber-50 tw-px-4 tw-py-2 tw-text-sm tw-font-semibold tw-text-amber-700">
                                Pending status: <strong id="broadcastPendingCount">-</strong>
                            </span>
                        </div>
@@ -3814,109 +4476,124 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 <!-- SECTION: MANUAL -->
                 <div id="sectionManual" class="mode-section d-none animate__animated animate__fadeIn">
-                    <div class="d-flex justify-content-between align-items-end mb-4">
+                    <div class="tw-mb-5 tw-flex tw-items-end tw-justify-between tw-gap-4">
                         <div>
-                            <h5 class="fw-bold text-dark mb-1">Pilih Pelanggan</h5>
-                            <p class="text-muted small mb-0">Cari pelanggan yang ingin dibuatkan tagihan.</p>
+                            <h5 class="tw-mb-1 tw-text-xl tw-font-extrabold tw-text-slate-950">Pilih Pelanggan</h5>
+                            <p class="tw-mb-0 tw-text-sm tw-text-slate-500">Cari pelanggan yang ingin dibuatkan tagihan.</p>
                         </div>
-                        <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm" id="manualSelectedCount">0 Terpilih</span>
+                        <span class="tw-rounded-full tw-bg-slate-950 tw-px-4 tw-py-2 tw-text-sm tw-font-bold tw-text-white tw-shadow-soft" id="manualSelectedCount">0 Terpilih</span>
                     </div>
 
-                    <div class="input-group input-group-lg border rounded-3 overflow-hidden shadow-sm mb-4">
-                        <span class="input-group-text bg-white border-0 ps-4"><i class="ri-search-line text-muted"></i></span>
-                        <input type="text" class="form-control border-0 py-3" id="manualSearchInput" placeholder="Ketik nama, ID, atau alamat pelanggan..." style="font-size: 0.95rem;">
+                    <div class="tw-mb-5 tw-flex tw-overflow-hidden tw-rounded-2xl tw-border tw-border-slate-200 tw-bg-white tw-shadow-sm">
+                        <span class="tw-flex tw-items-center tw-pl-5 tw-pr-3 tw-text-slate-400"><i class="ri-search-line"></i></span>
+                        <input type="text" class="tw-min-h-14 tw-w-full tw-border-0 tw-bg-transparent tw-px-2 tw-py-3 tw-text-sm tw-text-slate-900 tw-outline-none placeholder:tw-text-slate-400" id="manualSearchInput" placeholder="Ketik nama, ID, atau alamat pelanggan...">
                     </div>
 
-                    <div class="border rounded-3 overflow-hidden bg-white shadow-sm" style="height: 350px; overflow-y: auto;">
+                    <div class="tw-overflow-hidden tw-rounded-2xl tw-border tw-border-slate-200 tw-bg-white tw-shadow-soft" style="height: 350px; overflow-y: auto;">
                         <table class="table table-hover mb-0 align-middle">
-                            <thead class="bg-light sticky-top" style="z-index: 5;">
+                            <thead class="tw-sticky tw-top-0 tw-bg-slate-50" style="z-index: 5;">
                                 <tr>
-                                    <th width="60" class="text-center py-3">
-                                        <div class="form-check d-flex justify-content-center">
-                                            <input class="form-check-input" type="checkbox" id="checkAllManual" style="cursor: pointer;">
+                                    <th width="60" class="tw-py-4 tw-text-center">
+                                        <div class="tw-flex tw-justify-center">
+                                            <input class="form-check-input tw-cursor-pointer" type="checkbox" id="checkAllManual">
                                         </div>
                                     </th>
-                                    <th class="py-3 text-secondary small text-uppercase">Pelanggan</th>
-                                    <th class="py-3 text-secondary small text-uppercase">Paket</th>
-                                    <th class="py-3 text-secondary small text-uppercase">Lokasi</th>
+                                    <th class="tw-py-4 tw-text-xs tw-font-bold tw-uppercase tw-tracking-[0.14em] tw-text-slate-500">Pelanggan</th>
+                                    <th class="tw-py-4 tw-text-xs tw-font-bold tw-uppercase tw-tracking-[0.14em] tw-text-slate-500">Paket</th>
+                                    <th class="tw-py-4 tw-text-xs tw-font-bold tw-uppercase tw-tracking-[0.14em] tw-text-slate-500">Lokasi</th>
                                 </tr>
                             </thead>
                             <tbody id="manualTableBody" class="border-top-0">
                                 <!-- AJAX CONTENT -->
                             </tbody>
                         </table>
-                        
+
                         <!-- Empty States & Loading -->
-                        <div id="manualLoading" class="text-center py-5 d-none">
+                        <div id="manualLoading" class="tw-py-12 tw-text-center d-none">
                             <div class="spinner-border text-primary" role="status"></div>
-                            <p class="small text-muted mt-2">Memuat data...</p>
+                            <p class="tw-mt-2 tw-text-sm tw-text-slate-500">Memuat data...</p>
                         </div>
-                        <div id="manualEmpty" class="text-center py-5 text-muted d-none">
-                            <div class="mb-2"><i class="ri-search-2-line fs-1 opacity-25"></i></div>
-                            <p class="mb-0">Tidak ditemukan data yang cocok</p>
+                        <div id="manualEmpty" class="tw-py-12 tw-text-center tw-text-slate-500 d-none">
+                            <div class="tw-mb-2"><i class="ri-search-2-line tw-text-4xl tw-opacity-30"></i></div>
+                            <p class="tw-mb-0">Tidak ditemukan data yang cocok</p>
                         </div>
-                         <div class="text-center p-3 border-top bg-light">
-                             <button type="button" id="btnLoadMoreManual" class="btn btn-sm btn-outline-dark rounded-pill px-4 d-none">
+                         <div class="tw-border-t tw-border-slate-100 tw-bg-slate-50 tw-p-3 tw-text-center">
+                             <button type="button" id="btnLoadMoreManual" class="tw-rounded-full tw-border tw-border-slate-300 tw-bg-white tw-px-5 tw-py-2 tw-text-sm tw-font-bold tw-text-slate-700 tw-transition hover:tw-border-slate-950 hover:tw-text-slate-950 d-none">
                                 Muat Lebih Banyak
                              </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Footer Config (Always Visible) -->
-                <div class="mt-4 pt-4 border-top">
+                <div class="broadcast-config tw-mt-6 tw-rounded-3xl tw-border tw-border-slate-200 tw-bg-white tw-p-5 tw-shadow-soft">
                     <div class="row g-4 align-items-end">
                         <div class="col-md-6">
-                             <label class="form-label small fw-bold text-muted text-uppercase mb-2">Tanggal Mulai</label>
-                             <div class="input-group">
-                                 <span class="input-group-text bg-light border-end-0"><i class="ri-calendar-line"></i></span>
-                                 <input type="text" id="broadcastTanggalMulai" class="form-control border-start-0 ps-0 date-picker-flat" placeholder="YYYY-MM-DD" style="font-weight: 500;">
+                             <label class="tw-mb-2 tw-block tw-text-xs tw-font-bold tw-uppercase tw-tracking-[0.16em] tw-text-slate-400">Tanggal Tagihan</label>
+                             <div class="tw-flex tw-overflow-hidden tw-rounded-2xl tw-border tw-border-slate-200 tw-bg-slate-50">
+                                 <span class="tw-flex tw-items-center tw-pl-4 tw-pr-3 tw-text-slate-400"><i class="ri-calendar-line"></i></span>
+                                 <input type="text" id="broadcastTanggalMulai" class="date-picker-flat tw-min-h-12 tw-w-full tw-border-0 tw-bg-transparent tw-px-2 tw-text-sm tw-font-semibold tw-text-slate-900 tw-outline-none placeholder:tw-text-slate-400" placeholder="YYYY-MM-DD">
                              </div>
                         </div>
                         <div class="col-md-6">
-                             <label class="form-label small fw-bold text-muted text-uppercase mb-2">Jatuh Tempo</label>
-                             <div class="input-group">
-                                 <span class="input-group-text bg-light border-end-0"><i class="ri-calendar-check-line"></i></span>
-                                 <input type="text" id="broadcastTanggalBerakhir" class="form-control border-start-0 ps-0 text-danger date-picker-flat" placeholder="YYYY-MM-DD" style="font-weight: 600;">
+                             <label class="tw-mb-2 tw-block tw-text-xs tw-font-bold tw-uppercase tw-tracking-[0.16em] tw-text-slate-400">Jatuh Tempo</label>
+                             <div class="tw-flex tw-overflow-hidden tw-rounded-2xl tw-border tw-border-slate-200 tw-bg-slate-50">
+                                 <span class="tw-flex tw-items-center tw-pl-4 tw-pr-3 tw-text-slate-400"><i class="ri-calendar-check-line"></i></span>
+                                 <input type="text" id="broadcastTanggalBerakhir" class="date-picker-flat tw-min-h-12 tw-w-full tw-border-0 tw-bg-transparent tw-px-2 tw-text-sm tw-font-semibold tw-text-rose-600 tw-outline-none placeholder:tw-text-slate-400" placeholder="YYYY-MM-DD">
                              </div>
                         </div>
                         <div class="col-12">
-                             <button type="button" class="btn btn-dark btn-lg w-100 rounded-3 shadow-lg" id="btnBroadcastSubmit">
-                                <span class="d-flex align-items-center justify-content-center gap-2">
-                                    <i class="ri-flashlight-fill text-warning"></i>
-                                    <span>Proses Tagihan</span>
-                                </span>
-                             </button>
-                        </div>
-                    </div>
-                </div>
-                
-                 <!-- Progress Overlay (Absolute) -->
-                <div id="broadcastProgressSection" class="position-absolute top-0 start-0 w-100 h-100 bg-white d-flex flex-column justify-content-center align-items-center d-none" style="z-index: 50; border-radius: 0 0 16px 0;">
-                     <div class="text-center w-50">
-                          <div class="mb-4">
-                               <div class="spinner-grow text-warning" role="status" style="width: 3rem; height: 3rem;"></div>
-                          </div>
-                          <h4 class="fw-bold mb-2">Sedang Memproses...</h4>
-                          <p class="text-muted mb-4 small">Mohon jangan tutup halaman ini. Sistem sedang membuat tagihan secara bertahap.</p>
-                          
-                          <div class="progress rounded-pill bg-light shadow-inner" style="height: 12px;">
-                            <div class="progress-bar bg-warning rounded-pill progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="broadcastProgressBar"></div>
-                          </div>
-                          <div class="mt-2 d-flex justify-content-between text-muted x-small fw-bold">
-                              <span>PROGRESS</span>
-                              <span id="progressText">0%</span>
-                          </div>
-                     </div>
-                </div>
-                
-                <!-- Result & Success (Absolute) -->
-                <div id="broadcastResult" class="position-absolute top-0 start-0 w-100 h-100 bg-white d-flex flex-column justify-content-center align-items-center d-none" style="z-index: 51;">
-                    <!-- Injected via JS -->
-                </div>
+	                             <button type="button" class="tw-flex tw-min-h-14 tw-w-full tw-items-center tw-justify-center tw-rounded-2xl tw-bg-slate-950 tw-px-5 tw-py-3 tw-text-base tw-font-extrabold tw-text-white tw-shadow-2xl tw-shadow-slate-950/20 tw-transition hover:-tw-translate-y-0.5 hover:tw-bg-slate-800" id="btnBroadcastSubmit">
+	                                <span class="tw-flex tw-items-center tw-justify-center tw-gap-2">
+	                                    <i class="ri-flashlight-fill tw-text-amber-400"></i>
+	                                    <span>Proses Tagihan</span>
+	                                </span>
+	                             </button>
+                                 <div id="broadcastInlineStatus" class="d-none mt-3 rounded-4 border bg-white p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small fw-bold text-dark">Progress berjalan</span>
+                                        <span id="broadcastInlineStatusText" class="small fw-bold text-dark">0%</span>
+                                    </div>
+                                    <div class="progress rounded-pill bg-light" style="height: 12px;">
+                                        <div id="broadcastInlineStatusBar" class="progress-bar bg-warning progress-bar-striped progress-bar-animated rounded-pill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="width: 0%"></div>
+                                    </div>
+                                 </div>
+	                        </div>
+	                    </div>
+	                </div>
 
             </div> <!-- End Col-9 -->
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="tagihanProgressModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content tw-overflow-hidden tw-rounded-3xl tw-border-0 tw-bg-white tw-shadow-2xl">
+      <div class="tw-bg-slate-950 tw-px-6 tw-py-5">
+        <div class="tw-flex tw-items-center tw-gap-3">
+          <span class="tw-flex tw-h-11 tw-w-11 tw-items-center tw-justify-center tw-rounded-2xl tw-bg-amber-400 tw-text-slate-950">
+            <i class="ri-flashlight-fill tw-text-xl"></i>
+          </span>
+          <div>
+            <h5 class="tw-mb-1 tw-text-lg tw-font-extrabold tw-text-white">Progress Tagihan</h5>
+            <p class="tw-mb-0 tw-text-sm tw-text-slate-300" id="tagihanProgressSubtitle">Menyiapkan proses tagihan...</p>
+          </div>
+        </div>
+      </div>
+      <div class="tw-p-6">
+        <div class="tw-mb-4 tw-flex tw-items-end tw-justify-between tw-gap-4">
+          <div>
+            <p class="tw-mb-1 tw-text-xs tw-font-bold tw-uppercase tw-tracking-[0.16em] tw-text-slate-400">Sedang diproses</p>
+            <p class="tw-mb-0 tw-text-sm tw-font-semibold tw-text-slate-700" id="tagihanProgressCount">0 dari 0 pelanggan</p>
+          </div>
+          <span class="tw-text-4xl tw-font-black tw-text-slate-950" id="tagihanProgressPercent">0%</span>
+        </div>
+        <div class="tw-h-4 tw-overflow-hidden tw-rounded-full tw-bg-slate-100">
+          <div id="tagihanProgressBar" class="tw-h-full tw-w-0 tw-rounded-full tw-bg-amber-400 tw-transition-all tw-duration-300" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+        </div>
+        <p class="tw-mb-0 tw-mt-4 tw-text-sm tw-font-medium tw-text-slate-500" id="tagihanProgressNote">Mohon tunggu, jangan tutup halaman sampai proses selesai.</p>
       </div>
     </div>
   </div>
@@ -3933,29 +4610,29 @@ document.addEventListener("DOMContentLoaded", function () {
 /* Mode Card Styling */
 .mode-card {
     transition: all 0.2s ease;
-    border: 1px solid #e5e7eb;
 }
 .mode-card:hover {
-    border-color: #f59e0b; /* Warning color */
-    background-color: #fffbeb;
+    border-color: #cbd5e1;
+    background-color: #f8fafc;
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
 }
 .mode-card.active-mode {
-    border-color: #f59e0b;
-    background-color: #fffbeb;
-    box-shadow: 0 0 0 1px #f59e0b;
+    border-color: #0f172a;
+    background-color: #ffffff;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.10), 0 0 0 1px #0f172a;
 }
 .active-indicator {
     display: none;
     position: absolute;
-    top: 50%;
-    right: 15px;
-    transform: translateY(-50%);
-    width: 8px;
-    height: 8px;
+    top: 16px;
+    right: 16px;
+    width: 10px;
+    height: 10px;
     background: #f59e0b;
-    border-radius: 50%;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
 }
 .mode-card.active-mode .active-indicator { display: block; }
 </style>
@@ -3965,35 +4642,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- VARIABLES ---
     const modal = document.getElementById('modalMassTagihan');
     const bsModal = modal ? new bootstrap.Modal(modal) : null;
-    
+
     // UI Elements
     const modeInputs = document.querySelectorAll('input[name="broadcastMode"]');
     const labelAll = document.getElementById('labelModeAll');
     const labelManual = document.getElementById('labelModeManual');
-    
+    const broadcastMain = document.querySelector('#modalMassTagihan .broadcast-main');
+
     const sectionAll = document.getElementById('sectionAll');
     const sectionManual = document.getElementById('sectionManual');
     const countEl = document.getElementById('broadcastCount');
     const eligibleCountEl = document.getElementById('broadcastEligibleCount');
     const pendingCountEl = document.getElementById('broadcastPendingCount');
     const btnSubmit = document.getElementById('btnBroadcastSubmit');
-    const progressSection = document.getElementById('broadcastProgressSection');
-    const progressBar = document.getElementById('broadcastProgressBar');
-    const progressText = document.getElementById('progressText');
-    const resultEl = document.getElementById('broadcastResult');
-    
+    const inlineStatus = document.getElementById('broadcastInlineStatus');
+    const inlineStatusBar = document.getElementById('broadcastInlineStatusBar');
+    const inlineStatusText = document.getElementById('broadcastInlineStatusText');
+    const progressModalEl = document.getElementById('tagihanProgressModal');
+    const progressModal = progressModalEl ? new bootstrap.Modal(progressModalEl) : null;
+    const progressPercentEl = document.getElementById('tagihanProgressPercent');
+    const progressBarEl = document.getElementById('tagihanProgressBar');
+    const progressCountEl = document.getElementById('tagihanProgressCount');
+    const progressSubtitleEl = document.getElementById('tagihanProgressSubtitle');
+    const progressNoteEl = document.getElementById('tagihanProgressNote');
+    const tagihanListUrl = '{{ route("tagihan.get") }}';
+
     // Manual Selection Logic Items
     let manualPage = 1;
     let manualQuery = '';
-    let manualSelectedIds = new Set(); 
+    let manualSelectedIds = new Set();
     let isLoadingManual = false;
-    
+
     // Flatpickr Instances
     let broadcastStartPicker = null;
     let broadcastEndPicker = null;
 
     // Init Flatpickr
-    if(document.querySelector('#broadcastTanggalMulai')) {
+    if(window.flatpickr && document.querySelector('#broadcastTanggalMulai')) {
         broadcastStartPicker = flatpickr('#broadcastTanggalMulai', {
             mode: 'single',
             dateFormat: 'Y-m-d',
@@ -4005,7 +4690,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    if(document.querySelector('#broadcastTanggalBerakhir')) {
+    if(window.flatpickr && document.querySelector('#broadcastTanggalBerakhir')) {
         broadcastEndPicker = flatpickr('#broadcastTanggalBerakhir', {
             mode: 'single',
             dateFormat: 'Y-m-d',
@@ -4022,20 +4707,18 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.addEventListener('shown.bs.modal', function() {
             // Reset to defaults
             fetchBroadcastCount(); // Get All Count
-            
+
             // Date Initialization handled by Flatpickr below
             const today = new Date();
             if(broadcastStartPicker) broadcastStartPicker.setDate(today);
-            
-            // Reset UI
-            progressSection.classList.add('d-none');
-            resultEl.classList.add('d-none');
-            btnSubmit.disabled = false;
-            
+
+            if (btnSubmit) btnSubmit.disabled = false;
+            if (inlineStatus) inlineStatus.classList.add('d-none');
+
             // Default Mode: All
             document.querySelector('input[value="all"]').checked = true;
             updateModeUI('all');
-            
+
             // Load Manual Data (Init) if empty
             if (manualSelectedIds.size === 0) {
                  loadManualCustomers(true);
@@ -4050,20 +4733,52 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Fallback: clicking mode cards should always switch content,
+    // even if radio change event is blocked by other scripts/styles.
+    if (labelAll) {
+        labelAll.addEventListener('click', function() {
+            const radio = this.querySelector('input[name="broadcastMode"]');
+            if (radio) radio.checked = true;
+            updateModeUI('all');
+            fetchBroadcastCount();
+        });
+    }
+    if (labelManual) {
+        labelManual.addEventListener('click', function() {
+            const radio = this.querySelector('input[name="broadcastMode"]');
+            if (radio) radio.checked = true;
+            updateModeUI('manual');
+            loadManualCustomers(true);
+        });
+    }
+
     function updateModeUI(mode) {
+        if (broadcastMain) {
+            broadcastMain.scrollTop = 0;
+        }
+
         // Update Labels
         if (mode === 'all') {
             labelAll.classList.add('active-mode');
             labelManual.classList.remove('active-mode');
-            
+
             sectionAll.classList.remove('d-none');
             sectionManual.classList.add('d-none');
         } else {
             labelAll.classList.remove('active-mode');
             labelManual.classList.add('active-mode');
-            
+
             sectionAll.classList.add('d-none');
             sectionManual.classList.remove('d-none');
+        }
+
+        // Safety net: never allow both sections hidden (prevents blank white pane).
+        const allHidden = sectionAll.classList.contains('d-none');
+        const manualHidden = sectionManual.classList.contains('d-none');
+        if (allHidden && manualHidden) {
+            sectionAll.classList.remove('d-none');
+            labelAll.classList.add('active-mode');
+            labelManual.classList.remove('active-mode');
         }
     }
 
@@ -4072,6 +4787,10 @@ document.addEventListener('DOMContentLoaded', function() {
         countEl.innerHTML = '<span class="spinner-border spinner-border-sm text-warning"></span>';
         const countUrl = new URL('{{ route("tagihan.broadcast.count") }}', window.location.origin);
         countUrl.searchParams.set('_ts', String(Date.now()));
+        const selectedStart = document.getElementById('broadcastTanggalMulai')?.value;
+        if (selectedStart) {
+            countUrl.searchParams.set('tanggal_mulai', selectedStart);
+        }
 
         return fetch(countUrl.toString(), {
             cache: 'no-store',
@@ -4084,7 +4803,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.json())
             .then(data => {
                 countEl.textContent = data.count;
-                if (eligibleCountEl) eligibleCountEl.textContent = data.approve_count ?? data.eligible_count ?? data.count ?? 0;
+                if (eligibleCountEl) eligibleCountEl.textContent = data.processable_count ?? data.eligible_count ?? data.count ?? 0;
                 if (pendingCountEl) pendingCountEl.textContent = data.pending_status_count ?? 0;
                 return data;
             })
@@ -4113,7 +4832,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadManualCustomers(reset) {
         if (isLoadingManual) return;
         isLoadingManual = true;
-        
+
         if (reset) {
             manualPage = 1;
             document.getElementById('manualTableBody').innerHTML = '';
@@ -4125,19 +4844,20 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('manualLoading').classList.remove('d-none');
         btnLoadMore.classList.add('d-none');
 
-        const url = new URL('{{ route("pelanggan.search") }}');
+        const url = new URL('{{ route("pelanggan.search") }}', window.location.origin);
         url.searchParams.set('q', manualQuery);
         url.searchParams.set('page', manualPage);
         url.searchParams.set('filter_no_tagihan', 1);
+        url.searchParams.set('tanggal_mulai', document.getElementById('broadcastTanggalMulai')?.value || '');
 
         fetch(url)
             .then(res => res.json())
             .then(data => {
                 document.getElementById('manualLoading').classList.add('d-none');
                 isLoadingManual = false;
-                
+
                 const customers = data.results || [];
-                
+
                 if (reset && customers.length === 0) {
                     document.getElementById('manualEmpty').classList.remove('d-none');
                     return;
@@ -4199,6 +4919,56 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('manualSelectedCount').textContent = `${manualSelectedIds.size} Terpilih`;
     }
 
+    function setBroadcastProgress(processed, total, statusMessage = null) {
+        const safeTotal = Math.max(Number(total) || 0, 1);
+        const safeProcessed = Math.min(Math.max(Number(processed) || 0, 0), safeTotal);
+        const percent = Math.round((safeProcessed / safeTotal) * 100);
+
+        if (inlineStatusBar) {
+            inlineStatusBar.style.width = `${percent}%`;
+            inlineStatusBar.setAttribute('aria-valuenow', String(percent));
+        }
+        if (inlineStatusText) {
+            inlineStatusText.textContent = `${percent}% (${safeProcessed}/${safeTotal})`;
+        }
+
+        if (btnSubmit && btnSubmit.disabled) {
+            btnSubmit.innerHTML = `<span class="d-flex align-items-center justify-content-center gap-2"><span class="spinner-border spinner-border-sm"></span><span>Memproses ${percent}%</span></span>`;
+        }
+
+        if (progressPercentEl) progressPercentEl.textContent = `${percent}%`;
+        if (progressBarEl) {
+            progressBarEl.style.width = `${percent}%`;
+            progressBarEl.setAttribute('aria-valuenow', String(percent));
+        }
+        if (progressCountEl) {
+            progressCountEl.textContent = `${safeProcessed} dari ${safeTotal} pelanggan`;
+        }
+        if (statusMessage && progressNoteEl) {
+            progressNoteEl.textContent = statusMessage;
+        }
+    }
+
+    function showTagihanProgressModal(total) {
+        if (progressSubtitleEl) progressSubtitleEl.textContent = 'Tagihan sedang dibuat...';
+        if (progressNoteEl) progressNoteEl.textContent = 'Mohon tunggu, jangan tutup halaman sampai proses selesai.';
+        setBroadcastProgress(0, total);
+        if (bsModal) bsModal.hide();
+        setTimeout(() => {
+            if (progressModal) progressModal.show();
+        }, 180);
+    }
+
+    function finishTagihanProgressModal(successTotal, failedTotal, total) {
+        setBroadcastProgress(total, total);
+        if (progressSubtitleEl) progressSubtitleEl.textContent = 'Progress selesai 100%';
+        if (progressNoteEl) {
+            progressNoteEl.textContent = successTotal > 0
+                ? `Berhasil membuat ${successTotal} tagihan${failedTotal > 0 ? `, ${failedTotal} gagal diproses` : ''}. Halaman list tagihan akan dibuka dalam 5 detik.`
+                : 'Proses selesai, tetapi tidak ada tagihan yang berhasil dibuat.';
+        }
+    }
+
     // --- LOGIC: SUBMIT & BATCH PROCESSING ---
     btnSubmit.addEventListener('click', async function() {
         const mode = document.querySelector('input[name="broadcastMode"]:checked').value;
@@ -4209,7 +4979,7 @@ document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 icon: 'error',
                 title: 'Tanggal Belum Lengkap',
-                text: 'Harap isi Tanggal Mulai dan Jatuh Tempo.',
+                text: 'Harap isi Tanggal Tagihan dan Jatuh Tempo.',
                 confirmButtonColor: '#18181b'
             });
             return;
@@ -4219,7 +4989,7 @@ document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 icon: 'error',
                 title: 'Tanggal Tidak Valid',
-                text: 'Tanggal Jatuh Tempo harus sama atau setelah Tanggal Mulai.',
+                text: 'Tanggal Jatuh Tempo harus sama atau setelah Tanggal Tagihan.',
                 confirmButtonColor: '#18181b'
             });
             return;
@@ -4245,15 +5015,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Refresh angka real-time sebelum proses agar sesuai data approve terbaru
                 const latestCount = await fetchBroadcastCount();
-                const totalApprove = Number(
-                    (latestCount?.approve_count ?? countEl?.textContent ?? '0').toString().replace(/[^\d]/g, '')
-                ) || 0;
-                const res = await fetch('{{ route("tagihan.broadcast.ids") }}');
+                const idsUrl = new URL('{{ route("tagihan.broadcast.ids") }}', window.location.origin);
+                idsUrl.searchParams.set('tanggal_mulai', start);
+                const res = await fetch(idsUrl.toString(), { cache: 'no-store' });
                 const data = await res.json();
                 targetIds = data.ids || [];
-                
+
                 if (targetIds.length === 0) {
-                    Swal.fire('Info', 'Tidak ada pelanggan eligible untuk diproses.', 'info');
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Tidak Ada Tagihan Baru',
+                        text: 'Semua pelanggan approve sudah punya tagihan pada periode ini, belum punya paket, atau statusnya belum approve.',
+                        confirmButtonColor: '#18181b'
+                    });
                     btnSubmit.disabled = false;
                     btnSubmit.innerHTML = `<span class="d-flex align-items-center justify-content-center gap-2"><i class="ri-flashlight-fill text-warning"></i><span>Proses Tagihan</span></span>`;
                     return;
@@ -4270,7 +5044,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Confirmation (Using standard Swal but visually consistent)
         const result = await Swal.fire({
             title: 'Konfirmasi Proses',
-            html: `Total approve: <strong>${mode === 'all' ? (Number((countEl?.textContent || '0').replace(/[^\d]/g, '')) || 0) : targetIds.length}</strong><br>Yang akan diproses: <strong>${targetIds.length} pelanggan</strong>.<br><small class="text-muted">Sisanya biasanya sudah punya tagihan bulan ini atau belum memiliki paket.</small>`,
+            html: `Siap diproses: <strong>${mode === 'all' ? targetIds.length : targetIds.length}</strong> pelanggan.<br><small class="text-muted">Yang tidak masuk biasanya sudah punya tagihan pada periode ini, belum memiliki paket, atau belum approve.</small>`,
             icon: 'info',
             showCancelButton: true,
             confirmButtonColor: '#18181b', // Dark
@@ -4287,16 +5061,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // START BATCHING
-        progressSection.classList.remove('d-none');
-        
+        // Jangan sembunyikan section manual/all. Di beberapa HP, progress panel custom gagal render
+        // dan membuat modal terlihat putih kosong. Progress sekarang tampil inline + teks tombol.
+        if (broadcastMain) broadcastMain.scrollTop = 0;
+        btnSubmit.disabled = true;
+        if (inlineStatus) inlineStatus.classList.remove('d-none');
+
         let processed = 0;
         let successTotal = 0;
         let failedTotal = 0;
         const total = targetIds.length;
-        const batchSize = 25; 
-        
+        const isManualMode = mode === 'manual';
+        const batchSize = isManualMode ? 1 : 200;
+        showTagihanProgressModal(total);
+
         for (let i = 0; i < total; i += batchSize) {
             const chunk = targetIds.slice(i, i + batchSize);
+            const currentNumber = i + 1;
+            const endNumber = Math.min(i + chunk.length, total);
+
+            if (isManualMode) {
+                setBroadcastProgress(
+                    processed,
+                    total,
+                    `Membuat tagihan pelanggan ${currentNumber} dari ${total}. Setelah tagihan berhasil dibuat, notifikasi FCM/Webpushr langsung diproses.`
+                );
+            } else {
+                setBroadcastProgress(
+                    processed,
+                    total,
+                    `Membuat tagihan pelanggan ${currentNumber}-${endNumber} dari ${total}. Notifikasi broadcast diproses aman di background.`
+                );
+            }
+
             try {
                 const res = await fetch('{{ route("tagihan.broadcast.store") }}', {
                     method: 'POST',
@@ -4308,49 +5105,89 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify({
                         tanggal_mulai: start,
                         tanggal_berakhir: end,
+                        mode: mode,
                         pelanggan_ids: chunk
                     })
                 });
-                
+
                 const json = await res.json();
                 if (json.success) {
                     successTotal += (json.processed || 0);
                     failedTotal += (json.failed || 0);
+
+                    if (isManualMode) {
+                        const fcmCount = Number(json.fcm_notifications || 0);
+                        const webpushrCount = Number(json.webpushr_notifications || 0);
+                        const fcmDeliveryMode = json.fcm_delivery_mode || 'queue';
+                        const notificationText = fcmCount > 0
+                            ? (fcmDeliveryMode === 'sync'
+                                ? 'Notifikasi FCM sudah dikirim langsung.'
+                                : 'Notifikasi FCM sudah dikirim ke queue.')
+                            : (webpushrCount > 0
+                                ? 'Notifikasi Webpushr fallback sudah dikirim ke queue.'
+                                : 'Tidak ada token notifikasi untuk pelanggan ini.');
+
+                        setBroadcastProgress(
+                            Math.min(i + chunk.length, total),
+                            total,
+                            `Pelanggan ${currentNumber} selesai dibuat. ${notificationText} Melanjutkan pelanggan berikutnya...`
+                        );
+                    }
                 } else {
                     failedTotal += chunk.length;
+                    if (isManualMode) {
+                        setBroadcastProgress(
+                            Math.min(i + chunk.length, total),
+                            total,
+                            `Pelanggan ${currentNumber} gagal diproses. Melanjutkan pelanggan berikutnya...`
+                        );
+                    }
                 }
             } catch (err) {
                 console.error(err);
                 failedTotal += chunk.length;
+                if (isManualMode) {
+                    setBroadcastProgress(
+                        Math.min(i + chunk.length, total),
+                        total,
+                        `Pelanggan ${currentNumber} gagal karena koneksi/server. Melanjutkan pelanggan berikutnya...`
+                    );
+                }
             }
 
-            processed = Math.min(i + batchSize, total);
-            // Update UI
-            const percent = Math.round((processed / total) * 100);
-            progressBar.style.width = `${percent}%`;
-            progressText.textContent = `${percent}% (${processed}/${total})`;
+            processed = Math.min(i + chunk.length, total);
+            setBroadcastProgress(
+                processed,
+                total,
+                isManualMode
+                    ? `Progress manual: ${processed} dari ${total} pelanggan sudah diproses.`
+                    : `Progress broadcast: ${processed} dari ${total} pelanggan sudah diproses.`
+            );
         }
 
         // Finish
-        // Show Success in resultEl
-        progressSection.classList.add('d-none');
-        resultEl.classList.remove('d-none');
-        
-        resultEl.innerHTML = `
-            <div class="text-center animate__animated animate__zoomIn">
-                <div class="mb-3 text-success">
-                    <i class="ri-checkbox-circle-fill" style="font-size: 5rem;"></i>
-                </div>
-                <h2 class="fw-bold text-dark mb-2">Selesai!</h2>
-                <p class="text-muted mb-4">
-                    Berhasil memproses <strong>${successTotal}</strong> tagihan.<br>
-                    <span class="text-danger small">${failedTotal > 0 ? failedTotal + ' gagal.' : ''}</span>
-                </p>
-                <button onclick="window.location.reload()" class="btn btn-dark btn-lg rounded-pill px-5 shadow-lg">
-                    <i class="ri-refresh-line me-2"></i>Refresh Halaman
-                </button>
-            </div>
-        `; 
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `<span class="d-flex align-items-center justify-content-center gap-2"><i class="ri-flashlight-fill text-warning"></i><span>Proses Tagihan</span></span>`;
+        finishTagihanProgressModal(successTotal, failedTotal, total);
+
+        if (successTotal > 0) {
+            sessionStorage.setItem(
+                'tagihan_success_toast',
+                `Proses buat berhasil. ${successTotal} tagihan berhasil dibuat${failedTotal > 0 ? `, ${failedTotal} gagal diproses` : ''}.`
+            );
+            setTimeout(() => {
+                window.location.href = tagihanListUrl;
+            }, 5000);
+        } else {
+            if (progressModal) progressModal.hide();
+            showBottomToast('Broadcast selesai, tetapi tidak ada tagihan yang berhasil dibuat.', 'error');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Proses Selesai',
+                html: `Tidak ada tagihan yang berhasil dibuat.<br>${failedTotal > 0 ? `<span class="text-danger">${failedTotal} gagal diproses.</span>` : ''}`,
+                confirmButtonColor: '#18181b'
+            });
+        }
     });
 
     // Export Belum Lunas Handler
@@ -4358,17 +5195,17 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         const search = $('input[name="search"]').val();
         const periode = $('input[name="periode"]').val();
-        
+
         let url = '{{ route("tagihan.export.belumlunas") }}';
         const params = new URLSearchParams();
-        
+
         if (search) params.append('search', search);
         if (periode) params.append('periode', periode);
-        
+
         if (params.toString()) {
             url += '?' + params.toString();
         }
-        
+
         window.location.href = url;
     });
 });

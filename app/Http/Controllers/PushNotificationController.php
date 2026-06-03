@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Tagihan;
 use App\Models\Pelanggan;
+use App\Models\TagihanNotificationLog;
+use App\Jobs\SendBroadcastInfoPushJob;
+use App\Jobs\SendFcmTagihanPushJob;
 use App\Jobs\SendTagihanPushJob;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use App\Support\WilayahContext;
 
 class PushNotificationController extends Controller
 {
@@ -19,16 +24,18 @@ class PushNotificationController extends Controller
             $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
 
             $query = Tagihan::with(['pelanggan', 'paket'])
-                ->whereRaw('LOWER(status_pembayaran) = ?', ['belum bayar'])
-                ->orderBy('created_at', 'desc');
+                ->select('tagihans.*')
+                ->join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+                ->where('tagihans.status_pembayaran', 'belum bayar')
+                ->orderBy('tagihans.created_at', 'desc');
 
             // Search filter
             if ($request->filled('search')) {
                 $search = trim($request->search);
-                $query->whereHas('pelanggan', function ($q) use ($search) {
-                    $q->where('nama_lengkap', 'like', "%{$search}%")
-                        ->orWhere('nomer_id', 'like', "%{$search}%")
-                        ->orWhere('no_whatsapp', 'like', "%{$search}%");
+                $query->where(function ($q) use ($search) {
+                    $q->where('pelanggans.nama_lengkap', 'like', "%{$search}%")
+                        ->orWhere('pelanggans.nomer_id', 'like', "%{$search}%")
+                        ->orWhere('pelanggans.no_whatsapp', 'like', "%{$search}%");
                 });
             }
 
@@ -47,12 +54,14 @@ class PushNotificationController extends Controller
                     'tanggal_mulai' => $item->tanggal_mulai ?? null,
                     'tanggal_berakhir' => $item->tanggal_berakhir ?? null,
                     'status_pembayaran' => $item->status_pembayaran ?? 'belum bayar',
+                    'status_label' => ucwords(str_replace('_', ' ', $item->status_pembayaran ?? 'belum bayar')),
                     'catatan' => $item->catatan ?? '-',
                 ];
             });
 
             // Get total count for "send to all" feature
-            $totalTagihan = Tagihan::whereRaw('LOWER(status_pembayaran) = ?', ['belum bayar'])
+            $totalTagihan = Tagihan::join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+                ->where('tagihans.status_pembayaran', 'belum bayar')
                 ->count();
 
             return view('content.apps.PushNotification.push', compact('tagihans', 'totalTagihan'));
@@ -71,8 +80,9 @@ class PushNotificationController extends Controller
             $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
             $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
 
-            $ids = Tagihan::whereRaw('LOWER(status_pembayaran) = ?', ['belum bayar'])
-                ->pluck('id')
+            $ids = Tagihan::join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+                ->where('tagihans.status_pembayaran', 'belum bayar')
+                ->pluck('tagihans.id')
                 ->toArray();
 
             return response()->json([
@@ -93,17 +103,18 @@ class PushNotificationController extends Controller
 
     /**
      * Get outstanding tagihan IDs for broadcast (AJAX endpoint)
-     * Outstanding = belum bayar dan sudah lewat tanggal berakhir.
+     * Outstanding = belum bayar dan sudah lewat bulan berjalan.
      */
     public function getOutstandingTagihanIds()
     {
         try {
             $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
 
-            $ids = Tagihan::where('status_pembayaran', 'belum bayar')
+            $ids = Tagihan::join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+                ->where('tagihans.status_pembayaran', 'belum bayar')
                 // Outstanding = bulan sebelum bulan ini (exclude bulan berjalan)
-                ->whereDate('tanggal_mulai', '<', $startOfMonth)
-                ->pluck('id')
+                ->whereDate('tagihans.tanggal_mulai', '<', $startOfMonth)
+                ->pluck('tagihans.id')
                 ->toArray();
 
             return response()->json([
@@ -128,9 +139,11 @@ class PushNotificationController extends Controller
     public function broadcast(Request $request)
     {
         try {
-            $tagihanIds = $request->input('tagihan_ids', []);
-            $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
-            $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
+            $validated = $request->validate([
+                'tagihan_ids' => ['required', 'array', 'min:1'],
+                'tagihan_ids.*' => ['string', 'distinct'],
+            ]);
+            $tagihanIds = $validated['tagihan_ids'];
 
             Log::info('[push_notification] broadcast requested', [
                 'requested_total' => count($tagihanIds),
@@ -145,40 +158,110 @@ class PushNotificationController extends Controller
                 ]);
             }
 
-            // Guard: hanya tagihan yang belum bayar
+            // Guard: hanya tagihan yang masih berstatus belum bayar.
             $allowedTagihanIds = Tagihan::query()
-                ->whereIn('id', $tagihanIds)
-                ->whereRaw('LOWER(status_pembayaran) = ?', ['belum bayar'])
-                ->pluck('id')
+                ->join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+                ->whereIn('tagihans.id', $tagihanIds)
+                ->where('tagihans.status_pembayaran', 'belum bayar')
+                ->pluck('tagihans.id')
                 ->toArray();
 
             if (empty($allowedTagihanIds)) {
                 return response()->json([
                     'success' => false,
                     'queued' => false,
-                    'message' => 'Tidak ada tagihan bulan ini yang valid untuk dikirim',
+                    'message' => 'Tidak ada tagihan belum bayar yang valid untuk dikirim',
                 ]);
             }
 
-            $dispatchResult = $this->dispatchTagihanPush($allowedTagihanIds, 'broadcast');
+            $batchId = (string) Str::uuid();
+            $this->createTagihanPushLogs($batchId, $allowedTagihanIds);
+            $dispatchResult = $this->dispatchTagihanPush($allowedTagihanIds, 'broadcast', $batchId);
+
+            if (!($dispatchResult['accepted'] ?? true)) {
+                $this->markPendingTagihanPushLogsFailed($batchId, $dispatchResult['message']);
+
+                return response()->json([
+                    'success' => false,
+                    'queued' => false,
+                    'mode' => $dispatchResult['mode'],
+                    'batch_id' => $batchId,
+                    'message' => $dispatchResult['message'],
+                    'total' => count($allowedTagihanIds),
+                ], 422);
+            }
 
             return response()->json([
                 'success' => true,
                 'queued' => $dispatchResult['queued'],
                 'mode' => $dispatchResult['mode'],
+                'batch_id' => $batchId,
+                'progress_url' => route('push.notification.progress', $batchId),
                 'message' => $dispatchResult['queued']
                     ? 'Notifikasi sedang dikirim di background melalui queue'
                     : 'Notifikasi sedang diproses langsung (sync fallback karena queue tidak siap)',
                 'total' => count($allowedTagihanIds),
             ]);
 
-        } catch (\Exception $e) {
-            Log::error('Broadcast error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'queued' => false,
-                'message' => 'Terjadi kesalahan saat mengirim notifikasi'
+        } catch (\Throwable $e) {
+            return $this->pushErrorResponse('Broadcast error', $e);
+        }
+    }
+
+    /**
+     * Kirim reminder tagihan ke semua pelanggan approve yang masih belum bayar.
+     * Endpoint ini tidak mengirim puluhan ribu ID ke browser.
+     */
+    public function broadcastAll()
+    {
+        try {
+            Log::info('[push_notification] broadcast all requested', [
+                'queue_connection' => config('queue.default'),
             ]);
+
+            $allowedTagihanIds = Tagihan::query()
+                ->select('tagihans.id')
+                ->join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+                ->where('tagihans.status_pembayaran', 'belum bayar')
+                ->pluck('tagihans.id')
+                ->toArray();
+
+            if (empty($allowedTagihanIds)) {
+                return response()->json([
+                    'success' => false,
+                    'queued' => false,
+                    'message' => 'Tidak ada tagihan belum bayar yang valid untuk dikirim',
+                ]);
+            }
+
+            $batchId = (string) Str::uuid();
+            $this->createTagihanPushLogs($batchId, $allowedTagihanIds);
+            $dispatchResult = $this->dispatchTagihanPush($allowedTagihanIds, 'broadcast_all', $batchId);
+
+            if (!($dispatchResult['accepted'] ?? true)) {
+                $this->markPendingTagihanPushLogsFailed($batchId, $dispatchResult['message']);
+
+                return response()->json([
+                    'success' => false,
+                    'queued' => false,
+                    'mode' => $dispatchResult['mode'],
+                    'batch_id' => $batchId,
+                    'message' => $dispatchResult['message'],
+                    'total' => count($allowedTagihanIds),
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'queued' => $dispatchResult['queued'],
+                'mode' => $dispatchResult['mode'],
+                'batch_id' => $batchId,
+                'progress_url' => route('push.notification.progress', $batchId),
+                'message' => 'Reminder tagihan sedang dikirim aman melalui queue',
+                'total' => count($allowedTagihanIds),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->pushErrorResponse('Broadcast all error', $e);
         }
     }
 
@@ -188,7 +271,11 @@ class PushNotificationController extends Controller
     public function broadcastOutstanding(Request $request)
     {
         try {
-            $tagihanIds = $request->input('tagihan_ids', []);
+            $validated = $request->validate([
+                'tagihan_ids' => ['required', 'array', 'min:1'],
+                'tagihan_ids.*' => ['string', 'distinct'],
+            ]);
+            $tagihanIds = $validated['tagihan_ids'];
             $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
 
             Log::info('[push_notification] broadcast outstanding requested', [
@@ -205,10 +292,11 @@ class PushNotificationController extends Controller
             }
 
             $allowedTagihanIds = Tagihan::query()
-                ->whereIn('id', $tagihanIds)
-                ->where('status_pembayaran', 'belum bayar')
-                ->whereDate('tanggal_mulai', '<', $startOfMonth)
-                ->pluck('id')
+                ->join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+                ->whereIn('tagihans.id', $tagihanIds)
+                ->where('tagihans.status_pembayaran', 'belum bayar')
+                ->whereDate('tagihans.tanggal_mulai', '<', $startOfMonth)
+                ->pluck('tagihans.id')
                 ->toArray();
 
             if (empty($allowedTagihanIds)) {
@@ -219,24 +307,36 @@ class PushNotificationController extends Controller
                 ]);
             }
 
-            $dispatchResult = $this->dispatchTagihanPush($allowedTagihanIds, 'broadcast_outstanding');
+            $batchId = (string) Str::uuid();
+            $this->createTagihanPushLogs($batchId, $allowedTagihanIds);
+            $dispatchResult = $this->dispatchTagihanPush($allowedTagihanIds, 'broadcast_outstanding', $batchId);
+
+            if (!($dispatchResult['accepted'] ?? true)) {
+                $this->markPendingTagihanPushLogsFailed($batchId, $dispatchResult['message']);
+
+                return response()->json([
+                    'success' => false,
+                    'queued' => false,
+                    'mode' => $dispatchResult['mode'],
+                    'batch_id' => $batchId,
+                    'message' => $dispatchResult['message'],
+                    'total' => count($allowedTagihanIds),
+                ], 422);
+            }
 
             return response()->json([
                 'success' => true,
                 'queued' => $dispatchResult['queued'],
                 'mode' => $dispatchResult['mode'],
+                'batch_id' => $batchId,
+                'progress_url' => route('push.notification.progress', $batchId),
                 'message' => $dispatchResult['queued']
                     ? 'Notifikasi outstanding sedang dikirim di background melalui queue'
                     : 'Notifikasi outstanding sedang diproses langsung (sync fallback karena queue tidak siap)',
                 'total' => count($allowedTagihanIds),
             ]);
-        } catch (\Exception $e) {
-            Log::error('Broadcast outstanding error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'queued' => false,
-                'message' => 'Terjadi kesalahan saat mengirim notifikasi outstanding'
-            ]);
+        } catch (\Throwable $e) {
+            return $this->pushErrorResponse('Broadcast outstanding error', $e, 'Terjadi kesalahan saat mengirim notifikasi outstanding');
         }
     }
 
@@ -246,7 +346,10 @@ class PushNotificationController extends Controller
     public function broadcastInfo(Request $request)
     {
         try {
-            $message = $request->input('message', '');
+            $validated = $request->validate([
+                'message' => ['required', 'string', 'min:10', 'max:500'],
+            ]);
+            $message = trim($validated['message']);
 
             Log::info('[push_notification] broadcast info requested', [
                 'message_length' => mb_strlen((string) $message),
@@ -261,119 +364,48 @@ class PushNotificationController extends Controller
                 ]);
             }
 
-            $pelanggans = Pelanggan::whereNotNull('webpushr_sid')
-                ->where('webpushr_sid', '!=', '')
-                ->get();
+            $targetTotal = Pelanggan::where(function ($query) {
+                    $query->whereRaw("TRIM(COALESCE(fcm_token, '')) != ''")
+                        ->orWhereRaw("TRIM(COALESCE(webpushr_sid, '')) != ''");
+                })
+                ->tap(fn ($query) => WilayahContext::scopePelanggan($query))
+                ->where('status', 'approve')
+                ->count();
 
-            if ($pelanggans->isEmpty()) {
+            if ($targetTotal === 0) {
                 return response()->json([
                     'success' => true,
+                    'queued' => false,
                     'sent' => 0,
                     'ignored' => 0,
-                    'message' => 'Tidak ada pelanggan dengan SID yang valid'
+                    'message' => 'Tidak ada pelanggan dengan token notifikasi yang valid'
                 ]);
             }
 
-            $sentCount = 0;
-            $failedCount = 0;
-
-            foreach ($pelanggans as $pelanggan) {
-                try {
-                    $result = $this->sendWebpushrNotification([
-                        'title' => 'Info Penting',
-                        'message' => $message,
-                        'target_url' => url('/dashboard/customer/tagihan/home'),
-                        'sid' => $pelanggan->webpushr_sid,
-                    ]);
-
-                    if ($result['success']) {
-                        $sentCount++;
-                    } else {
-                        $failedCount++;
-                    }
-
-                } catch (\Exception $e) {
-                    $failedCount++;
-                    Log::warning('[push_notification] broadcast info failed per pelanggan', [
-                        'pelanggan_id' => $pelanggan->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                    continue;
-                }
+            $queueConnection = (string) config('queue.default', 'database');
+            $jobsTable = (string) config('queue.connections.database.table', 'jobs');
+            if ($queueConnection === 'sync' || ($queueConnection === 'database' && !Schema::hasTable($jobsTable))) {
+                return response()->json([
+                    'success' => false,
+                    'queued' => false,
+                    'message' => 'Queue belum aman untuk broadcast info. Gunakan database/redis queue dan jalankan queue worker.',
+                    'total' => $targetTotal,
+                ], 422);
             }
 
-            Log::info('[push_notification] broadcast info finished', [
-                'total' => $pelanggans->count(),
-                'sent' => $sentCount,
-                'ignored' => $failedCount,
-            ]);
+            SendBroadcastInfoPushJob::dispatch($message);
 
             return response()->json([
                 'success' => true,
-                'sent' => $sentCount,
-                'ignored' => $failedCount,
-                'total' => $pelanggans->count(),
-                'message' => $sentCount > 0
-                    ? "Berhasil mengirim {$sentCount} notifikasi info"
-                    : 'Tidak ada notifikasi yang terkirim'
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Broadcast info error: ' . $e->getMessage());
-            return response()->json([
-                'success' => true,
+                'queued' => true,
                 'sent' => 0,
                 'ignored' => 0,
-                'message' => 'Terjadi kesalahan saat mengirim notifikasi'
+                'total' => $targetTotal,
+                'message' => "Broadcast info untuk {$targetTotal} pelanggan diproses di background"
             ]);
-        }
-    }
 
-    /**
-     * Helper function untuk mengirim notifikasi via WebPushr API
-     */
-    private function sendWebpushrNotification($data)
-    {
-        try {
-            $ch = curl_init('https://api.webpushr.com/v1/notification/send/sid');
-
-            $payload = [
-                'title' => $data['title'] ?? 'Notifikasi',
-                'message' => $data['message'] ?? '',
-                'target_url' => $data['target_url'] ?? url('/'),
-                'sid' => $data['sid'],
-            ];
-
-            $headers = [
-                'Content-Type: application/json',
-                'webpushrKey: ' . env('WEBPUSHR_KEY', '2ee12b373a17d9ba5f44683cb42d4279'),
-                'webpushrAuthToken: ' . env('WEBPUSHR_TOKEN', '116294'),
-            ];
-
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
-            curl_close($ch);
-
-            $responseData = json_decode($response, true);
-
-            if ($httpCode == 200 && !empty($response)) {
-                return ['success' => true, 'response' => $responseData];
-            } else {
-                return ['success' => false, 'error' => $curlError ?: 'HTTP Code: ' . $httpCode];
-            }
-
-        } catch (\Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
+        } catch (\Throwable $e) {
+            return $this->pushErrorResponse('Broadcast info error', $e, 'Terjadi kesalahan saat mengirim notifikasi');
         }
     }
 
@@ -381,22 +413,69 @@ class PushNotificationController extends Controller
      * Dispatch job push dengan fallback sync jika queue database belum siap.
      *
      * @param array<int|string> $allowedTagihanIds
-     * @return array{queued:bool,mode:string}
+     * @return array{queued:bool,mode:string,accepted?:bool,message?:string}
      */
-    private function dispatchTagihanPush(array $allowedTagihanIds, string $source): array
+    private function dispatchTagihanPush(array $allowedTagihanIds, string $source, string $batchId): array
     {
         $queueConnection = (string) config('queue.default', 'database');
         $jobsTable = (string) config('queue.connections.database.table', 'jobs');
+        $syncFallbackLimit = max(1, (int) env('PUSH_SYNC_FALLBACK_LIMIT', 500));
+        $fcmJobChunkSize = max(1, (int) env('FCM_TAGIHAN_JOB_CHUNK_SIZE', 2500));
+        $webpushrJobChunkSize = max(1, (int) env('WEBPUSHR_TAGIHAN_JOB_CHUNK_SIZE', 2500));
 
         try {
+            if ($queueConnection === 'sync') {
+                if (count($allowedTagihanIds) > $syncFallbackLimit) {
+                    Log::warning('[push_notification] sync queue connection, large broadcast rejected', [
+                        'source' => $source,
+                        'total' => count($allowedTagihanIds),
+                        'sync_fallback_limit' => $syncFallbackLimit,
+                    ]);
+
+                    return [
+                        'queued' => false,
+                        'mode' => 'sync_queue_rejected',
+                        'accepted' => false,
+                        'message' => 'QUEUE_CONNECTION=sync tidak aman untuk broadcast besar. Gunakan database/redis queue dan jalankan queue worker terlebih dahulu.',
+                    ];
+                }
+
+                Log::warning('[push_notification] sync queue connection, processing small broadcast inline', [
+                    'source' => $source,
+                    'total' => count($allowedTagihanIds),
+                ]);
+
+                SendFcmTagihanPushJob::dispatchSync($allowedTagihanIds, $batchId);
+                SendTagihanPushJob::dispatchSync($allowedTagihanIds, $batchId);
+
+                return ['queued' => false, 'mode' => 'sync_queue_inline'];
+            }
+
             if ($queueConnection === 'database' && !Schema::hasTable($jobsTable)) {
+                if (count($allowedTagihanIds) > $syncFallbackLimit) {
+                    Log::warning('[push_notification] queue jobs table missing, large broadcast rejected', [
+                        'source' => $source,
+                        'jobs_table' => $jobsTable,
+                        'total' => count($allowedTagihanIds),
+                        'sync_fallback_limit' => $syncFallbackLimit,
+                    ]);
+
+                    return [
+                        'queued' => false,
+                        'mode' => 'queue_missing',
+                        'accepted' => false,
+                        'message' => 'Queue belum siap untuk broadcast besar. Jalankan migration jobs dan queue worker terlebih dahulu.',
+                    ];
+                }
+
                 Log::warning('[push_notification] queue jobs table missing, fallback to sync', [
                     'source' => $source,
                     'jobs_table' => $jobsTable,
                     'total' => count($allowedTagihanIds),
                 ]);
 
-                SendTagihanPushJob::dispatchSync($allowedTagihanIds);
+                SendFcmTagihanPushJob::dispatchSync($allowedTagihanIds, $batchId);
+                SendTagihanPushJob::dispatchSync($allowedTagihanIds, $batchId);
 
                 Log::info('[push_notification] sync fallback finished', [
                     'source' => $source,
@@ -406,11 +485,21 @@ class PushNotificationController extends Controller
                 return ['queued' => false, 'mode' => 'sync_fallback'];
             }
 
-            SendTagihanPushJob::dispatch($allowedTagihanIds);
+            foreach (array_chunk($allowedTagihanIds, $fcmJobChunkSize) as $tagihanIdChunk) {
+                SendFcmTagihanPushJob::dispatch($tagihanIdChunk, $batchId);
+            }
+
+            foreach (array_chunk($allowedTagihanIds, $webpushrJobChunkSize) as $tagihanIdChunk) {
+                SendTagihanPushJob::dispatch($tagihanIdChunk, $batchId);
+            }
 
             Log::info('[push_notification] queued successfully', [
                 'source' => $source,
                 'total' => count($allowedTagihanIds),
+                'fcm_job_chunk_size' => $fcmJobChunkSize,
+                'fcm_job_count' => (int) ceil(count($allowedTagihanIds) / $fcmJobChunkSize),
+                'webpushr_job_chunk_size' => $webpushrJobChunkSize,
+                'webpushr_job_count' => (int) ceil(count($allowedTagihanIds) / $webpushrJobChunkSize),
                 'queue_connection' => $queueConnection,
             ]);
 
@@ -422,6 +511,107 @@ class PushNotificationController extends Controller
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * @param array<int|string> $tagihanIds
+     */
+    private function createTagihanPushLogs(string $batchId, array $tagihanIds): void
+    {
+        $now = now();
+
+        Tagihan::query()
+            ->select('tagihans.*')
+            ->join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+            ->whereIn('tagihans.id', $tagihanIds)
+            ->where('tagihans.status_pembayaran', 'belum bayar')
+            ->with(['pelanggan:id,nama_lengkap,nomer_id,fcm_token,webpushr_sid'])
+            ->chunkById(500, function ($tagihans) use ($batchId, $now): void {
+                $rows = [];
+
+                foreach ($tagihans as $tagihan) {
+                    $pelanggan = $tagihan->pelanggan;
+                    $fcmToken = trim((string) ($pelanggan?->fcm_token ?? ''));
+                    $webpushrSid = trim((string) ($pelanggan?->webpushr_sid ?? ''));
+                    $provider = $fcmToken !== '' ? 'firebase' : ($webpushrSid !== '' ? 'webpushr' : null);
+
+                    $rows[] = [
+                        'id' => (string) Str::uuid(),
+                        'batch_id' => $batchId,
+                        'tagihan_id' => $tagihan->id,
+                        'pelanggan_id' => $pelanggan?->id,
+                        'pelanggan_nomer_id' => $pelanggan?->nomer_id,
+                        'pelanggan_nama' => $pelanggan?->nama_lengkap,
+                        'provider' => $provider,
+                        'status' => $provider ? 'pending' : 'skipped',
+                        'message' => $provider ? null : 'Token notifikasi pelanggan kosong.',
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+
+                if ($rows !== []) {
+                    TagihanNotificationLog::insert($rows);
+                }
+            }, 'tagihans.id', 'id');
+    }
+
+    private function markPendingTagihanPushLogsFailed(string $batchId, string $message): void
+    {
+        TagihanNotificationLog::query()
+            ->where('batch_id', $batchId)
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'failed',
+                'message' => $message,
+                'updated_at' => now(),
+            ]);
+    }
+
+    public function broadcastProgress(string $batchId)
+    {
+        $baseQuery = TagihanNotificationLog::query()->where('batch_id', $batchId);
+
+        $total = (clone $baseQuery)->count();
+        if ($total === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Log broadcast tidak ditemukan.',
+            ], 404);
+        }
+
+        $counts = [
+            'total' => $total,
+            'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
+            'sent' => (clone $baseQuery)->where('status', 'sent')->count(),
+            'failed' => (clone $baseQuery)->where('status', 'failed')->count(),
+            'skipped' => (clone $baseQuery)->where('status', 'skipped')->count(),
+        ];
+        $processed = $counts['sent'] + $counts['failed'] + $counts['skipped'];
+        $counts['processed'] = $processed;
+        $counts['percent'] = $counts['total'] > 0 ? (int) floor(($processed / $counts['total']) * 100) : 0;
+        $counts['finished'] = $counts['pending'] === 0;
+
+        $logs = (clone $baseQuery)
+            ->orderByRaw("CASE status WHEN 'pending' THEN 1 WHEN 'failed' THEN 2 WHEN 'skipped' THEN 3 WHEN 'sent' THEN 4 ELSE 5 END")
+            ->orderBy('updated_at', 'desc')
+            ->limit(200)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'batch_id' => $batchId,
+            'counts' => $counts,
+            'items' => $logs->map(fn(TagihanNotificationLog $log): array => [
+                'tagihan_id' => $log->tagihan_id,
+                'nama' => $log->pelanggan_nama ?: '-',
+                'nomer_id' => $log->pelanggan_nomer_id ?: '-',
+                'provider' => $log->provider ?: '-',
+                'status' => $log->status,
+                'message' => $log->message,
+                'sent_at' => optional($log->sent_at)->format('Y-m-d H:i:s'),
+            ])->values(),
+        ]);
     }
 
     /**
@@ -460,10 +650,10 @@ class PushNotificationController extends Controller
             }
 
             return response()->json([
-                'has_notification'  => true,
-                'total_tagihan'     => $tagihans->count(),
-                'tunggakan_count'   => $tunggakanCount,
-                'bulan_tunggakan'   => $bulanTunggakan,
+                'has_notification' => true,
+                'total_tagihan' => $tagihans->count(),
+                'tunggakan_count' => $tunggakanCount,
+                'bulan_tunggakan' => $bulanTunggakan,
             ]);
 
         } catch (\Exception $e) {
@@ -536,5 +726,20 @@ class PushNotificationController extends Controller
             Log::error('Check broadcast info error: ' . $e->getMessage());
             return response()->json(['has_info' => false, 'info' => null]);
         }
+    }
+
+    private function pushErrorResponse(string $context, \Throwable $e, string $message = 'Terjadi kesalahan saat mengirim notifikasi')
+    {
+        Log::error($context . ': ' . $e->getMessage(), [
+            'exception' => get_class($e),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'queued' => false,
+            'message' => $message,
+        ], 500);
     }
 }

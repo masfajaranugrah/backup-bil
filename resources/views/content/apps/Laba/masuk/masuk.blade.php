@@ -269,6 +269,21 @@ body {
   width: 60px;
 }
 
+.table-modern thead th:first-child {
+  cursor: default !important;
+  background-image: none !important;
+}
+
+.table-modern thead th:first-child::before,
+.table-modern thead th:first-child::after,
+.table-modern.dataTable thead > tr > th:first-child::before,
+.table-modern.dataTable thead > tr > th:first-child::after,
+.table-modern.dataTable thead > tr > td:first-child::before,
+.table-modern.dataTable thead > tr > td:first-child::after {
+  content: none !important;
+  display: none !important;
+}
+
 /* ========== BADGES - SHADCN STYLE ========== */
 .badge {
   border-radius: 9999px !important;
@@ -317,18 +332,191 @@ body {
 
 .pagination .page-item .page-link {
   border-radius: 50% !important;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  display: flex;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  flex: 0 0 32px;
+  padding: 0 !important;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid #e4e4e7;
   color: #18181b;
   font-weight: 600;
   background-color: #fff;
-  margin: 0 4px;
+  margin: 0 2px;
   transition: all 0.3s ease;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.pagination-wrapper .mui-pagination .page-link {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  flex: 0 0 32px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-wrapper nav .pagination.mui-pagination .page-item,
+.pagination-wrapper nav .pagination.mui-pagination .page-link {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  flex: 0 0 32px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  line-height: 1 !important;
+  box-sizing: border-box;
+}
+
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: #18181b;
+}
+
+.table-modern.is-dense th,
+.table-modern.is-dense td {
+  padding: 0.55rem 0.85rem !important;
+}
+
+.income-check {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 5px;
+  background: #ffffff;
+  cursor: pointer;
+  position: relative;
+  display: block;
+  margin: 0 auto;
+  transition: all 0.2s;
+}
+
+.income-check:hover {
+  border-color: #18181b;
+}
+
+.income-check:checked {
+  background: #18181b;
+  border-color: #18181b;
+}
+
+.income-check:checked::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 7px;
+  width: 6px;
+  height: 11px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.selection-toolbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 1rem;
+  padding: 0.9rem 1.2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.selection-toolbar.active {
+  display: flex;
+}
+
+.selection-toolbar .selected-text {
+  color: #18181b;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.selection-toolbar .toolbar-delete-btn {
+  border: 0;
+  background: #fee2e2;
+  color: #dc2626;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.selection-toolbar .toolbar-delete-btn:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+.income-snackbar {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  z-index: 12000;
+  min-width: 420px;
+  max-width: min(720px, calc(100vw - 48px));
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.4rem;
+  border-radius: 22px;
+  background: #111827;
+  color: #ffffff;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.28);
+  transform: translateY(18px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+
+.income-snackbar.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.income-snackbar i {
+  color: #86efac;
+  font-size: 1.35rem;
+}
+
+.income-snackbar span {
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+@media (max-width: 576px) {
+  .income-snackbar {
+    right: 16px;
+    bottom: 16px;
+    min-width: 0;
+    width: calc(100vw - 32px);
+    border-radius: 18px;
+  }
 }
 
 .pagination .page-item .page-link:hover {
@@ -627,6 +815,46 @@ nav[role="navigation"] > div > p {
 .card {
   animation: fadeIn 0.3s ease-out;
 }
+
+.card .pagination-wrapper .pagination.mui-pagination {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.75rem !important;
+  margin: 0 !important;
+}
+
+.card .pagination-wrapper .pagination.mui-pagination .page-item {
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  flex: 0 0 38px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+}
+
+.card .pagination-wrapper .pagination.mui-pagination .page-link,
+.card .pagination-wrapper .pagination.mui-pagination .page-link.page-nav-icon {
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  aspect-ratio: 1 / 1 !important;
+  flex: 0 0 38px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
 </style>
 @endsection
 
@@ -644,6 +872,33 @@ nav[role="navigation"] > div > p {
 @section('page-script')
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    function showIncomeSnackbar(message) {
+        if (!message) return;
+        const existing = document.querySelector('.income-snackbar');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'income-snackbar';
+        toast.innerHTML = `<i class="ri-checkbox-circle-line"></i><span>${message}</span>`;
+        document.body.appendChild(toast);
+        toast.offsetHeight;
+        setTimeout(() => toast.classList.add('show'), 50);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3200);
+    }
+
+    @if(session('success'))
+      showIncomeSnackbar(@json(session('success')));
+    @endif
+
+    const pendingIncomeSnackbar = localStorage.getItem('income_snackbar_success');
+    if (pendingIncomeSnackbar) {
+        localStorage.removeItem('income_snackbar_success');
+        showIncomeSnackbar(pendingIncomeSnackbar);
+    }
+
     function showLoading() {
         $('.loading-overlay').css('display', 'flex');
     }
@@ -670,6 +925,88 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     @endif
+
+    const denseToggleIncome = document.getElementById('densePaddingToggleIncome');
+    const incomeTableEl = document.querySelector('.datatables-income.table-modern');
+    if (denseToggleIncome && incomeTableEl) {
+        const savedDense = localStorage.getItem('income_dense_padding') === '1';
+        denseToggleIncome.checked = savedDense;
+        incomeTableEl.classList.toggle('is-dense', savedDense);
+
+        denseToggleIncome.addEventListener('change', function() {
+            const isDense = denseToggleIncome.checked;
+            incomeTableEl.classList.toggle('is-dense', isDense);
+            localStorage.setItem('income_dense_padding', isDense ? '1' : '0');
+        });
+    }
+
+    function updateIncomeSelectionState() {
+        const $all = $('.income-row-checkbox');
+        const $checked = $('.income-row-checkbox:checked');
+        const count = $checked.length;
+        $('#selectAllIncomes').prop('checked', $all.length > 0 && count === $all.length);
+        $('#incomeSelectedCount').text(`${count} dipilih`);
+        $('#incomeSelectionToolbar').toggleClass('active', count > 0);
+    }
+
+    $('#selectAllIncomes').on('change', function() {
+        $('.income-row-checkbox').prop('checked', this.checked);
+        updateIncomeSelectionState();
+    });
+
+    $(document).on('change', '.income-row-checkbox', updateIncomeSelectionState);
+
+    $('#btnBulkDeleteIncome').on('click', async function() {
+        const checked = $('.income-row-checkbox:checked').toArray();
+        if (!checked.length) return;
+
+        const result = await Swal.fire({
+            title: 'Hapus Data?',
+            text: `Yakin ingin menghapus ${checked.length} data laba masuk terpilih?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                confirmButton: 'btn btn-danger me-2',
+                cancelButton: 'btn btn-secondary'
+            },
+            buttonsStyling: false
+        });
+
+        if (!result.isConfirmed) return;
+
+        showLoading();
+        let successCount = 0;
+        for (const cb of checked) {
+            const id = $(cb).val();
+            const source = $(cb).data('source');
+            const deleteUrl = source === 'income'
+                ? `{{ url('/dashboard/admin/incomes') }}/${id}`
+                : `{{ url('/dashboard/admin/tagihan/tagihan-lunas') }}/${id}`;
+            try {
+                const response = await fetch(deleteUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ _method: 'DELETE' })
+                });
+                if (response.ok) successCount++;
+            } catch (e) {}
+        }
+
+        hideLoading();
+        if (successCount > 0) {
+            localStorage.setItem('income_snackbar_success', `${successCount} data laba masuk berhasil dihapus.`);
+            window.location.reload();
+        } else {
+            Swal.fire('Gagal', 'Data belum berhasil dihapus. Coba ulangi lagi.', 'error');
+        }
+    });
 
     // Event Detail - gunakan event delegation
     $(document).on('click', '.btn-detail', function(e) {
@@ -857,7 +1194,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     <a href="{{ route('income.export', request()->only(['filter_month', 'filter_year', 'search'])) }}" class="btn btn-outline-secondary" title="Export Harian (Pisah Sheet)">
                         <i class="ri-file-excel-line me-1"></i>Export (Pisah Sheet)
                     </a>
-                    
+
                     <a href="{{ route('income.export.monthly', request()->only(['filter_month', 'filter_year'])) }}" class="btn btn-outline-success" title="Export Rekap Sebulan Penuh">
                         <i class="ri-file-excel-2-line me-1"></i>Export Bulanan (1 Sheet)
                     </a>
@@ -977,21 +1314,31 @@ document.addEventListener("DOMContentLoaded", function() {
     <div class="card-body p-0">
         <div class="table-responsive p-3">
             @if($incomes->count() > 0)
+                <div class="selection-toolbar" id="incomeSelectionToolbar">
+                    <span class="selected-text" id="incomeSelectedCount">0 dipilih</span>
+                    <button type="button" class="toolbar-delete-btn" id="btnBulkDeleteIncome" title="Hapus Terpilih">
+                        <i class="ri-delete-bin-line fs-5"></i>
+                    </button>
+                </div>
                 <table class="datatables-income table table-modern table-hover">
                     <thead>
                         <tr>
-                            <th><i class="ri-hashtag me-1"></i>No</th>
-                            <th><i class="ri-user-line me-1"></i>Pelanggan</th>
-                            <th><i class="ri-router-line me-1"></i>Paket</th>
-                            <th><i class="ri-bank-card-line me-1"></i>Tipe Pembayaran</th>
-                            <th><i class="ri-money-dollar-box-line me-1"></i>Jumlah</th>
-                            <th><i class="ri-calendar-check-line me-1"></i>Tanggal Bayar</th>
+                            <th style="width: 56px; text-align: center;">
+                                <input type="checkbox" class="income-check" id="selectAllIncomes">
+                            </th>
+                            <th>Pelanggan</th>
+                            <th>Paket</th>
+                            <th>Tipe Pembayaran</th>
+                            <th>Jumlah</th>
+                            <th>Tanggal Bayar</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($incomes as $i)
                         <tr>
-                            <td class="text-muted fw-semibold">{{ ($incomes->firstItem() ?? 1) + $loop->index }}</td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" class="income-check income-row-checkbox" value="{{ $i->id }}" data-source="{{ $i->sumber ?? 'tagihan' }}">
+                            </td>
 
                             <td>
                                 <div class="d-flex flex-column">
@@ -1005,9 +1352,9 @@ document.addEventListener("DOMContentLoaded", function() {
                             </td>
 
                             <td>
-                                @if(strtolower($i->tipe_pembayaran ?? '') === 'cash / tunai' || empty($i->tipe_pembayaran))
+                                @if(in_array(strtolower($i->tipe_pembayaran ?? ''), ['cash', 'cash / tunai', 'tunai'], true) || empty($i->tipe_pembayaran))
                                     <span class="badge" style="background:#f4f4f5;color:#18181b;border:1px solid #e4e4e7;">
-                                        <i class="ri-money-dollar-circle-line me-1"></i>Cash / Tunai
+                                        <i class="ri-money-dollar-circle-line me-1"></i>cash
                                     </span>
                                 @else
                                     <span class="badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;">
@@ -1040,17 +1387,27 @@ document.addEventListener("DOMContentLoaded", function() {
             @endif
         </div>
 
-    @if($incomes->hasPages())
       <div class="pagination-wrapper">
-        <div class="pagination-info">
-          Menampilkan <strong>{{ $incomes->firstItem() ?? 0 }}</strong> - <strong>{{ $incomes->lastItem() ?? 0 }}</strong>
-          dari <strong>{{ $incomes->total() }}</strong> data
-        </div>
+        <label class="dense-toggle-wrap mb-0">
+          <input type="checkbox" id="densePaddingToggleIncome">
+          <span class="small">Dense padding</span>
+        </label>
         <div>
-          {{ $incomes->appends(request()->query())->onEachSide(1)->links('pagination::bootstrap-5') }}
+          @if($incomes->hasPages())
+            {{ $incomes->appends(request()->query())->onEachSide(1)->links('pagination.mui') }}
+          @else
+            <nav>
+              <ul class="pagination mui-pagination mb-0">
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                <li class="page-item disabled"><span class="page-link">&lsaquo;</span></li>
+                <li class="page-item active"><span class="page-link">1</span></li>
+                <li class="page-item disabled"><span class="page-link">&rsaquo;</span></li>
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+              </ul>
+            </nav>
+          @endif
         </div>
       </div>
-    @endif
     </div>
 </div>
 

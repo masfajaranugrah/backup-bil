@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    @include('content.apps.Customer.partials.disable-zoom')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Invoice Tagihan</title>
 
@@ -617,6 +618,34 @@
             color: #334155;
         }
 
+        .upload-proof-popup {
+            width: min(500px, calc(100vw - 24px)) !important;
+            max-height: calc(100dvh - 28px) !important;
+            overflow: hidden !important;
+        }
+
+        .upload-proof-popup .swal2-html-container {
+            margin: 0 !important;
+            max-height: calc(100dvh - 190px) !important;
+            overflow-y: auto !important;
+            padding: 2px 2px 6px !important;
+        }
+
+        .upload-proof-popup .swal2-actions {
+            width: 100%;
+            margin: 14px 0 0 !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px !important;
+        }
+
+        .upload-proof-popup .swal2-confirm,
+        .upload-proof-popup .swal2-cancel {
+            width: 100%;
+            min-height: 48px;
+            margin: 0 !important;
+        }
+
         .camera-overlay {
             position: fixed;
             inset: 0;
@@ -865,6 +894,57 @@
 
         @media (max-width: 520px) {
             .upload-source-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .invoice-actions {
+                flex-direction: column;
+            }
+
+            .invoice-actions .btn {
+                width: 100%;
+                min-height: 46px;
+            }
+
+            .upload-proof-popup {
+                width: calc(100vw - 16px) !important;
+                padding: 16px !important;
+                border-radius: 18px !important;
+            }
+
+            .upload-proof-popup .swal2-title {
+                font-size: 1.1rem !important;
+                line-height: 1.25 !important;
+                padding: 0 4px !important;
+            }
+
+            .upload-proof-popup .swal2-html-container {
+                max-height: calc(100dvh - 178px) !important;
+            }
+
+            .upload-area {
+                padding: 16px 12px;
+            }
+
+            .upload-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 1.3rem;
+                margin-bottom: 10px;
+            }
+
+            .upload-source-btn {
+                height: 48px;
+                font-size: 0.95rem;
+            }
+
+            .upload-preview {
+                height: 128px;
+            }
+
+            .upload-proof-popup .swal2-actions {
                 grid-template-columns: 1fr;
             }
         }
@@ -1196,6 +1276,59 @@
             background: #e2e8f0;
         }
 
+        .rejection-note-card {
+            margin-bottom: 16px;
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px solid #fecaca;
+            background: linear-gradient(135deg, #fff1f2 0%, #ffffff 72%);
+            box-shadow: 0 10px 28px rgba(220, 38, 38, 0.08);
+        }
+
+        .rejection-note-head {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .rejection-note-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #dc2626;
+            color: #fff;
+            font-size: 1.15rem;
+            flex: 0 0 40px;
+        }
+
+        .rejection-note-title {
+            margin: 0;
+            color: #991b1b;
+            font-size: 0.95rem;
+            font-weight: 800;
+        }
+
+        .rejection-note-subtitle {
+            margin: 2px 0 0;
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+
+        .rejection-note-text {
+            margin: 0;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.82);
+            color: #7f1d1d;
+            font-size: 0.9rem;
+            line-height: 1.55;
+            border: 1px solid rgba(254, 202, 202, 0.8);
+        }
+
         @media (max-width: 380px) {
             .verif-alert-actions {
                 grid-template-columns: 1fr;
@@ -1450,11 +1583,28 @@
                     <div style="color: #94a3b8; font-size: 1.05rem;">Batas Waktu Bayar</div>
                     <div style="color: #334155; font-size: 1.05rem; font-weight: 500;">{{ \Carbon\Carbon::parse($tagihan->tanggal_berakhir)->translatedFormat('j M Y') }}</div>
                 </div>
-                
+
                 <div class="d-flex justify-content-between mb-4 align-items-center">
                     <div style="color: #94a3b8; font-size: 1.05rem;">Total Tagihan</div>
                     <div style="color: #16a34a; font-size: 1.3rem; font-weight: 700;">+Rp{{ number_format($paket->harga ?? 0, 0, ',', '.') }}</div>
                 </div>
+
+                @if($tagihan->status_pembayaran === 'belum bayar' && filled($tagihan->alasan_penolakan))
+                    <div class="rejection-note-card">
+                        <div class="rejection-note-head">
+                            <div class="rejection-note-icon">
+                                <i class="bi bi-x-octagon-fill"></i>
+                            </div>
+                            <div>
+                                <h6 class="rejection-note-title">Pembayaran Sebelumnya Ditolak</h6>
+                                <p class="rejection-note-subtitle">
+                                    {{ $tagihan->ditolak_at ? $tagihan->ditolak_at->translatedFormat('d F Y, H:i') : 'Mohon cek catatan admin sebelum upload ulang.' }}
+                                </p>
+                            </div>
+                        </div>
+                        <p class="rejection-note-text">{{ $tagihan->alasan_penolakan }}</p>
+                    </div>
+                @endif
 
                 @if($tagihan->status_pembayaran === 'lunas')
                     <div class="status-wrapper mt-0 pt-0 border-0">
@@ -1491,9 +1641,9 @@
                         </div>
                     </div>
                 @else
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn flex-grow-1" data-bs-toggle="modal" data-bs-target="#caraBayarModal" style="background: white; color: #0f172a; border: 1px solid #0f172a; font-weight: 600; border-radius: 8px; padding: 10px 0;">Lihat Cara upload</button>
-                        <button class="btn flex-grow-1 bayar-btn" data-id="{{ $tagihan->id }}" style="background: #0f172a; color: white; border: 1px solid #0f172a; font-weight: 600; border-radius: 8px; padding: 10px 0;">Upload Pembayaran</button>
+                    <div class="d-flex gap-2 invoice-actions">
+                        <button type="button" class="btn flex-grow-1" data-bs-toggle="modal" data-bs-target="#caraBayarModal" style="background: white; color: #0f172a; border: 1px solid #0f172a; font-weight: 600; border-radius: 8px; padding: 10px 0;">Lihat Cara Bayar</button>
+                        <button class="btn flex-grow-1 bayar-btn" data-id="{{ $tagihan->id }}" style="background: #0f172a; color: white; border: 1px solid #0f172a; font-weight: 600; border-radius: 8px; padding: 10px 0;">Bayar Sekarang</button>
                     </div>
                 @endif
             </div>
@@ -1525,7 +1675,7 @@
                 <div class="modal-body px-4 pt-4 pb-4">
                     <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f1f5f9;">
                         <ol style="line-height: 1.8; font-size: 0.95rem; color: #334155; margin-bottom: 0; padding-left: 20px;">
-                            <li class="mb-3">Klik tombol <strong>Upload Pembayaran</strong>.</li>
+                            <li class="mb-3">Klik tombol <strong>Bayar Sekarang</strong>.</li>
                             <li class="mb-3">Pilih <strong>Bank Tujuan</strong> transfer kemana.</li>
                             <li class="mb-3">Klik kamera jika ingin langsung foto struk / bisa pilih foto melalui galeri.</li>
                             <li class="mb-3">Setelah bukti pembayaran diunggah, admin akan melakukan konfirmasi.</li>
@@ -1542,8 +1692,59 @@
 
     @include('content.apps.Customer.tagihan.bottom-navbar', ['active' => 'tagihan'])
 
+    @php
+        $tagihanRealtimeSignature = $tagihans->map(function ($tagihan) {
+            return [
+                'id' => $tagihan->id,
+                'status_pembayaran' => $tagihan->status_pembayaran,
+                'bukti_pembayaran' => $tagihan->bukti_pembayaran,
+                'updated_at' => optional($tagihan->updated_at)->toISOString(),
+            ];
+        })->values();
+    @endphp
+
     <script>
         axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').content;
+
+        let currentTagihanSignature = @json($tagihanRealtimeSignature);
+        currentTagihanSignature = JSON.stringify(currentTagihanSignature);
+
+        function buildTagihanSignature(tagihans) {
+            return JSON.stringify((tagihans || []).map((tagihan) => ({
+                id: tagihan.id,
+                status_pembayaran: tagihan.status_pembayaran,
+                bukti_pembayaran: tagihan.bukti_pembayaran,
+                updated_at: tagihan.updated_at,
+            })));
+        }
+
+        async function refreshTagihanIfChanged(forceReload = false) {
+            if (document.hidden) return;
+
+            const swalOpen = document.querySelector('.swal2-container');
+            const cameraOpen = document.querySelector('.camera-overlay[style*="flex"]');
+            if (!forceReload && (swalOpen || cameraOpen)) return;
+
+            try {
+                const response = await axios.get('{{ route('customer.tagihan.json') }}', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+
+                if (response.data?.status !== 'success') return;
+
+                const nextSignature = buildTagihanSignature(response.data.data);
+                if (nextSignature !== currentTagihanSignature) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.warn('Gagal cek update tagihan realtime:', error?.message || error);
+            }
+        }
+
+        setInterval(refreshTagihanIfChanged, 8000);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) refreshTagihanIfChanged();
+        });
 
         /* ================================
            FUNGSI KOMPRES GAMBAR (iOS/Android)
@@ -1688,6 +1889,17 @@
         function buildTagihanUrl(tagihanId) {
             if (tagihanId === undefined || tagihanId === null || tagihanId === '') return null;
             return `/dashboard/customer/tagihan/${encodeURIComponent(String(tagihanId))}`;
+        }
+
+        function isMobileUploadDevice() {
+            return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+        }
+
+        function openNativeCameraInput(input) {
+            if (!input) return false;
+            input.value = '';
+            input.click();
+            return true;
         }
 
         // HELPER: Upload menggunakan XMLHttpRequest untuk bypass bug Fetch di Safari/iOS
@@ -1896,6 +2108,10 @@
                                 e.stopPropagation();
                                 fileInput.value = '';
                                 cameraInput.value = '';
+                                if (isMobileUploadDevice()) {
+                                    openNativeCameraInput(cameraInput);
+                                    return;
+                                }
                                 await openCameraFlow();
                             });
 
@@ -2092,6 +2308,8 @@
                                 text: 'Bukti pembayaran terkirim. Status berubah ke Menunggu Verifikasi.',
                                 icon: 'success',
                                 confirmButtonColor: '#0f172a'
+                            }).then(() => {
+                                window.location.reload();
                             });
                         }
                     });
@@ -2338,7 +2556,16 @@
 
                     uploadArea.addEventListener('click', () => { fileInput.click(); });
                     btnFile.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
-                    btnCamera.addEventListener('click', async (e) => { e.stopPropagation(); await openCameraFlow(); });
+                    btnCamera.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        fileInput.value = '';
+                        cameraInput.value = '';
+                        if (isMobileUploadDevice()) {
+                            openNativeCameraInput(cameraInput);
+                            return;
+                        }
+                        await openCameraFlow();
+                    });
                     btnCamClose.addEventListener('click', () => {
                         selectedCameraFile = null;
                         camOverlay.style.display = 'none';

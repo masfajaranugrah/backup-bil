@@ -4,12 +4,14 @@ namespace App\Jobs;
 
 use App\Models\Iklan;
 use App\Models\Pelanggan;
+use App\Services\CustomerPushService;
+use App\Services\FirebasePushService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class SendIklanJob implements ShouldQueue
@@ -31,63 +33,141 @@ class SendIklanJob implements ShouldQueue
             return;
         }
 
-        $pelanggan = Pelanggan::whereNotNull('player_id')
-            ->where('player_id', '!=', '')
-            ->get();
+        $totalFcmTargets = Pelanggan::query()
+            ->whereRaw("TRIM(COALESCE(fcm_token, '')) != ''")
+            ->count();
 
-        if ($pelanggan->isEmpty()) {
-            Log::info('SendIklanJob: no pelanggan with player_id');
-            $iklan->update([
-                'status' => 'sent',
-                'sent_at' => now(),
-                'total_sent' => 0,
-            ]);
-            return;
-        }
+        $totalWebpushFallbackTargets = Pelanggan::query()
+            ->whereRaw("TRIM(COALESCE(fcm_token, '')) = ''")
+            ->whereRaw("TRIM(COALESCE(webpushr_sid, '')) != ''")
+            ->count();
 
-        $playerIds = $pelanggan->pluck('player_id')->filter()->values()->all();
-        $sent = 0;
-
-        if (!empty($playerIds)) {
-            $notificationData = [
-                'app_id' => env('ONESIGNAL_APP_ID'),
-                'include_player_ids' => $playerIds,
-                'headings' => ['en' => $iklan->title],
-                'contents' => ['en' => $iklan->message],
-                'data' => [
-                    'type' => 'iklan',
-                    'iklan_id' => $iklan->id,
-                ],
-            ];
-
-            if ($iklan->image) {
-                $notificationData['big_picture'] = asset('storage/' . $iklan->image);
-                $notificationData['ios_attachments'] = ['id' => asset('storage/' . $iklan->image)];
-            }
-
-            try {
-                $response = Http::withHeaders([
-                    'Authorization' => 'Basic ' . env('ONESIGNAL_REST_API_KEY'),
-                    'Content-Type' => 'application/json',
-                ])->post('https://onesignal.com/api/v1/notifications', $notificationData);
-
-                if ($response->successful()) {
-                    $sent = count($playerIds);
-                } else {
-                    Log::error('SendIklanJob: OneSignal response error', [
-                        'status' => $response->status(),
-                        'body' => $response->body(),
-                    ]);
-                }
-            } catch (\Throwable $e) {
-                Log::error('SendIklanJob: exception sending', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
+        $targetTotal = $totalFcmTargets + $totalWebpushFallbackTargets;
 
         $iklan->update([
-            'status' => 'sent',
+            'status' => 'active',
+            'sent_at' => null,
+            'total_sent' => 0,
+        ]);
+
+        $this->updateProgress([
+            'status' => 'processing',
+            'total' => $targetTotal,
+            'processed' => 0,
+            'sent' => 0,
+            'failed' => 0,
+        ]);
+
+        $sent = 0;
+        $failed = 0;
+        $totalTargets = 0;
+        $pushService = app(CustomerPushService::class);
+        $firebasePushService = app(FirebasePushService::class);
+
+        Pelanggan::query()
+            ->whereRaw("TRIM(COALESCE(fcm_token, '')) != ''")
+            ->select(['id', 'fcm_token'])
+            ->chunkById(500, function ($customers) use (&$sent, &$failed, &$totalTargets, $firebasePushService, $iklan, $targetTotal): void {
+                $tokens = [];
+                $tokenToCustomerIds = [];
+
+                foreach ($customers as $customer) {
+                    $token = trim((string) $customer->fcm_token);
+                    if ($token === '') {
+                        continue;
+                    }
+
+                    $tokens[] = $token;
+                    $tokenToCustomerIds[$token][] = $customer->id;
+                }
+
+                if ($tokens === []) {
+                    return;
+                }
+
+                $totalTargets += count($customers);
+                $result = $firebasePushService->sendMulticastDetailed(
+                    $tokens,
+                    $iklan->title,
+                    $iklan->message,
+                    url('/dashboard/customer/tagihan/home')
+                );
+
+                $reports = $result['reports'] ?? [];
+
+                foreach ($tokenToCustomerIds as $token => $customerIds) {
+                    $report = $reports[$token] ?? null;
+                    $ok = is_array($report) ? ((bool) ($report['success'] ?? false)) : false;
+
+                    if ($ok) {
+                        $sent += count($customerIds);
+                        continue;
+                    }
+
+                    $failed += count($customerIds);
+                }
+
+                $invalidOrUnknownTokens = array_values(array_unique(array_merge(
+                    $result['invalid_tokens'] ?? [],
+                    $result['unknown_tokens'] ?? []
+                )));
+
+                if ($invalidOrUnknownTokens !== []) {
+                    Pelanggan::query()
+                        ->whereIn('fcm_token', $invalidOrUnknownTokens)
+                        ->update(['fcm_token' => null]);
+                }
+
+                $this->updateProgress([
+                    'status' => 'processing',
+                    'total' => $targetTotal,
+                    'processed' => $sent + $failed,
+                    'sent' => $sent,
+                    'failed' => $failed,
+                ]);
+            });
+
+        Pelanggan::query()
+            ->whereRaw("TRIM(COALESCE(fcm_token, '')) = ''")
+            ->whereRaw("TRIM(COALESCE(webpushr_sid, '')) != ''")
+            ->select(['id', 'webpushr_sid'])
+            ->chunkById(500, function ($customers) use (&$sent, &$failed, &$totalTargets, $pushService, $iklan, $targetTotal): void {
+                $totalTargets += count($customers);
+
+                foreach ($customers as $customer) {
+                    try {
+                        $result = $pushService->sendWebpushrToPelanggan(
+                            $customer,
+                            $iklan->title,
+                            $iklan->message,
+                            url('/dashboard/customer/tagihan/home')
+                        );
+
+                        if (($result['success'] ?? false) === true) {
+                            $sent++;
+                        } else {
+                            $failed++;
+                        }
+                    } catch (\Throwable $e) {
+                        $failed++;
+                        Log::error('SendIklanJob: webpushr exception', [
+                            'pelanggan_id' => $customer->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+
+                $this->updateProgress([
+                    'status' => 'processing',
+                    'total' => $targetTotal,
+                    'processed' => $sent + $failed,
+                    'sent' => $sent,
+                    'failed' => $failed,
+                ]);
+            });
+
+        $iklan->update([
+            'status' => 'active',
             'sent_at' => now(),
             'total_sent' => $sent,
         ]);
@@ -95,7 +175,22 @@ class SendIklanJob implements ShouldQueue
         Log::info('SendIklanJob finished', [
             'iklan_id' => $iklan->id,
             'sent' => $sent,
-            'total_targets' => count($playerIds),
+            'failed' => $failed,
+            'total_targets' => $totalTargets,
         ]);
+
+        $this->updateProgress([
+            'status' => 'completed',
+            'total' => max($targetTotal, $totalTargets),
+            'processed' => $sent + $failed,
+            'sent' => $sent,
+            'failed' => $failed,
+            'finished_at' => now()->toDateTimeString(),
+        ]);
+    }
+
+    private function updateProgress(array $progress): void
+    {
+        Cache::put('iklan_push_progress:' . $this->iklanId, $progress, now()->addHours(6));
     }
 }

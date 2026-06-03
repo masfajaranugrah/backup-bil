@@ -4,8 +4,7 @@
 
 @section('vendor-style')
 @vite([
-  'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
-  'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
+  'resources/css/app.css',
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'
 ])
 <style>
@@ -46,15 +45,18 @@ body {
 
 /* ========== HEADER SECTION ========== */
 .card-header-custom {
-  background: #ffffff !important;
-  border-bottom: 1px solid var(--gray-border);
+  background:
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.10), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  border-bottom: 1px solid #eef2f7;
   padding: 1.5rem;
   border-radius: var(--border-radius) var(--border-radius) 0 0;
 }
 
 .card-header-custom h4 {
   color: #18181b !important;
-  font-size: 1.5rem;
+  font-size: 1.28rem;
+  font-weight: 800;
 }
 
 .card-header-custom p {
@@ -215,44 +217,121 @@ body {
 /* ========== TABLE STYLES ========== */
 .table-modern {
   margin-bottom: 0;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
-  border-collapse: separate;
+  border-collapse: collapse;
   border-spacing: 0;
+  table-layout: fixed;
 }
 
 .table-modern thead th {
   background: #f8fafc;
-  font-weight: 600;
+  font-weight: 800;
   text-transform: uppercase;
   font-size: 0.75rem;
-  letter-spacing: 0.5px;
-  color: #18181b;
-  padding: 1rem;
-  border: none;
+  letter-spacing: 0;
+  color: #64748b;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid #e5eaf0;
   white-space: nowrap;
 }
 
 .table-modern tbody tr {
   transition: var(--transition);
-  border-bottom: 1px solid #e4e4e7;
 }
 
-.table-modern tbody tr:not(.empty-state-row):hover {
-  background-color: #f4f4f5 !important;
+.table-modern tbody tr:not(.empty-state-row):hover td {
+  background-color: #fcfcfd !important;
 }
 
 .table-modern tbody td {
-  padding: 1rem;
+  padding: 1rem 1.1rem;
   vertical-align: middle;
-  border-bottom: 1px solid #e4e4e7;
+  border-bottom: 1px dashed #e5eaf0;
   color: #18181b;
   white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.table-modern.is-dense thead th,
+.table-modern.is-dense tbody td {
+  padding-top: 0.62rem;
+  padding-bottom: 0.62rem;
+}
+
+.status-row-checkbox,
+.mui-checkbox,
+#densePaddingToggleStatus {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  border-radius: 6px;
+  accent-color: #18181b;
+  cursor: pointer;
+  margin: 0;
+}
+
+.status-row-selected {
+  background: #f8fafc !important;
+}
+
+.table-modern tbody tr.status-row-selected td {
+  background: #edf4fd !important;
+}
+
+.status-selection-toolbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.25rem;
+  background: linear-gradient(90deg, #f8fafc 0%, #ffffff 100%);
+  border-bottom: 1px solid #e4e4e7;
+}
+
+.status-selection-toolbar.active {
+  display: flex;
+}
+
+.status-selection-toolbar .selected-text {
+  color: #18181b;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.delete-selected-btn {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #71717a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  transition: var(--transition);
+}
+
+.delete-selected-btn:hover {
+  background: rgba(220, 38, 38, 0.10);
+  color: #dc2626;
+}
+
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+  color: #334155;
+  min-height: 34px;
 }
 
 .status-icon {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -282,9 +361,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-top: 1px solid #f0f0f0;
-  background: #fafafa;
+  padding: 1.1rem 1.5rem;
+  border-top: 1px solid #eef2f7;
+  background: #ffffff;
   border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
@@ -296,14 +375,15 @@ body {
 
 .pagination {
   margin: 0;
-  gap: 0.5rem;
+  gap: 0.45rem;
   justify-content: flex-end;
 }
 
 .pagination .page-item .page-link {
   border-radius: 50% !important;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
   padding: 0;
   display: flex;
   align-items: center;
@@ -312,8 +392,59 @@ body {
   color: #18181b;
   font-weight: 600;
   background-color: #fff;
-  margin: 0 4px;
+  margin: 0 2px;
   transition: all 0.3s ease;
+}
+
+.pagination-wrapper .mui-pagination {
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.pagination-wrapper .mui-pagination .page-item,
+.pagination-wrapper .mui-pagination .page-link {
+  width: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  flex: 0 0 34px !important;
+}
+
+.pagination-wrapper .mui-pagination .page-link {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: #1f2937 !important;
+  box-shadow: none !important;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1 !important;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.pagination-wrapper .mui-pagination .page-item.active .page-link {
+  background: #1f2933 !important;
+  color: #ffffff !important;
+}
+
+.pagination-wrapper .mui-pagination .page-link:hover {
+  background: rgba(31, 41, 51, 0.06) !important;
+  color: #111827 !important;
+}
+
+.pagination-wrapper .mui-pagination .page-item.disabled .page-link {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+}
+
+.pagination-wrapper .mui-pagination .pagination-ellipsis .page-link {
+  color: #64748b !important;
+  letter-spacing: 0.08em;
 }
 
 .pagination .page-item .page-link:hover {
@@ -434,7 +565,6 @@ table.dataTable tbody tr.empty-state-row:hover {
 
 @section('vendor-script')
 @vite([
-  'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.js'
 ])
 @endsection
@@ -442,74 +572,127 @@ table.dataTable tbody tr.empty-state-row:hover {
 @section('page-script')
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const loadScript = (src) => new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = src;
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
+    @if(session('success'))
+      Swal.fire({
+        toast: true,
+        position: 'bottom-end',
+        icon: 'success',
+        title: @json(session('success')),
+        showConfirmButton: false,
+        timer: 3200,
+        timerProgressBar: true
+      });
+    @endif
+
+    const statusTable = document.querySelector('.status-table');
+    const denseToggle = document.getElementById('densePaddingToggleStatus');
+    if (denseToggle && statusTable) {
+      const saved = localStorage.getItem('dense_status_pelanggan') === '1';
+      denseToggle.checked = saved;
+      statusTable.classList.toggle('is-dense', saved);
+
+      denseToggle.addEventListener('change', function () {
+        statusTable.classList.toggle('is-dense', this.checked);
+        localStorage.setItem('dense_status_pelanggan', this.checked ? '1' : '0');
+      });
+    }
+
+    const selectAllStatus = document.getElementById('selectAllStatus');
+    const statusCheckboxes = document.querySelectorAll('.status-checkbox');
+    const statusToolbar = document.getElementById('statusSelectionToolbar');
+    const statusSelectedCount = document.getElementById('statusSelectedCount');
+    const statusBulkDeleteBtn = document.getElementById('statusBulkDeleteBtn');
+    const csrfToken = @json(csrf_token());
+
+    function syncStatusSelection() {
+      const checked = document.querySelectorAll('.status-checkbox:checked');
+      if (statusSelectedCount) statusSelectedCount.textContent = `${checked.length} dipilih`;
+      if (statusToolbar) statusToolbar.classList.toggle('active', checked.length > 0);
+      if (selectAllStatus) {
+        selectAllStatus.checked = statusCheckboxes.length > 0 && checked.length === statusCheckboxes.length;
+        selectAllStatus.indeterminate = checked.length > 0 && checked.length < statusCheckboxes.length;
+      }
+
+      document.querySelectorAll('tr[data-pelanggan-row]').forEach((row) => {
+        const checkbox = row.querySelector('.status-checkbox');
+        row.classList.toggle('status-row-selected', !!checkbox && checkbox.checked);
+      });
+    }
+
+    async function deleteStatusRows(targets) {
+      const rows = Array.from(targets).filter((row) => row && row.dataset.deleteUrl);
+      if (!rows.length) return;
+
+      const result = await Swal.fire({
+        title: rows.length > 1 ? 'Hapus pelanggan terpilih?' : 'Hapus pelanggan ini?',
+        html: `<p class="mb-0">Anda akan menghapus <strong>${rows.length}</strong> data pelanggan.<br><span style="color:#71717a;font-size:0.875rem;">Data tidak dapat dikembalikan.</span></p>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, hapus',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#71717a'
+      });
+
+      if (!result.isConfirmed) return;
+
+      const overlay = document.querySelector('.loading-overlay');
+      if (overlay) overlay.style.display = 'flex';
+
+      let successCount = 0;
+      for (const row of rows) {
+        try {
+          const response = await fetch(row.dataset.deleteUrl, {
+            method: 'DELETE',
+            headers: {
+              'X-CSRF-TOKEN': csrfToken,
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            }
+          });
+          if (response.ok) successCount++;
+        } catch (error) {
+          console.warn('Gagal menghapus pelanggan:', error);
+        }
+      }
+
+      if (overlay) overlay.style.display = 'none';
+
+      if (successCount === rows.length) {
+        Swal.fire({
+          toast: true,
+          position: 'bottom-end',
+          icon: 'success',
+          title: `${successCount} data pelanggan berhasil dihapus`,
+          showConfirmButton: false,
+          timer: 2200
+        }).then(() => window.location.reload());
+      } else {
+        Swal.fire('Sebagian gagal', `${rows.length - successCount} data gagal dihapus. Coba ulangi lagi.`, 'warning')
+          .then(() => window.location.reload());
+      }
+    }
+
+    if (selectAllStatus) {
+      selectAllStatus.addEventListener('change', function () {
+        statusCheckboxes.forEach((checkbox) => {
+          checkbox.checked = this.checked;
+        });
+        syncStatusSelection();
+      });
+    }
+
+    statusCheckboxes.forEach((checkbox) => {
+      checkbox.addEventListener('change', syncStatusSelection);
     });
 
-    const ensureJquery = () => {
-      if (window.jQuery) return Promise.resolve();
-      return loadScript('https://code.jquery.com/jquery-3.7.1.min.js');
-    };
-
-    const ensureDataTables = () => {
-      if (window.jQuery && $.fn.DataTable) return Promise.resolve();
-      const css = document.createElement('link');
-      css.rel = 'stylesheet';
-      css.href = 'https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css';
-      document.head.appendChild(css);
-
-      const jsCore = loadScript('https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js');
-      const jsBs = loadScript('https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js');
-      return Promise.all([jsCore, jsBs]);
-    };
-
-    ensureJquery()
-      .then(ensureDataTables)
-      .then(() => {
-        const $table = $('.datatables-status');
-        if (!$table.length) return;
-
-        const hasData = $table.find('tbody tr').not(':has(td[colspan])').length > 0;
-
-        if (hasData) {
-          try {
-            $table.DataTable({
-              paging: false,
-              lengthChange: false,
-              searching: false,
-              ordering: true,
-              info: false,
-              scrollX: true,
-              autoWidth: false,
-              dom: 'rt',
-              language: {
-                zeroRecords: "Tidak ada data yang sesuai",
-                emptyTable: "Tidak ada data tersedia"
-              },
-              columnDefs: [
-                { orderable: false, targets: [0, 6, 7] },
-                { width: '5%', targets: 0 },
-                { width: '20%', targets: 1 },
-                { width: '12%', targets: 2 },
-                { width: '20%', targets: 3 },
-                { width: '10%', targets: 4 },
-                { width: '12%', targets: 5 },
-                { width: '10%', targets: 6 },
-                { width: '11%', targets: 7 }
-              ]
-            });
-          } catch (error) {
-            console.warn('DataTables initialization error:', error);
-          }
-        }
-      })
-      .catch((error) => {
-        console.warn('DataTables gagal dimuat:', error);
+    if (statusBulkDeleteBtn) {
+      statusBulkDeleteBtn.addEventListener('click', function () {
+        const rows = Array.from(document.querySelectorAll('.status-checkbox:checked'))
+          .map((checkbox) => checkbox.closest('tr[data-pelanggan-row]'));
+        deleteStatusRows(rows);
       });
+    }
 
     const statusFilter = document.getElementById('statusFilter');
     if (statusFilter) {
@@ -554,7 +737,7 @@ table.dataTable tbody tr.empty-state-row:hover {
               type="text"
               name="search"
               class="form-control"
-              placeholder="Cari nama, No. ID, WhatsApp, alamat, paket..."
+              placeholder="Cari nama, No. ID, WhatsApp, alamat..."
               value="{{ request('search') }}">
           </div>
 
@@ -616,20 +799,27 @@ table.dataTable tbody tr.empty-state-row:hover {
         </a>
       </div>
     </div>
-  </div>
+    </div>
     <div class="card-body p-0">
-      <div class="table-responsive p-3">
-        <table class="datatables-status table table-modern table-hover nowrap" style="width: 100%;">
+      <div class="table-responsive">
+        <div class="status-selection-toolbar" id="statusSelectionToolbar">
+          <span class="selected-text" id="statusSelectedCount">0 dipilih</span>
+          <button type="button" class="delete-selected-btn" id="statusBulkDeleteBtn" title="Hapus data dipilih">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </div>
+        <table class="table table-modern table-hover status-table mb-0" style="width: 100%;">
           <thead>
             <tr>
-              <th><i class="ri-hashtag me-1"></i>No</th>
-              <th><i class="ri-user-3-line me-1"></i>Nama</th>
-              <th><i class="ri-whatsapp-line me-1"></i>No. WhatsApp</th>
-              <th><i class="ri-map-pin-line me-1"></i>Alamat</th>
-              <th><i class="ri-barcode-line me-1"></i>No. ID</th>
-              <th><i class="ri-box-3-line me-1"></i>Paket</th>
-              <th><i class="ri-shield-check-line me-1"></i>Status</th>
-              <th><i class="ri-time-line me-1"></i>Login Terakhir</th>
+              <th style="width: 56px; text-align: center;">
+                <input type="checkbox" class="mui-checkbox" id="selectAllStatus" aria-label="Pilih semua pelanggan">
+              </th>
+              <th>Nama</th>
+              <th>No. WhatsApp</th>
+              <th>Alamat</th>
+              <th>No. ID</th>
+              <th>Status</th>
+              <th>Login Terakhir</th>
             </tr>
           </thead>
           <tbody>
@@ -637,10 +827,11 @@ table.dataTable tbody tr.empty-state-row:hover {
               @php
                 $isActive    = optional($item->loginStatus)->is_active;
                 $loggedInAt  = optional($item->loginStatus)->logged_in_at;
-                $no          = ($pelanggan->currentPage() - 1) * $pelanggan->perPage() + $index + 1;
               @endphp
-              <tr>
-                <td class="fw-bold text-center">{{ $no }}</td>
+              <tr data-pelanggan-row data-delete-url="{{ route('pelanggan.delete', $item->id) }}">
+                <td class="text-center">
+                  <input type="checkbox" class="status-row-checkbox status-checkbox" value="{{ $item->id }}" aria-label="Pilih pelanggan {{ $item->nama_lengkap }}">
+                </td>
 
                 <td>
                   <div class="d-flex align-items-center">
@@ -676,12 +867,6 @@ table.dataTable tbody tr.empty-state-row:hover {
                 </td>
 
                 <td>
-                  <span class="badge bg-label-info">
-                    <i class="ri-box-line me-1"></i>{{ optional($item->paket)->nama_paket ?? '-' }}
-                  </span>
-                </td>
-
-                <td>
                   @if($isActive)
                     <span class="badge bg-success">
                       <i class="ri-checkbox-circle-line me-1"></i>Active
@@ -710,7 +895,7 @@ table.dataTable tbody tr.empty-state-row:hover {
               </tr>
             @empty
               <tr class="empty-state-row">
-                <td colspan="8" class="text-center">
+                <td colspan="7" class="text-center">
                   <div class="empty-state-content">
                     <div class="mb-3">
                       <i class="ri-inbox-line" style="font-size: 4rem; color: #ddd;"></i>
@@ -760,17 +945,27 @@ table.dataTable tbody tr.empty-state-row:hover {
       </div>
     </div>
 
-    @if($pelanggan->hasPages())
       <div class="pagination-wrapper">
-        <div class="pagination-info">
-          Menampilkan <strong>{{ $pelanggan->firstItem() ?? 0 }}</strong> - <strong>{{ $pelanggan->lastItem() ?? 0 }}</strong>
-          dari <strong>{{ $pelanggan->total() }}</strong> data
-        </div>
+        <label class="dense-toggle-wrap mb-0">
+          <input type="checkbox" class="mui-checkbox" id="densePaddingToggleStatus">
+          <span>Dense padding</span>
+        </label>
         <div>
-          {{ $pelanggan->onEachSide(1)->links('pagination::bootstrap-5') }}
+          @if($pelanggan->hasPages())
+            {{ $pelanggan->onEachSide(1)->links('pagination.mui') }}
+          @else
+            <nav>
+              <ul class="pagination mui-pagination mb-0">
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                <li class="page-item disabled"><span class="page-link">&lsaquo;</span></li>
+                <li class="page-item active"><span class="page-link">1</span></li>
+                <li class="page-item disabled"><span class="page-link">&rsaquo;</span></li>
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+              </ul>
+            </nav>
+          @endif
         </div>
       </div>
-    @endif
   </div>
 
 </div>

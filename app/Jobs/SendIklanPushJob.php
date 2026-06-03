@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Iklan;
 use App\Models\Pelanggan;
+use App\Services\CustomerPushService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -35,18 +36,27 @@ class SendIklanPushJob implements ShouldQueue
         $failedCount = 0;
 
         // PENTING: pakai cursor supaya aman 10.000+
-        $pelanggans = Pelanggan::whereNotNull('webpushr_sid')
-            ->where('webpushr_sid', '!=', '')
+        $pelanggans = Pelanggan::where(function ($query) {
+                $query->where(function ($tokenQuery) {
+                    $tokenQuery->whereNotNull('fcm_token')
+                        ->where('fcm_token', '!=', '');
+                })->orWhere(function ($sidQuery) {
+                    $sidQuery->whereNotNull('webpushr_sid')
+                        ->where('webpushr_sid', '!=', '');
+                });
+            })
             ->cursor();
+
+        $pushService = app(CustomerPushService::class);
 
         foreach ($pelanggans as $pelanggan) {
             try {
-                $result = $this->sendWebpushrNotification([
-                    'title' => $iklan->title,
-                    'message' => $iklan->message,
-                    'target_url' => url('https://layanan.jernih.net.id/dashboard/customer/tagihan/home'),
-                    'sid' => $pelanggan->webpushr_sid,
-                ]);
+                $result = $pushService->sendToPelanggan(
+                    $pelanggan,
+                    $iklan->title,
+                    $iklan->message,
+                    url('/dashboard/customer/tagihan/home')
+                );
 
                 if ($result['success']) {
                     $sentCount++;
@@ -79,48 +89,4 @@ class SendIklanPushJob implements ShouldQueue
         ]);
     }
 
-    /**
-     * Kirim push ke Webpushr
-     */
-    private function sendWebpushrNotification(array $data): array
-    {
-        try {
-            $ch = curl_init('https://api.webpushr.com/v1/notification/send/sid');
-
-            $payload = [
-                'title' => $data['title'],
-                'message' => $data['message'],
-                'target_url' => $data['target_url'],
-                'sid' => $data['sid'],
-            ];
-
-            $headers = [
-                'Content-Type: application/json',
-                'webpushrKey: ' . env('WEBPUSHR_KEY'),
-                'webpushrAuthToken: ' . env('WEBPUSHR_TOKEN'),
-            ];
-
-            curl_setopt_array($ch, [
-                CURLOPT_HTTPHEADER => $headers,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode($payload),
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_TIMEOUT => 10,
-                CURLOPT_CONNECTTIMEOUT => 5,
-            ]);
-
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-
-            return ($httpCode === 200)
-                ? ['success' => true]
-                : ['success' => false, 'http_code' => $httpCode];
-
-        } catch (\Throwable $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
 }

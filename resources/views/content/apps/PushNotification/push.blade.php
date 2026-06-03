@@ -4,6 +4,7 @@
 
 @section('vendor-style')
 @vite([
+  'resources/css/app.css',
   'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
@@ -52,10 +53,10 @@
 
 /* Card Header */
 .card-header-custom {
-  background: #ffffff !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%) !important;
   color: #18181b !important;
   border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
-  padding: 1.5rem;
+  padding: 1.75rem;
   border-bottom: 1px solid #e4e4e7;
 }
 
@@ -192,16 +193,18 @@
 }
 
 .btn-broadcast {
-  padding: 10px 24px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  transition: all 0.3s !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  min-height: 52px;
+  padding: 12px 24px !important;
+  border-radius: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: .2px;
+  transition: all 0.25s !important;
+  box-shadow: 0 10px 20px rgba(24,24,27,0.16) !important;
 }
 
 .btn-broadcast:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.2) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 12px 24px rgba(24,24,27,0.22) !important;
 }
 
 .btn-broadcast i {
@@ -338,11 +341,136 @@
   background-color: #f4f4f5 !important;
 }
 
+.table-modern tbody tr.row-selected {
+  background: #eff6ff !important;
+}
+
 .table-modern tbody td {
   padding: 1rem;
   border-bottom: 1px solid #e4e4e7;
   vertical-align: middle;
   color: #18181b;
+}
+
+.table-modern.is-dense thead th {
+  padding-top: .6rem !important;
+  padding-bottom: .6rem !important;
+}
+
+.table-modern.is-dense tbody td {
+  padding-top: .6rem !important;
+  padding-bottom: .6rem !important;
+}
+
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #111827;
+}
+
+.push-row-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  accent-color: #111827;
+  cursor: pointer;
+}
+
+.push-selection-toolbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.5rem;
+  background: #eaf2ff;
+  border: 1px solid #dbe7f7;
+  border-radius: 12px 12px 0 0;
+  color: #111827;
+}
+
+.push-selection-toolbar.active {
+  display: flex;
+}
+
+.push-selection-toolbar .selected-text {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.push-selection-toolbar .send-selected-btn {
+  border: 0;
+  border-radius: 12px;
+  background: #111827;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .7rem 1rem;
+  font-weight: 800;
+}
+
+.push-selection-toolbar .send-selected-btn:hover {
+  background: #1f2937;
+}
+
+.push-title-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem;
+  margin-bottom: .4rem;
+}
+
+.push-total-chip {
+  padding: .45rem .8rem;
+  border-radius: 999px;
+  background: #18181b;
+  color: #fff !important;
+  border: 1px solid #27272a;
+  font-size: .86rem;
+  font-weight: 600;
+}
+
+.push-search-row {
+  margin-top: 1rem;
+}
+
+.push-search-form {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.push-search-group {
+  max-width: 560px;
+  width: 100%;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.push-search-group .input-group-text {
+  border: 0;
+  background: transparent;
+  color: #71717a;
+  padding-left: 1rem;
+}
+
+.push-search-group .form-control {
+  border: 0;
+  box-shadow: none !important;
+  min-height: 48px;
 }
 
 /* ========================================= */
@@ -640,6 +768,10 @@ p:has(span.font-medium) {
 
 /* Responsive - stack on mobile */
 @media (max-width: 768px) {
+  .push-search-form .btn {
+    width: 100%;
+  }
+
   .dataTables_wrapper .row:first-child,
   .dataTables_wrapper .row:last-child {
     flex-direction: column !important;
@@ -695,6 +827,143 @@ p:has(span.font-medium) {
 .card {
   animation: fadeIn 0.3s ease-out;
 }
+
+/* ========================================= */
+/* BOTTOM SNACKBAR */
+/* ========================================= */
+.bottom-snackbar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120%);
+  z-index: 99999;
+  min-width: 380px;
+  max-width: 560px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: #18181b;
+  color: #fafafa;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05);
+  animation: snackbarSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
+}
+
+.bottom-snackbar.snackbar-hide {
+  animation: snackbarSlideDown 0.35s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+}
+
+.bottom-snackbar .snackbar-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  margin-top: 1px;
+}
+
+.bottom-snackbar .snackbar-icon.icon-success {
+  background: #22c55e;
+  color: #fff;
+}
+
+.bottom-snackbar .snackbar-icon.icon-error {
+  background: #ef4444;
+  color: #fff;
+}
+
+.bottom-snackbar .snackbar-icon.icon-info {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.bottom-snackbar .snackbar-content {
+  flex: 1;
+}
+
+.bottom-snackbar .snackbar-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 2px;
+  color: #e4e4e7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bottom-snackbar .snackbar-message {
+  color: #d4d4d8;
+  font-size: 0.88rem;
+}
+
+.bottom-snackbar .snackbar-message strong {
+  color: #ffffff;
+}
+
+.bottom-snackbar .snackbar-close {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: #71717a;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.bottom-snackbar .snackbar-close:hover {
+  color: #fafafa;
+}
+
+.bottom-snackbar .snackbar-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  border-radius: 0 0 14px 14px;
+  animation: snackbarProgress 5s linear forwards;
+}
+
+@keyframes snackbarSlideUp {
+  from { transform: translateX(-50%) translateY(120%); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+@keyframes snackbarSlideDown {
+  from { transform: translateX(-50%) translateY(0); opacity: 1; }
+  to { transform: translateX(-50%) translateY(120%); opacity: 0; }
+}
+
+@keyframes snackbarProgress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@media (max-width: 480px) {
+  .bottom-snackbar {
+    min-width: auto;
+    left: 12px;
+    right: 12px;
+    transform: translateX(0) translateY(120%);
+  }
+  @keyframes snackbarSlideUp {
+    from { transform: translateX(0) translateY(120%); opacity: 0; }
+    to { transform: translateX(0) translateY(0); opacity: 1; }
+  }
+  @keyframes snackbarSlideDown {
+    from { transform: translateX(0) translateY(0); opacity: 1; }
+    to { transform: translateX(0) translateY(120%); opacity: 0; }
+  }
+}
 </style>
 @endsection
 
@@ -720,16 +989,18 @@ p:has(span.font-medium) {
     <div class="card-header-custom">
         <div class="d-flex flex-wrap justify-content-between align-items-center">
             <div>
-                <h4 class="mb-1 fw-bold">
-                    <i class="ri-bill-line me-2"></i>Daftar Tagihan Belum Bayar
-                </h4>
+                <div class="push-title-wrap">
+                    <h4 class="mb-0 fw-bold">
+                        <i class="ri-bill-line me-2"></i>Daftar Tagihan Belum Lunas
+                    </h4>
+                    <span class="push-total-chip">{{ $totalTagihan ?? $tagihans->total() }} Total Tagihan</span>
+                </div>
                 <p class="mb-0 opacity-75 small">
-                    Kelola dan kirim notifikasi tagihan ke pelanggan
-                    <span class="badge bg-primary ms-2">{{ $totalTagihan ?? $tagihans->total() }} Total Tagihan</span>
+                    Kelola dan kirim push notifikasi tagihan pelanggan dengan cepat.
                 </p>
             </div>
             <div class="d-flex action-buttons mt-3 mt-md-0 gap-2">
-                <button id="send-broadcast-push" class="btn btn-success btn-broadcast">
+                <button id="send-broadcast-push" class="btn btn-success btn-broadcast" data-total="{{ $totalTagihan ?? $tagihans->total() }}">
                     <i class="ri-notification-3-fill"></i>
                     Kirim Notifikasi ke Semua ({{ $totalTagihan ?? $tagihans->total() }})
                 </button>
@@ -737,10 +1008,10 @@ p:has(span.font-medium) {
         </div>
         
         <!-- Search Form -->
-        <div class="mt-3">
-            <form action="{{ route('push.notification.index') }}" method="GET" class="d-flex gap-2">
-                <div class="input-group" style="max-width: 400px;">
-                    <span class="input-group-text bg-white"><i class="ri-search-line"></i></span>
+        <div class="push-search-row">
+            <form action="{{ route('push.notification.index') }}" method="GET" class="push-search-form">
+                <div class="input-group push-search-group">
+                    <span class="input-group-text"><i class="ri-search-line"></i></span>
                     <input type="text" name="search" class="form-control" placeholder="Cari nama, ID, atau WhatsApp..." value="{{ request('search') }}">
                 </div>
                 <button type="submit" class="btn btn-primary">
@@ -755,42 +1026,82 @@ p:has(span.font-medium) {
         </div>
     </div>
 
+    <div class="broadcast-progress-panel d-none" id="broadcastProgressPanel">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+            <div>
+                <div class="fw-semibold">Progress kirim notifikasi</div>
+                <div class="text-muted small" id="broadcastProgressText">Menyiapkan log pelanggan...</div>
+            </div>
+            <div class="broadcast-progress-counts">
+                <span class="badge bg-label-success" id="broadcastSentCount">0 terkirim</span>
+                <span class="badge bg-label-danger" id="broadcastFailedCount">0 gagal</span>
+                <span class="badge bg-label-secondary" id="broadcastSkippedCount">0 dilewati</span>
+            </div>
+        </div>
+        <div class="progress broadcast-progress-bar">
+            <div class="progress-bar bg-success" id="broadcastProgressBar" style="width: 0%">0%</div>
+        </div>
+        <div class="broadcast-log-list" id="broadcastLogList"></div>
+    </div>
+
     <div class="card-body p-0">
         <div class="table-responsive p-3">
+            <div class="push-selection-toolbar" id="pushSelectionToolbar">
+                <span class="selected-text" id="pushSelectedCount">0 dipilih</span>
+                <button type="button" class="send-selected-btn" id="send-selected-push">
+                    <i class="ri-notification-3-line"></i>
+                    Kirim Notifikasi Terpilih
+                </button>
+            </div>
             <table class="table table-modern table-hover">
                 <thead>
                     <tr>
-                        <th><i class="ri-hashtag me-1"></i>No</th>
-                        <th><i class="ri-user-3-line me-1"></i>Nama Pelanggan</th>
-                        <th><i class="ri-shopping-bag-line me-1"></i>Paket</th>
-                        <th><i class="ri-checkbox-circle-line me-1"></i>Status</th>
-                        <th><i class="ri-calendar-line me-1"></i>Tanggal Mulai</th>
-                        <th><i class="ri-calendar-check-line me-1"></i>Tanggal Berakhir</th>
+                        <th style="width: 64px;">
+                            <input type="checkbox" class="push-row-checkbox" id="selectAllPush" aria-label="Pilih semua tagihan notifikasi">
+                        </th>
+                        <th>Nama Pelanggan</th>
+                        <th>Nomer ID</th>
+                        <th>Status</th>
+                        <th>Notifikasi</th>
+                        <th>Tanggal Mulai</th>
+                        <th>Tanggal Berakhir</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($tagihans as $index => $tagihan)
-                    <tr id="row-{{ $tagihan['id'] }}">
-                        <td class="fw-bold">{{ $tagihans->firstItem() + $index }}</td>
+                    @php
+                        $statusKey = strtolower(trim($tagihan['status_pembayaran'] ?? ''));
+                    @endphp
+                    @continue($statusKey !== 'belum bayar')
+                    <tr id="row-{{ $tagihan['id'] }}" data-tagihan-id="{{ $tagihan['id'] }}">
+                        <td style="width: 64px;">
+                            <input type="checkbox" class="push-row-checkbox push-checkbox" value="{{ $tagihan['id'] }}" aria-label="Pilih notifikasi {{ $tagihan['nama_lengkap'] }}">
+                        </td>
                         <td>
                             <div class="d-flex align-items-center">
                                 <span class="fw-semibold">{{ $tagihan['nama_lengkap'] }}</span>
                             </div>
                         </td>
                         <td>
-                            <span class="badge bg-label-info">{{ $tagihan['paket']['nama_paket'] ?? '-' }}</span>
+                            <span class="badge bg-label-info">{{ $tagihan['nomer_id'] ?? '-' }}</span>
                         </td>
                         <td>
                             @php
-                                $statusClass = match($tagihan['status_pembayaran']) {
-                                    'Lunas' => 'bg-success',
-                                    'Belum Bayar' => 'bg-warning',
-                                    'Jatuh Tempo' => 'bg-danger',
+                                $statusClass = match($statusKey) {
+                                    'lunas' => 'bg-success',
+                                    'belum bayar' => 'bg-warning',
+                                    'proses_verifikasi' => 'bg-info',
+                                    'jatuh tempo' => 'bg-danger',
                                     default => 'bg-secondary'
                                 };
                             @endphp
                             <span class="badge badge-status {{ $statusClass }}">
-                                {{ $tagihan['status_pembayaran'] }}
+                                {{ $tagihan['status_label'] ?? ucwords(str_replace('_', ' ', $tagihan['status_pembayaran'])) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-label-secondary notification-log-badge" data-tagihan-id="{{ $tagihan['id'] }}">
+                                <i class="ri-time-line me-1"></i>Belum dikirim
                             </span>
                         </td>
                         <td>{{ $tagihan['tanggal_mulai'] ?? '-' }}</td>
@@ -798,9 +1109,9 @@ p:has(span.font-medium) {
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5">
+                        <td colspan="7" class="text-center py-5">
                             <i class="ri-inbox-line fs-1 text-muted mb-3 d-block"></i>
-                            <p class="text-muted mb-0">Tidak ada tagihan yang belum dibayar</p>
+                            <p class="text-muted mb-0">Tidak ada tagihan yang belum lunas</p>
                         </td>
                     </tr>
                     @endforelse
@@ -811,12 +1122,12 @@ p:has(span.font-medium) {
         <!-- Laravel Pagination -->
         @if($tagihans->hasPages())
         <div class="pagination-wrapper">
-          <div class="pagination-info">
-            Menampilkan <strong>{{ $tagihans->firstItem() ?? 0 }}</strong> - <strong>{{ $tagihans->lastItem() ?? 0 }}</strong>
-            dari <strong>{{ $tagihans->total() }}</strong> tagihan
-          </div>
+          <label class="dense-toggle-wrap mb-0">
+            <input type="checkbox" id="densePaddingTogglePush">
+            <span>Dense padding</span>
+          </label>
           <div>
-            {{ $tagihans->appends(request()->query())->onEachSide(2)->links('pagination::bootstrap-5') }}
+            {{ $tagihans->appends(request()->query())->onEachSide(2)->links('vendor.pagination.tagihan-compact') }}
           </div>
         </div>
         @endif
@@ -827,6 +1138,65 @@ p:has(span.font-medium) {
 @section('page-script')
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    const denseTogglePush = document.getElementById('densePaddingTogglePush');
+    const pushTable = document.querySelector('.table-modern');
+    if (denseTogglePush && pushTable) {
+        const saved = localStorage.getItem('dense_push_tagihan') === '1';
+        denseTogglePush.checked = saved;
+        pushTable.classList.toggle('is-dense', saved);
+        denseTogglePush.addEventListener('change', function () {
+            const isDense = denseTogglePush.checked;
+            pushTable.classList.toggle('is-dense', isDense);
+            localStorage.setItem('dense_push_tagihan', isDense ? '1' : '0');
+        });
+    }
+    // ========================================
+    // BOTTOM SNACKBAR HELPER
+    // ========================================
+    function showBottomSnackbar(message, type = 'success', duration = 5000) {
+        // Remove existing snackbar
+        const existing = document.querySelector('.bottom-snackbar');
+        if (existing) existing.remove();
+
+        const iconMap = {
+            success: { cls: 'icon-success', icon: 'ri-check-line' },
+            error:   { cls: 'icon-error',   icon: 'ri-close-line' },
+            info:    { cls: 'icon-info',     icon: 'ri-information-line' }
+        };
+        const iconData = iconMap[type] || iconMap.success;
+
+        const titleMap = {
+            success: 'Berhasil',
+            error: 'Gagal',
+            info: 'Informasi'
+        };
+
+        const snackbar = document.createElement('div');
+        snackbar.className = 'bottom-snackbar';
+        snackbar.innerHTML = `
+            <div class="snackbar-icon ${iconData.cls}">
+                <i class="${iconData.icon}"></i>
+            </div>
+            <div class="snackbar-content">
+                <div class="snackbar-title">${titleMap[type] || 'Notifikasi'}</div>
+                <div class="snackbar-message">${message}</div>
+            </div>
+            <button class="snackbar-close" onclick="this.parentElement.classList.add('snackbar-hide'); setTimeout(() => this.parentElement.remove(), 350);">
+                <i class="ri-close-line"></i>
+            </button>
+            <div class="snackbar-progress" style="animation-duration: ${duration}ms;"></div>
+        `;
+
+        document.body.appendChild(snackbar);
+
+        setTimeout(() => {
+            if (snackbar.parentElement) {
+                snackbar.classList.add('snackbar-hide');
+                setTimeout(() => snackbar.remove(), 350);
+            }
+        }, duration);
+    }
+
     // Fungsi helper untuk menampilkan loading
     function showLoading() {
         $('.loading-overlay').css('display', 'flex');
@@ -836,55 +1206,235 @@ document.addEventListener("DOMContentLoaded", function() {
         $('.loading-overlay').css('display', 'none');
     }
 
-    // ========================================
-    // TOMBOL BROADCAST PUSH NOTIFICATION
-    // Fetch ALL IDs from backend (not just current page)
-    // ========================================
-    $('#send-broadcast-push').on('click', async function() {
+    async function parseJsonFetchResponse(response) {
+        const text = await response.text();
+        let data = {};
+
+        if (text) {
+            try {
+                data = JSON.parse(text);
+            } catch (error) {
+                data = {
+                    message: response.ok
+                        ? text
+                        : `Respons server tidak valid (HTTP ${response.status}). Silakan login ulang atau cek log Laravel.`
+                };
+            }
+        }
+
+        if (!response.ok) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        return data;
+    }
+
+    function statusBadgeHtml(status) {
+        const map = {
+            sent: '<span class="badge bg-label-success"><i class="ri-check-line me-1"></i>Terkirim</span>',
+            failed: '<span class="badge bg-label-danger"><i class="ri-close-line me-1"></i>Gagal</span>',
+            skipped: '<span class="badge bg-label-secondary"><i class="ri-subtract-line me-1"></i>Dilewati</span>',
+            pending: '<span class="badge bg-label-warning"><i class="ri-loader-4-line me-1"></i>Proses</span>'
+        };
+
+        return map[status] || map.pending;
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, function (char) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char];
+        });
+    }
+
+    function startBroadcastProgress(progressUrl, total) {
+        if (!progressUrl) return;
+
+        const panel = $('#broadcastProgressPanel');
+        const progressText = $('#broadcastProgressText');
+        const progressBar = $('#broadcastProgressBar');
+        const logList = $('#broadcastLogList');
+
+        panel.removeClass('d-none');
+        progressText.text(`0 dari ${total || 0} pelanggan diproses`);
+        progressBar.css('width', '0%').text('0%');
+        logList.html('');
+
+        const poll = () => {
+            fetch(progressUrl, { headers: { 'Accept': 'application/json' } })
+                .then(parseJsonFetchResponse)
+                .then(data => {
+                    if (!data.success) {
+                        throw new Error(data.message || 'Gagal membaca progress');
+                    }
+
+                    const counts = data.counts || {};
+                    const percent = counts.percent || 0;
+                    const processed = counts.processed || 0;
+                    const totalCount = counts.total || total || 0;
+
+                    progressText.text(`${processed} dari ${totalCount} pelanggan diproses`);
+                    progressBar.css('width', `${percent}%`).text(`${percent}%`);
+                    $('#broadcastSentCount').text(`${counts.sent || 0} terkirim`);
+                    $('#broadcastFailedCount').text(`${counts.failed || 0} gagal`);
+                    $('#broadcastSkippedCount').text(`${counts.skipped || 0} dilewati`);
+
+                    (data.items || []).forEach(item => {
+                        $(`.notification-log-badge[data-tagihan-id="${item.tagihan_id}"]`).replaceWith(
+                            `<span class="notification-log-badge" data-tagihan-id="${item.tagihan_id}">${statusBadgeHtml(item.status)}</span>`
+                        );
+                    });
+
+                    logList.html((data.items || []).slice(0, 20).map(item => `
+                        <div class="broadcast-log-item">
+                            <span>${statusBadgeHtml(item.status)} <strong>${escapeHtml(item.nama)}</strong> <span class="text-muted">(${escapeHtml(item.nomer_id)})</span></span>
+                            <span class="text-muted">${escapeHtml(item.provider)}${item.message ? ' - ' + escapeHtml(item.message) : ''}</span>
+                        </div>
+                    `).join(''));
+
+                    if (!counts.finished) {
+                        setTimeout(poll, 2500);
+                        return;
+                    }
+
+                    const type = (counts.failed || 0) > 0 ? 'info' : 'success';
+                    showBottomSnackbar(
+                        `Broadcast selesai: <strong>${counts.sent || 0}</strong> terkirim, <strong>${counts.failed || 0}</strong> gagal, <strong>${counts.skipped || 0}</strong> dilewati.`,
+                        type,
+                        8000
+                    );
+                })
+                .catch(err => {
+                    console.error('Progress error:', err);
+                    progressText.text('Gagal membaca progress broadcast. Cek log server.');
+                });
+        };
+
+        poll();
+    }
+
+    function updatePushSelection() {
+        const $all = $('.push-checkbox');
+        const $checked = $('.push-checkbox:checked');
+        const selectedCount = $checked.length;
+
+        $('#pushSelectedCount').text(`${selectedCount} dipilih`);
+        $('#pushSelectionToolbar').toggleClass('active', selectedCount > 0);
+        $('tr[data-tagihan-id]').removeClass('row-selected');
+        $checked.closest('tr[data-tagihan-id]').addClass('row-selected');
+
+        const $selectAll = $('#selectAllPush');
+        $selectAll.prop('checked', $all.length > 0 && selectedCount === $all.length);
+        $selectAll.prop('indeterminate', selectedCount > 0 && selectedCount < $all.length);
+    }
+
+    $('#selectAllPush').on('change', function () {
+        $('.push-checkbox').prop('checked', this.checked);
+        updatePushSelection();
+    });
+
+    $(document).on('change', '.push-checkbox', updatePushSelection);
+
+    $('#send-selected-push').on('click', function () {
+        const ids = $('.push-checkbox:checked').map(function () {
+            return $(this).val();
+        }).get();
+
+        if (!ids.length) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Belum Ada Pilihan',
+                text: 'Pilih tagihan yang ingin dikirim notifikasi terlebih dahulu.',
+                confirmButtonText: 'OK',
+                customClass: { confirmButton: 'btn btn-warning' },
+                buttonsStyling: false
+            });
+            return;
+        }
+
         const btn = $(this);
         const originalText = btn.html();
-        
-        // Show loading state
-        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memuat...');
 
-        try {
-            // Fetch ALL tagihan IDs from backend
-            const response = await fetch("{{ route('push.notification.all.ids') }}", {
-                method: 'GET',
+        Swal.fire({
+            title: 'Kirim Notifikasi Terpilih?',
+            html: `<p>Kirim notifikasi tagihan ke <strong>${ids.length}</strong> pelanggan terpilih?</p>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '<i class="ri-send-plane-line me-2"></i>Ya, Kirim',
+            cancelButtonText: 'Batal',
+            customClass: {
+                confirmButton: 'btn btn-success me-2',
+                cancelButton: 'btn btn-secondary'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Mengirim...');
+
+            fetch("{{ route('tagihan.push') }}", {
+                method: 'POST',
                 headers: {
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                    'Content-Type': 'application/json',
                     'Accept': 'application/json'
+                },
+                body: JSON.stringify({ tagihan_ids: ids })
+            })
+            .then(parseJsonFetchResponse)
+            .then(data => {
+                btn.prop('disabled', false).html(originalText);
+
+                if (data.success && data.progress_url) {
+                    showBottomSnackbar(`Broadcast dimulai untuk <strong>${data.total || ids.length}</strong> tagihan. Progress akan berjalan di bawah tombol.`, 'info');
+                    startBroadcastProgress(data.progress_url, data.total || ids.length);
+                } else {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Broadcast Tidak Dimulai',
+                        text: data.message || 'Tidak ada notifikasi yang diproses.',
+                        confirmButtonText: 'OK',
+                        customClass: { confirmButton: 'btn btn-warning' },
+                        buttonsStyling: false
+                    });
                 }
-            });
-            
-            const data = await response.json();
-            btn.prop('disabled', false).html(originalText);
-            
-            if (!data.success || !data.ids || data.ids.length === 0) {
+            })
+            .catch(err => {
+                console.error('Selected push error:', err);
+                btn.prop('disabled', false).html(originalText);
                 Swal.fire({
-                    icon: 'warning',
-                    title: 'Tidak Ada Data',
-                    text: 'Tidak ada tagihan yang bisa dikirim.',
-                    showCancelButton: false,
-                    showDenyButton: false,
-                    showCloseButton: false,
+                    icon: 'error',
+                    title: 'Terjadi Kesalahan',
+                    text: err.message || 'Gagal mengirim notifikasi terpilih.',
                     confirmButtonText: 'OK',
-                    customClass: {
-                        confirmButton: 'btn btn-warning'
-                    },
+                    customClass: { confirmButton: 'btn btn-danger' },
                     buttonsStyling: false
                 });
-                return;
-            }
-            
-            const allTagihanIds = data.ids;
+            });
+        });
+    });
+
+    // ========================================
+    // TOMBOL BROADCAST PUSH NOTIFICATION
+    // Server-side broadcast, aman untuk puluhan ribu pelanggan
+    // ========================================
+    $('#send-broadcast-push').on('click', function() {
+        const btn = $(this);
+        const originalText = btn.html();
+        const totalTagihan = Number(btn.data('total') || 0);
 
         // MODAL KONFIRMASI - 2 BUTTON: YA & BATAL
         Swal.fire({
             title: 'Apakah Anda yakin?',
             html: `
-                <p>Kirim notifikasi tagihan ke <strong>${allTagihanIds.length}</strong> pelanggan?</p>
+                <p>Kirim reminder tagihan ke <strong>${totalTagihan}</strong> pelanggan belum lunas?</p>
                 <p class="text-muted small mt-2">
-                    <i class="ri-information-line"></i> Notifikasi akan dikirim ke semua pelanggan yang belum bayar
+                    <i class="ri-information-line"></i> Sistem akan membuat batch di server dan mengirim via queue FCM multicast.
                 </p>
             `,
             icon: 'question',
@@ -906,61 +1456,28 @@ document.addEventListener("DOMContentLoaded", function() {
             if (result.isConfirmed) {
                 btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Mengirim...');
 
-                fetch("{{ route('tagihan.push') }}", {
+                fetch("{{ route('push.notification.broadcast.all') }}", {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': "{{ csrf_token() }}",
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ tagihan_ids: allTagihanIds })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    return response.json();
                 })
+                .then(parseJsonFetchResponse)
                 .then(data => {
                     btn.prop('disabled', false).html(originalText);
 
                     console.log('Response data:', data);
 
-                    if (data.queued) {
-                        Swal.fire({
-                            toast: true,
-                            position: 'top-end',
-                            icon: 'success',
-                            title: 'Dikirim ke antrian',
-                            html: `<small>Notifikasi untuk <strong>${data.total || allTagihanIds.length}</strong> tagihan sedang dikirim di background. Anda bisa lanjut bekerja.</small>`,
-                            showConfirmButton: false,
-                            timer: 4000,
-                            timerProgressBar: true,
-                        });
-                    } else if (data.success && data.sent > 0) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil Terkirim!',
-                            html: `
-                                <div class="text-center">
-                                    <p class="mb-2"><strong class="text-success fs-4">${data.sent}</strong> notifikasi berhasil dikirim</p>
-                                    ${data.ignored > 0 ? `<p class="text-muted small mb-0"><i class="ri-information-line"></i> ${data.ignored} pelanggan diabaikan (SID kosong)</p>` : ''}
-                                </div>
-                            `,
-                            showCancelButton: false,
-                            showDenyButton: false,
-                            showCloseButton: false,
-                            confirmButtonText: 'OK',
-                            customClass: {
-                                confirmButton: 'btn btn-success'
-                            },
-                            buttonsStyling: false
-                        });
+                    if (data.success && data.progress_url) {
+                        showBottomSnackbar(`Broadcast dimulai untuk <strong>${data.total || totalTagihan}</strong> tagihan. Progress akan berjalan di bawah tombol.`, 'info');
+                        startBroadcastProgress(data.progress_url, data.total || totalTagihan);
                     } else {
                         Swal.fire({
                             icon: 'warning',
-                            title: 'Tidak Ada Yang Terkirim',
-                            text: data.message || 'Tidak ada notifikasi yang berhasil dikirim. Pastikan pelanggan memiliki SID yang valid.',
+                            title: 'Broadcast Tidak Dimulai',
+                            text: data.message || 'Tidak ada notifikasi yang diproses. Pastikan pelanggan memiliki token valid.',
                             showCancelButton: false,
                             showDenyButton: false,
                             showCloseButton: false,
@@ -978,7 +1495,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     Swal.fire({
                         icon: 'error',
                         title: 'Terjadi Kesalahan',
-                        text: 'Gagal mengirim notifikasi. Silakan coba lagi atau hubungi administrator.',
+                        text: err.message || 'Gagal mengirim notifikasi. Silakan coba lagi atau hubungi administrator.',
                         showCancelButton: false,
                         showDenyButton: false,
                         showCloseButton: false,
@@ -991,21 +1508,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
             }
         });
-        
-        } catch (err) {
-            console.error('Error fetching tagihan IDs:', err);
-            btn.prop('disabled', false).html(originalText);
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal Memuat Data',
-                text: 'Tidak dapat mengambil data tagihan. Silakan refresh halaman.',
-                confirmButtonText: 'OK',
-                customClass: {
-                    confirmButton: 'btn btn-danger'
-                },
-                buttonsStyling: false
-            });
-        }
     });
 
     // ========================================
@@ -1065,7 +1567,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Mengirim...');
                 showLoading();
 
-                fetch("", {
+                fetch("{{ route('push.notification.broadcast.info') }}", {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': "{{ csrf_token() }}",
@@ -1074,12 +1576,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     },
                     body: JSON.stringify({ message: message })
                 })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
+                .then(parseJsonFetchResponse)
                 .then(data => {
                     hideLoading();
                     btn.prop('disabled', false).html(originalText);
@@ -1131,7 +1628,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     Swal.fire({
                         icon: 'error',
                         title: 'Terjadi Kesalahan',
-                        text: 'Gagal mengirim notifikasi. Silakan coba lagi atau hubungi administrator.',
+                        text: err.message || 'Gagal mengirim notifikasi. Silakan coba lagi atau hubungi administrator.',
                         showCancelButton: false,
                         showDenyButton: false,
                         showCloseButton: false,
@@ -1187,6 +1684,43 @@ document.addEventListener("DOMContentLoaded", function() {
     width: 1rem;
     height: 1rem;
     border-width: 0.2em;
+}
+
+.broadcast-progress-panel {
+    margin: 16px;
+    padding: 16px;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.broadcast-progress-bar {
+    height: 18px;
+    border-radius: 6px;
+}
+
+.broadcast-log-list {
+    display: grid;
+    gap: 8px;
+    max-height: 260px;
+    overflow: auto;
+    margin-top: 12px;
+}
+
+.broadcast-log-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    border: 1px solid #f1f1f2;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.broadcast-progress-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 </style>
 @endsection

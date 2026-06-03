@@ -5,7 +5,8 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+@include('content.apps.Customer.partials.disable-zoom')
 <title>Riwayat Pembayaran</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -186,26 +187,6 @@ body {
 .empty-title { font-size: 1rem; font-weight: 600; color: #64748b; margin-bottom: 4px; }
 .empty-sub { font-size: 0.8125rem; color: #94a3b8; }
 
-/* Bottom nav */
-.bottom-nav {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    height: 72px; background: #ffffff;
-    display: flex; justify-content: space-around; align-items: center;
-    box-shadow: 0 -2px 16px rgba(0,0,0,0.08);
-    border-top: 1px solid #e2e8f0; z-index: 999;
-}
-
-.bottom-nav .tab-btn {
-    background: none; border: none;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 4px;
-    color: #94a3b8; cursor: pointer; padding: 8px 16px; border-radius: 12px;
-    transition: all 0.2s ease;
-}
-
-.bottom-nav .tab-btn:hover { background: #f8fafc; }
-.bottom-nav .tab-btn i { font-size: 1.5rem; }
-.bottom-nav .tab-btn span { font-size: 0.6875rem; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -290,7 +271,8 @@ body {
     </div>
 
 </div>
- 
+
+@include('content.apps.Customer.tagihan.bottom-navbar', ['active' => 'invoice'])
 
 <script>
 // Year filter

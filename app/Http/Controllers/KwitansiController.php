@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class KwitansiController extends Controller
 {
@@ -22,12 +23,16 @@ class KwitansiController extends Controller
 
         try {
             // 1. Ambil data tagihan
-            $tagihan = Tagihan::findOrFail($tagihanId);
+            $tagihan = Tagihan::with('pelanggan')->findOrFail($tagihanId);
             $this->authorizeKwitansiAccess($tagihan);
 
             // 2. Validasi apakah kwitansi ada
             if (!$tagihan->kwitansi) {
                 abort(404, 'Kwitansi belum tersedia untuk tagihan ini');
+            }
+
+            if (!$this->kwitansiFileExists($tagihan) && $redirect = $this->redirectToAlternateKwitansiDomain($tagihan, 'kwitansi.preview')) {
+                return $redirect;
             }
 
             [$filePath, $mimeType, $fileSize] = $this->resolveKwitansiFile($tagihan, $tagihanId);
@@ -69,7 +74,13 @@ class KwitansiController extends Controller
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             abort(404, 'Tagihan tidak ditemukan');
+        } catch (HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
+            if (isset($tagihan) && $redirect = $this->redirectToAlternateKwitansiDomain($tagihan, 'kwitansi.preview')) {
+                return $redirect;
+            }
+
             Log::error('Error preview kwitansi', [
                 'tagihan_id' => $tagihanId,
                 'error' => $e->getMessage(),
@@ -94,6 +105,10 @@ class KwitansiController extends Controller
 
             if (!$tagihan->kwitansi) {
                 abort(404, 'Kwitansi belum tersedia');
+            }
+
+            if (!$this->kwitansiFileExists($tagihan) && $redirect = $this->redirectToAlternateKwitansiDomain($tagihan, 'kwitansi.download')) {
+                return $redirect;
             }
 
             [$filePath, $mimeType, $fileSize] = $this->resolveKwitansiFile($tagihan, $tagihanId);
@@ -127,7 +142,13 @@ class KwitansiController extends Controller
                 'Accept-Ranges' => 'bytes',
                 'X-Accel-Buffering' => 'no',
             ]);
+        } catch (HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
+            if (isset($tagihan) && $redirect = $this->redirectToAlternateKwitansiDomain($tagihan, 'kwitansi.download')) {
+                return $redirect;
+            }
+
             Log::error('Error download kwitansi', [
                 'tagihan_id' => $tagihanId,
                 'error' => $e->getMessage(),
@@ -214,17 +235,28 @@ class KwitansiController extends Controller
      */
     private function authorizeKwitansiAccess(Tagihan $tagihan): void
     {
+        if ($this->hasValidKwitansiCode($tagihan)) {
+            return;
+        }
+
         $webUser = Auth::guard('web')->user();
         if ($webUser && isset($webUser->role) && in_array($webUser->role, ['administrator', 'admin', 'customer_service'], true)) {
             return;
         }
 
         $customer = Auth::guard('customer')->user();
-        if ($customer && (int) $customer->id === (int) $tagihan->pelanggan_id) {
+        if ($customer && (string) $customer->id === (string) $tagihan->pelanggan_id) {
             return;
         }
 
         abort(403, 'Anda tidak memiliki akses ke kwitansi ini.');
+    }
+
+    private function hasValidKwitansiCode(Tagihan $tagihan): bool
+    {
+        $code = strtoupper(trim((string) request()->query('code', '')));
+
+        return $code !== '' && hash_equals($this->generateVerificationCode($tagihan), $code);
     }
 
     /**
@@ -252,5 +284,42 @@ class KwitansiController extends Controller
             mime_content_type($filePath),
             filesize($filePath),
         ];
+    }
+
+    private function redirectToAlternateKwitansiDomain(Tagihan $tagihan, string $routeName)
+    {
+        if (request()->boolean('fallback_checked')) {
+            return null;
+        }
+
+        $currentHost = request()->getHost();
+        $jmkUrl = rtrim(config('app.jmk_app_url', 'https://layanan.jernih.net.id'), '/');
+        $jmkgkUrl = rtrim(config('app.jmkgk_app_url', 'https://layanan.beningmedia.co.id'), '/');
+        $jmkHost = parse_url($jmkUrl, PHP_URL_HOST);
+        $jmkgkHost = parse_url($jmkgkUrl, PHP_URL_HOST);
+
+        $targetBaseUrl = strcasecmp((string) $currentHost, (string) $jmkHost) === 0 ? $jmkgkUrl : $jmkUrl;
+        $targetHost = parse_url($targetBaseUrl, PHP_URL_HOST);
+
+        if (!$targetHost || strcasecmp($targetHost, $currentHost) === 0) {
+            return null;
+        }
+
+        return redirect()->away($targetBaseUrl.route($routeName, [
+            'tagihan_id' => $tagihan->id,
+            'code' => request()->query('code') ?: $this->generateVerificationCode($tagihan),
+            'domain_checked' => 1,
+            'fallback_checked' => 1,
+        ], false));
+    }
+
+    private function kwitansiFileExists(Tagihan $tagihan): bool
+    {
+        $relativePath = $tagihan->kwitansi;
+        if (!str_starts_with($relativePath, 'kwitansi/')) {
+            $relativePath = 'kwitansi/' . $relativePath;
+        }
+
+        return file_exists(storage_path('app/public/' . $relativePath));
     }
 }

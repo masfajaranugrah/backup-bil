@@ -8,10 +8,17 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    @include('content.apps.Customer.partials.disable-zoom')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Home - Dashboard</title>
-
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Pixel Code - https://app.pushaja.com/ -->
+    <script defer src="https://app.pushaja.com/pixel/pANATtCQfpZQVbbw"></script>
+    <!-- END Pixel Code -->
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -19,7 +26,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -84,11 +91,11 @@
             width: 180px;
             height: 180px;
             transform: translateY(-50%);
-            background-image: url('{{ asset("assets/img/logo-card.png") }}');
+            background-image: url('{{ asset("assets/img/jmk-logo.png") }}');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center right;
-            opacity: 0.50;
+            opacity: 0.15;
             z-index: 0;
         }
 
@@ -166,6 +173,40 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
+        }
+
+        .network-status-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            padding: 8px 12px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+            color: #0f172a;
+            font-size: 0.82rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .network-status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.14);
+        }
+
+        .network-status-card.signal-warning .network-status-dot {
+            background: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.16);
+        }
+
+        .network-status-card.signal-bad .network-status-dot {
+            background: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
         }
 
         /* Iklan/Info Section */
@@ -448,7 +489,7 @@
         .modern-menu-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px 12px;
+            gap: 24px 14px;
             margin-bottom: 32px;
         }
 
@@ -462,17 +503,17 @@
         }
 
         .modern-menu-icon {
-            width: 58px;
-            height: 58px;
+            width: 68px;
+            height: 68px;
             background: #ffffff;
             border: 1.5px solid #475569;
-            border-radius: 14px;
+            border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 8px;
             position: relative;
-            font-size: 26px;
+            font-size: 31px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
             transition: all 0.2s ease;
         }
@@ -485,18 +526,39 @@
 
         .modern-menu-badge {
             position: absolute;
-            bottom: -6px;
-            right: -6px;
-            width: 22px;
-            height: 22px;
+            bottom: -7px;
+            right: -7px;
+            width: 25px;
+            height: 25px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 11px;
             color: white;
             border: 2px solid white;
             font-weight: bold;
+        }
+
+        .modern-menu-notification-count {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: #ef4444;
+            border: 2px solid #ffffff;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35);
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.66rem;
+            font-weight: 900;
+            line-height: 1;
+            z-index: 3;
         }
 
         .badge-purple {
@@ -520,15 +582,29 @@
         }
 
         .modern-menu-text {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #475569;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #334155;
             text-align: center;
-            line-height: 1.2;
-            max-width: 80px;
+            line-height: 1.3;
+            max-width: 96px;
         }
 
-        color: #64748b;
+        @media (max-width: 380px) {
+            .modern-menu-grid {
+                gap: 22px 10px;
+            }
+
+            .modern-menu-icon {
+                width: 64px;
+                height: 64px;
+                font-size: 29px;
+            }
+
+            .modern-menu-text {
+                font-size: 0.9rem;
+                max-width: 92px;
+            }
         }
 
         /* Bottom Navigation */
@@ -694,301 +770,246 @@
             font-size: 1.125rem;
         }
 
-        /* ========== CUSTOM SWEETALERT2 MODAL - PREMIUM MODERN LIGHT ========== */
-        .swal2-popup.custom-modal {
+        /* ========== CUSTOM SWEETALERT2 MODAL - GLASSMORPHISM PREMIUM ========== */
+        /* ========== GLOBAL SWEETALERT2 OVERRIDE - GLASSMORPHISM PREMIUM ========== */
+        .swal2-popup {
             border-radius: 28px !important;
-            padding: 0 !important;
-            width: 92% !important;
-            max-width: 400px !important;
-            box-shadow: 0 32px 80px rgba(15, 23, 42, 0.18), 0 8px 32px rgba(15, 23, 42, 0.10) !important;
+            padding: 36px 24px 24px !important;
+            width: 90% !important;
+            max-width: 380px !important;
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(24px) !important;
+            -webkit-backdrop-filter: blur(24px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12), 0 8px 24px rgba(15, 23, 42, 0.04) !important;
             font-family: 'Inter', sans-serif !important;
             overflow: hidden !important;
-            border: 1px solid #e2e8f0 !important;
-            background: #ffffff !important;
         }
 
-        .swal2-popup.custom-modal .swal2-html-container {
-            margin: 0 !important;
+        .swal2-popup .swal2-title {
+            font-size: 1.375rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            letter-spacing: -0.02em !important;
+            margin-bottom: 8px !important;
             padding: 0 !important;
         }
 
-        .modal-content-wrapper {
-            position: relative;
-            background: #ffffff;
-            overflow: hidden;
+        .swal2-popup .swal2-html-container {
+            font-size: 0.875rem !important;
+            color: #475569 !important;
+            line-height: 1.6 !important;
+            margin: 16px 0 24px !important;
+            padding: 0 !important;
         }
 
-        /* Gradient Header Banner */
-        .modal-header-banner {
-            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f172a 100%);
-            padding: 36px 28px 52px;
-            position: relative;
-            overflow: hidden;
-            text-align: center;
+        .swal2-backdrop-show {
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            background: rgba(15, 23, 42, 0.45) !important;
         }
 
-        /* Decorative circles in header */
-        .modal-header-banner::before {
-            content: '';
-            position: absolute;
-            width: 220px;
-            height: 220px;
-            background: rgba(255, 255, 255, 0.04);
+        /* Glassmorphism Icon Badge */
+        .glass-icon-wrap {
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
-            top: -80px;
-            right: -60px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .modal-header-banner::after {
-            content: '';
-            position: absolute;
-            width: 140px;
-            height: 140px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 50%;
-            bottom: -50px;
-            left: -40px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        /* Floating Icon Badge */
-        .modal-icon-wrap {
-            position: relative;
-            z-index: 2;
+            background: rgba(15, 23, 42, 0.05);
+            border: 1px solid rgba(15, 23, 42, 0.08);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.12);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            margin: 0 auto 16px;
-            backdrop-filter: blur(8px);
-            animation: iconFloat 1s ease-out;
+            margin: 0 auto 20px;
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4);
         }
 
-        .modal-icon-inner {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.75rem;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-icon-inner i {
+        .glass-icon-wrap i {
             color: #0f172a !important;
+            font-size: 1.75rem;
         }
 
-        @keyframes iconFloat {
-            from {
-                transform: translateY(16px) scale(0.85);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0) scale(1);
-                opacity: 1;
-            }
-        }
-
-        /* Header text */
-        .modal-header-title {
-            font-size: 1.5rem;
+        .glass-modal-title {
+            font-size: 1.375rem;
             font-weight: 800;
-            color: #ffffff;
-            letter-spacing: -0.025em;
-            margin-bottom: 6px;
-            position: relative;
-            z-index: 2;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
         }
 
-        .modal-header-subtitle {
-            font-size: 0.9375rem;
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 400;
-            position: relative;
-            z-index: 2;
+        .glass-modal-text {
+            font-size: 0.875rem;
+            color: #475569;
+            line-height: 1.5;
+            margin-bottom: 24px;
         }
 
-        /* White body card pulled up over banner */
-        .modal-body-card {
-            background: #ffffff;
-            border-radius: 24px 24px 0 0;
-            margin-top: -24px;
-            padding: 28px 24px 20px;
-            position: relative;
-            z-index: 3;
-        }
-
-        /* Stats row */
-        .modal-stat-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
+        .glass-features-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
             margin-bottom: 20px;
         }
 
-        .modal-stat-item {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 16px 14px;
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-
-        .modal-stat-item:hover {
-            border-color: #cbd5e1;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-        }
-
-        .modal-stat-icon {
-            font-size: 1.5rem;
-            margin-bottom: 6px;
-            display: block;
-        }
-
-        .modal-stat-label {
-            font-size: 0.8125rem;
-            font-weight: 600;
-            color: #0f172a;
-            letter-spacing: -0.01em;
-        }
-
-        /* Notification badge */
-        .notification-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            color: #92400e;
-            font-size: 0.8125rem;
+        .glass-feature-tag {
+            background: rgba(15, 23, 42, 0.04);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            border-radius: 12px;
+            padding: 10px 14px;
+            flex: 1;
+            font-size: 0.78rem;
             font-weight: 700;
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid #fcd34d;
-            letter-spacing: -0.01em;
-            margin-bottom: 16px;
+            color: #1e293b;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
-        /* Aliases untuk backward compat */
-        .modal-title {
-            display: none;
+        /* SweetAlert2 Standard Icons Override */
+        .swal2-icon {
+            border-width: 3px !important;
+            margin: 0 auto 20px !important;
+            transform: scale(0.9);
         }
 
-        .modal-subtitle {
-            display: none;
+        .swal2-icon.swal2-warning {
+            border-color: #f59e0b !important;
+            color: #f59e0b !important;
         }
 
-        .feature-cards {
-            display: none;
+        .swal2-icon.swal2-warning .swal2-icon-content {
+            font-size: 3rem !important;
+            color: #f59e0b !important;
         }
 
-        .bg-circle {
-            display: none;
+        .swal2-icon.swal2-success {
+            border-color: #10b981 !important;
         }
 
-        .icon-container {
-            display: none;
+        .swal2-icon.swal2-success [class^=swal2-success-line] {
+            background-color: #10b981 !important;
         }
 
-        .icon-bg {
-            display: none;
+        .swal2-icon.swal2-success .swal2-success-ring {
+            border: 3px solid rgba(16, 185, 129, 0.2) !important;
         }
 
-        .icon-main {
-            display: none;
+        .swal2-icon.swal2-error {
+            border-color: #ef4444 !important;
         }
 
-        /* Confirm button - Full width primary */
-        .swal2-confirm.custom-btn {
+        .swal2-icon.swal2-error [class^=swal2-x-mark-line] {
+            background-color: #ef4444 !important;
+        }
+
+        /* Buttons styling */
+        .swal2-actions {
+            margin-top: 16px !important;
             width: 100% !important;
-            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%) !important;
-            color: #ffffff !important;
-            font-weight: 700 !important;
-            font-size: 1rem !important;
-            padding: 15px 24px !important;
-            border-radius: 14px !important;
-            border: none !important;
-            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.3) !important;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            margin-top: 8px !important;
-            letter-spacing: -0.01em !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
             gap: 8px !important;
         }
 
-        .swal2-confirm.custom-btn:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 8px 28px rgba(15, 23, 42, 0.4) !important;
+        .swal2-confirm.swal2-styled {
+            background: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: 0.9375rem !important;
+            padding: 12px 24px !important;
+            border-radius: 12px !important;
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2) !important;
+            transition: all 0.2s ease !important;
+            margin: 0 !important;
+            flex: 1;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px;
         }
 
-        .swal2-confirm.custom-btn:active {
-            transform: translateY(0) !important;
+        .swal2-confirm.swal2-styled:hover {
+            background: #1e293b !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25) !important;
+        }
+
+        .swal2-cancel.swal2-styled {
+            background: transparent !important;
+            color: #64748b !important;
+            font-weight: 600 !important;
+            font-size: 0.9375rem !important;
+            padding: 12px 24px !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(15, 23, 42, 0.12) !important;
+            transition: all 0.2s ease !important;
+            margin: 0 !important;
+            flex: 1;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px;
+        }
+
+        .swal2-cancel.swal2-styled:hover {
+            background: rgba(15, 23, 42, 0.04) !important;
+            border-color: rgba(15, 23, 42, 0.2) !important;
+        }
+
+        /* Backward compatibility for custom classes */
+        .swal2-confirm.custom-btn {
+            background: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: 0.9375rem !important;
+            padding: 14px 24px !important;
+            border-radius: 14px !important;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25) !important;
+            transition: all 0.2s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px;
+            width: 100% !important;
+            margin-top: 8px !important;
+        }
+
+        .swal2-confirm.custom-btn:hover {
+            background: #1e293b !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.3) !important;
         }
 
         .swal2-cancel.custom-cancel-btn {
-            width: 100% !important;
-            background: #f8fafc !important;
+            background: transparent !important;
             color: #64748b !important;
             font-weight: 600 !important;
             font-size: 0.9375rem !important;
             padding: 14px 24px !important;
             border-radius: 14px !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: none !important;
+            border: 1px solid rgba(15, 23, 42, 0.12) !important;
             transition: all 0.2s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px;
+            width: 100% !important;
             margin-top: 8px !important;
-            margin-right: 0 !important;
-            letter-spacing: -0.01em !important;
         }
 
         .swal2-cancel.custom-cancel-btn:hover {
-            background: #f1f5f9 !important;
-            border-color: #cbd5e1 !important;
-        }
-
-        /* Tombol merah untuk kondisi tunggakan */
-        .swal2-confirm.custom-btn.custom-btn-danger {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
-            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.35) !important;
-        }
-
-        .swal2-confirm.custom-btn.custom-btn-danger:hover {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-            box-shadow: 0 8px 28px rgba(220, 38, 38, 0.45) !important;
-        }
-
-        /* Bold di subtitle header */
-        .modal-header-subtitle strong {
-            color: #ffffff;
-            font-weight: 700;
-        }
-
-
-        .swal2-actions {
-            flex-direction: column !important;
-            gap: 0 !important;
-            padding: 0 24px 24px !important;
-            width: 100% !important;
+            background: rgba(15, 23, 42, 0.04) !important;
+            border-color: rgba(15, 23, 42, 0.2) !important;
         }
 
         .swal2-close {
-            color: rgba(255, 255, 255, 0.8) !important;
+            color: rgba(15, 23, 42, 0.4) !important;
             font-size: 1.5rem !important;
             opacity: 1 !important;
             transition: all 0.25s ease !important;
             width: 36px !important;
             height: 36px !important;
-            background: rgba(255, 255, 255, 0.12) !important;
+            background: rgba(15, 23, 42, 0.05) !important;
             border-radius: 50% !important;
             position: absolute !important;
             top: 14px !important;
@@ -997,8 +1018,8 @@
         }
 
         .swal2-close:hover {
-            color: #ffffff !important;
-            background: rgba(255, 255, 255, 0.22) !important;
+            color: #0f172a !important;
+            background: rgba(15, 23, 42, 0.1) !important;
             transform: rotate(90deg) scale(1.1) !important;
         }
 
@@ -1194,6 +1215,99 @@
             font-size: 0.8125rem;
             color: #15803d;
         }
+
+        /* Modern Custom Spinner for Loading Modals */
+        .modern-spinner {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: conic-gradient(from 180deg at 50% 50%, rgba(59, 130, 246, 0) 0deg, #3b82f6 360deg);
+            -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 6px), #000 0);
+            mask: radial-gradient(farthest-side, #0000 calc(100% - 6px), #000 0);
+            animation: modern-spin 0.8s infinite linear;
+            margin: 0 auto 20px auto;
+        }
+        @keyframes modern-spin {
+            to { transform: rotate(1turn); }
+        }
+
+        /* Force-hide cancel button inside custom-modal popups — must be LAST to win specificity */
+        .swal2-popup.custom-modal .swal2-cancel.swal2-styled,
+        .swal2-popup.custom-modal .swal2-cancel {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+            visibility: hidden !important;
+        }
+
+        /* Custom Success Modal Styling - Premium Glassmorphism */
+        .glass-success-icon-wrap {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(20, 184, 166, 0.1) 100%);
+            border: 2px solid rgba(34, 197, 94, 0.25);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            position: relative;
+            box-shadow: 0 8px 24px rgba(34, 197, 94, 0.15);
+        }
+
+        .glass-success-icon-wrap i.bi-bell-fill {
+            color: #22c55e !important;
+            font-size: 2.2rem;
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.610, 0.355, 1) infinite;
+        }
+
+        .success-badge-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 26px;
+            height: 26px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .success-badge-badge i {
+            color: #22c55e !important;
+            font-size: 1.15rem;
+            display: block;
+            line-height: 1;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(0.95); }
+        }
+
+        /* Specific CSS rules for success popups */
+        .swal2-popup.custom-modal-success {
+            border-radius: 24px !important;
+            padding: 30px 20px 20px !important;
+            max-width: 340px !important;
+            background: rgba(255, 255, 255, 0.94) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15) !important;
+        }
+
+        .swal2-popup.custom-modal-success .swal2-timer-progress-bar {
+            background: linear-gradient(90deg, #22c55e, #14b8a6) !important;
+            height: 3px !important;
+            border-radius: 99px !important;
+        }
     </style>
 </head>
 
@@ -1215,13 +1329,29 @@
                 $greeting = 'Selamat Malam';
                 $icon = 'bi-moon-stars-fill';
             }
+
+            $signalValue = strtolower(trim((string) data_get($user, 'kualitas_sinyal', data_get($user, 'sinyal', 'bagus'))));
+            $signalClass = 'signal-good';
+            $signalLabel = 'Good';
+
+            if (in_array($signalValue, ['kurang', 'sedang', 'warning', 'kuning'], true)) {
+                $signalClass = 'signal-warning';
+                $signalLabel = 'Medium';
+            } elseif (in_array($signalValue, ['jelek', 'buruk', 'bad', 'merah'], true)) {
+                $signalClass = 'signal-bad';
+                $signalLabel = 'Low';
+            }
+
+            $unreadInformationCount = $unreadInformationCount ?? session('customer_unread_information_count', 0);
+
+            $unpaidTagihanCount = $tagihanBelum ?? 0;
         @endphp
 
         <div class="header-greeting mt-4 mb-4">
-
-            <div class="fw-bold" style="font-size: 1.75rem; color: #0f172a; letter-spacing: -0.02em;">PT. JERNIH MULTI
-                KOMUNIKASI</div>
-
+            <div class="network-status-card {{ $signalClass }}">
+                <span class="network-status-dot"></span>
+                <span>{{ $signalLabel }}</span>
+            </div>
         </div>
 
         <!-- Virtual Card -->
@@ -1239,52 +1369,29 @@
                     </div>
                     <div class="vc-bottom">
                         <div class="vc-name">{{ strtoupper($user->nama_lengkap ?? 'PELANGGAN') }}</div>
-                        <div class="vc-brand"><em>BILLING JMK</em></div>
+                        <div class="vc-brand"><em>JMK</em></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Iklan Maintenance (Di Atas) -->
-        @if(isset($iklans) && $iklans->where('type', 'maintenance')->count() > 0)
-            <div class="info-section">
-                @foreach($iklans->where('type', 'maintenance') as $iklan)
-                    <div class="info-card maintenance"
-                        onclick='openIklanModal("{{ $iklan->id }}", "{{ $iklan->type }}", "{{ addslashes($iklan->title) }}", {{ json_encode($iklan->message) }}, "{{ $iklan->image ? asset("storage/" . $iklan->image) : "" }}", "{{ $iklan->created_at->diffForHumans() }}")'>
-                        @if($iklan->image)
-                            <img src="{{ asset('storage/' . $iklan->image) }}" alt="{{ $iklan->title }}" class="info-image">
-                        @endif
-                        <div class="info-content">
-                            <span class="info-badge maintenance">
-                                <i class="bi bi-tools"></i>
-                                Maintenance
-                            </span>
-                            <div class="info-title">{{ $iklan->title }}</div>
-                            <p class="info-message">{{ Str::limit($iklan->message, 100) }}</p>
-                            <div class="info-timestamp">
-                                <i class="bi bi-clock"></i>
-                                {{ $iklan->created_at->diffForHumans() }}
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        @endif
-
         <!-- Quick Actions -->
- 
+        <div class="section-title">Menu Cepat</div>
         <div class="modern-menu-grid">
             <!-- Tagihan -->
-            <a href="/dashboard/customer/tagihan" class="modern-menu-item">
+            <a href="/dashboard/customer/tagihan" class="modern-menu-item" wire:navigate.hover data-customer-prefetch>
                 <div class="modern-menu-icon" style="color: #0ea5e9;">
                     <i class="bi bi-receipt"></i>
+                    @if($unpaidTagihanCount > 0)
+                        <span class="modern-menu-notification-count" aria-label="{{ $unpaidTagihanCount }} tagihan belum dibayar">{{ $unpaidTagihanCount > 99 ? '99+' : $unpaidTagihanCount }}</span>
+                    @endif
                     <div class="modern-menu-badge badge-purple"><i class="bi bi-plus"></i></div>
                 </div>
                 <div class="modern-menu-text">Tagihan</div>
             </a>
 
             <!-- Kwitansi -->
-            <a href="/dashboard/customer/tagihan/selesai" class="modern-menu-item">
+            <a href="/dashboard/customer/tagihan/selesai" class="modern-menu-item" wire:navigate.hover data-customer-prefetch>
                 <div class="modern-menu-icon" style="color: #10b981;">
                     <i class="bi bi-file-earmark-text"></i>
                     <div class="modern-menu-badge badge-blue"><span style="font-size: 8px;">Rp</span></div>
@@ -1311,7 +1418,7 @@
             </a>
 
             <!-- Riwayat -->
-            <a href="/dashboard/customer/riwayat" class="modern-menu-item">
+            <a href="/dashboard/customer/riwayat" class="modern-menu-item" wire:navigate.hover data-customer-prefetch>
                 <div class="modern-menu-icon" style="color: #64748b;">
                     <i class="bi bi-clock-history"></i>
                     <div class="modern-menu-badge badge-slate"><i class="bi bi-arrow-repeat"></i></div>
@@ -1320,41 +1427,35 @@
             </a>
 
             <!-- FAQ -->
-            <a href="/dashboard/customer/faq" class="modern-menu-item">
+            <a href="/dashboard/customer/faq" class="modern-menu-item" wire:navigate.hover data-customer-prefetch>
                 <div class="modern-menu-icon" style="color: #ec4899;">
                     <i class="bi bi-question-circle"></i>
                     <div class="modern-menu-badge badge-blue"><i class="bi bi-info"></i></div>
                 </div>
                 <div class="modern-menu-text">FAQ</div>
             </a>
-        </div>
 
-        <!-- Iklan/Informasi (Di Bawah) -->
-        @if(isset($iklans) && $iklans->whereIn('type', ['informasi', 'iklan'])->count() > 0)
-            <div class="section-title">Informasi & Promo</div>
-            <div class="info-section">
-                @foreach($iklans->whereIn('type', ['informasi', 'iklan']) as $iklan)
-                    <div class="info-card {{ $iklan->type }}"
-                        onclick='openIklanModal("{{ $iklan->id }}", "{{ $iklan->type }}", "{{ addslashes($iklan->title) }}", {{ json_encode($iklan->message) }}, "{{ $iklan->image ? asset("storage/" . $iklan->image) : "" }}", "{{ $iklan->created_at->diffForHumans() }}")'>
-                        @if($iklan->image)
-                            <img src="{{ asset('storage/' . $iklan->image) }}" alt="{{ $iklan->title }}" class="info-image">
-                        @endif
-                        <div class="info-content">
-                            <span class="info-badge {{ $iklan->type }}">
-                                <i class="bi {{ $iklan->type == 'informasi' ? 'bi-info-circle' : 'bi-megaphone' }}"></i>
-                                {{ ucfirst($iklan->type) }}
-                            </span>
-                            <div class="info-title">{{ $iklan->title }}</div>
-                            <p class="info-message">{{ Str::limit($iklan->message, 100) }}</p>
-                            <div class="info-timestamp">
-                                <i class="bi bi-clock"></i>
-                                {{ $iklan->created_at->diffForHumans() }}
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        @endif
+            <!-- Informasi -->
+            <a href="{{ route('customer.informasi') }}" class="modern-menu-item" wire:navigate.hover data-customer-prefetch>
+                <div class="modern-menu-icon" style="color: #7c3aed;">
+                    <i class="bi bi-megaphone"></i>
+                    @if($unreadInformationCount > 0)
+                        <span class="modern-menu-notification-count" aria-label="{{ $unreadInformationCount }} informasi baru">{{ $unreadInformationCount > 99 ? '99+' : $unreadInformationCount }}</span>
+                    @endif
+                    <div class="modern-menu-badge badge-purple"><i class="bi bi-bell"></i></div>
+                </div>
+                <div class="modern-menu-text">Informasi</div>
+            </a>
+
+            <!-- Tulis Masukan -->
+            <a href="{{ route('customer.feedback.create') }}" class="modern-menu-item" wire:navigate.hover data-customer-prefetch>
+                <div class="modern-menu-icon" style="color: #2563eb;">
+                    <i class="bi bi-chat-square-text"></i>
+                    <div class="modern-menu-badge badge-green"><i class="bi bi-send"></i></div>
+                </div>
+                <div class="modern-menu-text">Tulis Masukan</div>
+            </a>
+        </div>
 
     </div>
 
@@ -1386,35 +1487,33 @@
         <img id="zoom-image" src="" alt="">
     </div>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-
     <script>
 
         // Logout
         document.getElementById('btn-logout').addEventListener('click', () => {
             Swal.fire({
                 title: 'Yakin Ingin Keluar?',
-                html: `?? <strong>Peringatan:</strong><br><span style="font-size: 0.9rem; color: #64748b;">Jika Anda keluar aplikasi, Anda <b>tidak akan menerima notifikasi</b> tagihan baru dan pengingat jatuh tempo secara realtime. Tetap login untuk selalu update informasi tagihan Anda.</span>`,
+                html: `<div class="tw-text-center"><span class="tw-text-sm tw-text-slate-500 tw-leading-relaxed">Jika Anda keluar, Anda <b>tidak akan menerima notifikasi</b> tagihan baru dan pengingat jatuh tempo secara realtime. Tetap login untuk selalu update informasi tagihan Anda.</span></div>`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Ya, Tetap Keluar',
-                cancelButtonText: 'Batal',
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#94a3b8',
+                cancelButtonText: 'Batal, Tetap Login',
+                customClass: {
+                    container: 'swal-tailwind-backdrop',
+                    popup: 'swal-tailwind-popup',
+                    confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                    cancelButton: 'swal-tailwind-cancel'
+                },
+                showClass: {
+                    popup: 'animate__animated animate__fadeInUp animate__faster'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutDown animate__faster'
+                },
+                buttonsStyling: false,
                 reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'Keluar...',
-                        text: 'Mohon tunggu sebentar',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-
                     fetch('/customer/logout', {
                         method: 'POST',
                         headers: {
@@ -1427,9 +1526,18 @@
                                     title: 'Berhasil!',
                                     text: 'Anda telah keluar dari akun',
                                     icon: 'success',
-                                    confirmButtonColor: '#0f172a',
                                     timer: 1500,
-                                    showConfirmButton: false
+                                    showConfirmButton: false,
+                                    customClass: {
+                                        container: 'swal-tailwind-backdrop',
+                                        popup: 'swal-tailwind-popup'
+                                    },
+                                    showClass: {
+                                        popup: 'animate__animated animate__fadeInUp animate__faster'
+                                    },
+                                    hideClass: {
+                                        popup: 'animate__animated animate__fadeOutDown animate__faster'
+                                    }
                                 }).then(() => {
                                     window.location.href = '/';
                                 });
@@ -1439,10 +1547,21 @@
                         })
                         .catch(() => {
                             Swal.fire({
-                                title: 'Error',
-                                text: 'Gagal keluar dari akun',
+                                title: 'Gagal!',
+                                text: 'Gagal keluar dari akun. Silakan coba lagi.',
                                 icon: 'error',
-                                confirmButtonColor: '#dc2626'
+                                customClass: {
+                                    container: 'swal-tailwind-backdrop',
+                                    popup: 'swal-tailwind-popup',
+                                    confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger'
+                                },
+                                buttonsStyling: false,
+                                showClass: {
+                                    popup: 'animate__animated animate__fadeInUp animate__faster'
+                                },
+                                hideClass: {
+                                    popup: 'animate__animated animate__fadeOutDown animate__faster'
+                                }
                             });
                         });
                 }
@@ -1534,177 +1653,129 @@
         });
     </script>
 
-    <!-- WebPushr SDK -->
+    @include('content.apps.partials.firebase-messaging', ['user' => $user])
+
     <script>
-        (function (w, d, s, id) {
-            if (typeof w.webpushr !== 'undefined') return;
-            w.webpushr = w.webpushr || function () { (w.webpushr.q = w.webpushr.q || []).push(arguments) };
-            var js, fjs = d.getElementsByTagName(s)[0];
-            js = d.createElement(s); js.id = id; js.async = 1;
-            js.src = "https://cdn.webpushr.com/app.min.js";
-            fjs.parentNode.insertBefore(js, fjs);
-        }(window, document, 'script', 'webpushr-js'));
-
-        webpushr('setup', {
-            'key': 'BA6E203ONU9JRrWFSTUFepnOgRg7JZ0hZKGtfZ_nT_WWOzRCvjlF9BJT8hvmA_Rvbl_W4NbpYiy7SDwoQKK6g2M'
-        });
-
-        // ========== WEBPUSHR READY CALLBACK ==========
-        window._webpushrScriptReady = function () {
-            console.log('? WebPushr SDK is ready!');
-            checkNotificationStatus();
-        };
-
-        // ========== NOTIFICATION MANAGEMENT ==========
         const nomerid = "{{ $user->nomer_id }}";
-        const DEVICE_ID_KEY = 'device_notification_id';
-        const LAST_SID_KEY = 'last_subscriber_id';
-
-        function getDeviceId() {
-            let deviceId = localStorage.getItem(DEVICE_ID_KEY);
-            if (!deviceId) {
-                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem(DEVICE_ID_KEY, deviceId);
-                console.log('?? Device ID baru dibuat:', deviceId);
-            }
-            return deviceId;
-        }
-
-        function updateSubscriberId(forceUpdate = false) {
-            const deviceId = getDeviceId();
-            let retryCount = 0;
-            const maxRetries = 5;
-
-            function attemptFetchSID() {
-                webpushr('fetch_id', function (sid) {
-                    if (sid) {
-                        const lastSID = localStorage.getItem(LAST_SID_KEY);
-                        if (forceUpdate || sid !== lastSID) {
-                            console.log('?? Updating SID to server...');
-                            $.ajax({
-                                url: '/pelanggan/' + nomerid + '/update-sid',
-                                method: 'POST',
-                                data: {
-                                    sid: sid,
-                                    device_id: deviceId,
-                                    _token: '{{ csrf_token() }}'
-                                },
-                                success: function (response) {
-                                    console.log('? SID berhasil diupdate!');
-                                    localStorage.setItem(LAST_SID_KEY, sid);
-                                    showSuccessToast();
-                                },
-                                error: function (xhr, status, error) {
-                                    console.error('? Gagal update SID:', error);
-                                    if (retryCount < 3) {
-                                        retryCount++;
-                                        setTimeout(() => updateSubscriberId(forceUpdate), 2000);
-                                    }
-                                }
-                            });
-                        }
-                    } else {
-                        if (retryCount < maxRetries) {
-                            retryCount++;
-                            setTimeout(attemptFetchSID, 1000);
-                        }
-                    }
-                });
-            }
-            attemptFetchSID();
-        }
+        const customerHasFcmToken = @json(filled($user?->fcm_token));
+        let firebasePermissionModalOpen = false;
 
         function checkNotificationStatus() {
             if (!('Notification' in window)) return;
-            const permission = Notification.permission;
-            const deviceId = getDeviceId();
-            const hasAskedBefore = localStorage.getItem('notification_asked_' + deviceId);
 
-            if (permission === 'granted') {
-                const forceUpdate = !hasAskedBefore;
-                setTimeout(() => updateSubscriberId(forceUpdate), 1500);
-            } else if (permission === 'default' && !hasAskedBefore) {
-                setTimeout(() => showCustomPermissionPopup(), 3000);
+            if (shouldPromptFirebasePermission()) {
+                scheduleFirebasePermissionPrompt(1200);
+            } else if (Notification.permission === 'granted') {
+                if (typeof window.syncFirebaseMessaging === 'function') {
+                    setTimeout(() => window.syncFirebaseMessaging(), 800);
+                }
             }
         }
 
-        function showCustomPermissionPopup() {
-            const deviceId = getDeviceId();
+        function shouldPromptFirebasePermission() {
+            if (!('Notification' in window)) return false;
+
+            const isNotificationDisabled = localStorage.getItem('firebase_messaging_disabled') === 'true';
+            const isPermissionNotGranted = Notification.permission !== 'granted';
+
+            // We should prompt if:
+            // 1. Manually disabled via profile switch (isNotificationDisabled is true)
+            // 2. Or browser permission is not yet granted (isPermissionNotGranted is true)
+            // 3. Or the database does not have any FCM token (!customerHasFcmToken)
+            return isNotificationDisabled || isPermissionNotGranted || !customerHasFcmToken;
+        }
+
+
+        function scheduleFirebasePermissionPrompt(delay = 15000) {
+            if (!shouldPromptFirebasePermission() || firebasePermissionModalOpen) return;
+
+            setTimeout(() => {
+                if (shouldPromptFirebasePermission() && !firebasePermissionModalOpen) {
+                    showFirebasePermissionPopup();
+                }
+            }, delay);
+        }
+
+        function showFirebasePermissionPopup() {
+            if (firebasePermissionModalOpen || !shouldPromptFirebasePermission()) return;
+
+            firebasePermissionModalOpen = true;
+
             Swal.fire({
                 html: `
-            <div class="modal-content-wrapper">
-                <div class="modal-header-banner">
-                    <div class="modal-icon-wrap">
-                        <div class="modal-icon-inner">
-                            <i class="bi bi-bell-fill"></i>
-                        </div>
-                    </div>
-                    <div class="modal-header-title">Aktifkan Notifikasi</div>
-                    <div class="modal-header-subtitle">Tetap up-to-date dengan tagihan Anda</div>
+            <div class="text-center">
+                <!-- Icon Bell Glass -->
+                <div class="glass-icon-wrap">
+                    <i class="bi bi-bell-fill"></i>
                 </div>
-                <div class="modal-body-card">
-                    <div class="modal-stat-row">
-                        <div class="modal-stat-item">
-                            <span class="modal-stat-icon"><i class="bi bi-lightning-charge-fill" style="color:#f59e0b;"></i></span>
-                            <div class="modal-stat-label">Update Realtime</div>
-                        </div>
-                        <div class="modal-stat-item">
-                            <span class="modal-stat-icon"><i class="bi bi-alarm-fill" style="color:#3b82f6;"></i></span>
-                            <div class="modal-stat-label">Pengingat Tagihan</div>
-                        </div>
-                    </div>
-                    <p style="font-size:0.875rem; color:#64748b; text-align:center; margin:0; line-height:1.6;">
-                        Dapatkan pemberitahuan instan untuk tagihan baru dan update pembayaran Anda
-                    </p>
-                </div>
+                <h3 class="glass-modal-title">Aktifkan Notifikasi</h3>
+                <p class="glass-modal-text">
+                    Izinkan notifikasi agar Anda mendapatkan pemberitahuan realtime saat ada tagihan baru atau pengingat jatuh tempo langsung ke perangkat Anda.
+                </p>
             </div>
         `,
-                confirmButtonText: '<i class="bi bi-check-circle-fill" style="margin-right:6px;"></i> Ya, Aktifkan',
-                showCancelButton: true,
-                cancelButtonText: 'Nanti Saja',
+                confirmButtonText: '<i class="bi bi-check-circle-fill" style="margin-right:6px;"></i> Iya, Saya Mau',
+                showCancelButton: false,
                 customClass: {
                     popup: 'custom-modal',
                     confirmButton: 'custom-btn',
-                    cancelButton: 'custom-cancel-btn'
+                    cancelButton: 'd-none'
                 },
                 showClass: {
-                    popup: 'animate__animated animate__zoomIn animate__faster'
+                    popup: 'animate__animated animate__fadeInUp animate__faster'
                 },
                 hideClass: {
-                    popup: 'animate__animated animate__zoomOut animate__faster'
+                    popup: 'animate__animated animate__fadeOutDown animate__faster'
                 },
                 allowOutsideClick: false,
                 showCloseButton: true,
-                backdrop: 'rgba(15,23,42,0.6)'
+                backdrop: 'rgba(15,23,42,0.45)'
             }).then((result) => {
-                localStorage.setItem('notification_asked_' + deviceId, 'true');
                 if (result.isConfirmed) {
-                    requestBrowserPermission();
+                    requestFirebasePermission();
+                    return;
                 }
+
+                firebasePermissionModalOpen = false;
+                scheduleFirebasePermissionPrompt();
             });
         }
 
-        function requestBrowserPermission() {
+        async function requestFirebasePermission() {
             Swal.fire({
-                title: 'Mohon Tunggu',
-                text: 'Memproses permintaan notifikasi...',
+                html: `
+                    <div class="text-center">
+                        <div class="modern-spinner"></div>
+                        <h3 class="glass-modal-title" style="margin-bottom: 8px;">Mohon Tunggu</h3>
+                        <p class="glass-modal-text" style="margin-bottom: 0;">Memproses permintaan notifikasi...</p>
+                    </div>
+                `,
                 allowOutsideClick: false,
                 allowEscapeKey: false,
-                didOpen: () => Swal.showLoading()
+                showConfirmButton: false,
+                showCancelButton: false,
+                customClass: {
+                    popup: 'custom-modal'
+                }
             });
 
-            Notification.requestPermission().then(function (permission) {
-                if (permission === 'granted') {
-                    Swal.close();
-                    Swal.fire({
-                        title: 'Mengaktifkan Notifikasi',
-                        text: 'Menyimpan pengaturan...',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        didOpen: () => Swal.showLoading()
-                    });
-                    setTimeout(() => updateSubscriberId(true), 2000);
-                } else if (permission === 'denied') {
+            try {
+                await waitForFirebaseMessaging();
+
+                if (typeof window.enableFirebaseMessaging !== 'function') {
+                    throw new Error('Firebase Messaging belum siap.');
+                }
+
+                const token = await window.enableFirebaseMessaging();
+
+                if (token) {
+                    firebasePermissionModalOpen = false;
+                    showSuccessToast();
+                    return;
+                }
+
+                if (Notification.permission === 'denied') {
+                    firebasePermissionModalOpen = false;
                     Swal.fire({
                         icon: 'warning',
                         title: 'Notifikasi Diblokir',
@@ -1715,28 +1786,98 @@
                     <strong>3.</strong> Refresh halaman ini
                 `,
                         confirmButtonText: 'Mengerti'
+                    }).then(() => {
+                        scheduleFirebasePermissionPrompt();
                     });
+                    return;
                 }
+
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Notifikasi Belum Aktif',
+                    text: 'Izin notifikasi belum diberikan.',
+                    confirmButtonText: 'Mengerti'
+                }).then(() => {
+                    firebasePermissionModalOpen = false;
+                    scheduleFirebasePermissionPrompt();
+                });
+            } catch (error) {
+                console.error('Firebase notification failed:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Mengaktifkan',
+                    text: error?.message || 'Notifikasi belum bisa diaktifkan. Coba refresh halaman lalu ulangi.',
+                    confirmButtonText: 'Mengerti'
+                }).then(() => {
+                    firebasePermissionModalOpen = false;
+                    scheduleFirebasePermissionPrompt();
+                });
+            }
+        }
+
+        function waitForFirebaseMessaging() {
+            if (typeof window.enableFirebaseMessaging === 'function') {
+                return Promise.resolve();
+            }
+
+            return new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    window.removeEventListener('firebase-messaging-loaded', onReady);
+                    reject(new Error('Firebase Messaging timeout.'));
+                }, 5000);
+
+                function onReady() {
+                    clearTimeout(timeout);
+                    resolve();
+                }
+
+                window.addEventListener('firebase-messaging-loaded', onReady, { once: true });
             });
         }
 
         function showSuccessToast() {
             Swal.fire({
-                icon: 'success',
-                title: 'Akun Aktif!',
-                timer: 3000,
+                html: `
+                    <div class="text-center" style="padding: 10px 0;">
+                        <!-- Animated modern success icon badge -->
+                        <div class="glass-success-icon-wrap animate__animated animate__zoomIn">
+                            <i class="bi bi-bell-fill"></i>
+                            <div class="success-badge-badge">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                        </div>
+                        <h3 class="glass-modal-title animate__animated animate__fadeInUp animate__faster" style="margin-top: 12px; margin-bottom: 8px;">
+                            Notifikasi Aktif!
+                        </h3>
+                        <p class="glass-modal-text animate__animated animate__fadeInUp animate__faster" style="margin-bottom: 0; color: #475569;">
+                            Selamat! Notifikasi tagihan dan pengingat jatuh tempo berhasil diaktifkan di perangkat ini.
+                        </p>
+                    </div>
+                `,
                 showConfirmButton: false,
-                position: 'top-end',
-                toast: true
+                timer: 2500,
+                timerProgressBar: true,
+                backdrop: 'rgba(15, 23, 42, 0.45)',
+                customClass: {
+                    popup: 'custom-modal-success'
+                },
+                showClass: {
+                    popup: 'animate__animated animate__fadeInUp animate__faster'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutDown animate__faster'
+                }
             });
         }
 
         setInterval(function () {
+            if (!('Notification' in window)) return;
+
             const currentPermission = Notification.permission;
             const lastPermission = localStorage.getItem('last_permission_status');
             if (lastPermission && lastPermission !== currentPermission) {
-                if (currentPermission === 'granted') {
-                    updateSubscriberId(true);
+                if (currentPermission === 'granted' && typeof window.syncFirebaseMessaging === 'function') {
+                    window.syncFirebaseMessaging();
                 }
             }
             localStorage.setItem('last_permission_status', currentPermission);
@@ -1767,9 +1908,12 @@
         let isModalShown = false;
 
         function checkForNewNotifications() {
-            if (isModalShown) return;
-            $.get('/api/check-pending-notifications/' + userNomerId)
-                .done(function (response) {
+            if (isModalShown || firebasePermissionModalOpen) return;
+            fetch('/api/check-pending-notifications/' + encodeURIComponent(userNomerId), {
+                headers: { 'Accept': 'application/json' },
+            })
+                .then((response) => response.ok ? response.json() : Promise.reject(response))
+                .then(function (response) {
                     if (response.has_notification && !isModalShown) {
                         isModalShown = true;
 
@@ -1866,7 +2010,7 @@
                             hideClass: {
                                 popup: 'animate__animated animate__zoomOut animate__faster'
                             },
-                            allowOutsideClick: true,
+                            allowOutsideClick: false,
                             showCloseButton: true,
                             backdrop: 'rgba(15,23,42,0.65)'
                         }).then(result => {
@@ -1877,23 +2021,18 @@
                         });
                     }
                 })
-                .fail(function (xhr) {
-                    console.error('? Error polling:', xhr.responseText);
+                .catch(function (error) {
+                    console.error('Error polling:', error);
                 });
         }
 
         // ========== INISIALISASI ==========
-        $(document).ready(function () {
-            console.log('?? Aplikasi dimulai');
-            console.log('?? User Nomer ID:', nomerid);
+        document.addEventListener('DOMContentLoaded', function () {
+            checkNotificationStatus();
 
-            if (typeof webpushr !== 'undefined') {
-                console.log('? Menunggu WebPushr SDK ready...');
-            }
-
-            // Polling untuk tagihan baru (setiap jam 12 siang)
-            setTimeout(checkForNewNotifications, 3000);
-            setInterval(checkForNewNotifications, 21600000);
+            // Modal tagihan baru/tunggakan dimatikan sementara.
+            // setTimeout(checkForNewNotifications, 3000);
+            // setInterval(checkForNewNotifications, 21600000);
         });
     </script>
 

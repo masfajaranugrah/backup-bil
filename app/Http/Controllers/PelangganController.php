@@ -15,13 +15,13 @@ use App\Exports\PelangganExport;
 class PelangganController extends Controller
 {
     // index
-public function exportExcel(Request $request)
-{
-    return Excel::download(
-        new PelangganExport(),
-        'data-pelanggan-keseluruhan.xlsx'
-    );
-}
+    public function exportExcel(Request $request)
+    {
+        return Excel::download(
+            new PelangganExport(),
+            'data-pelanggan-keseluruhan.xlsx'
+        );
+    }
     // public function getData()
     // {
     //     // Ambil hanya pelanggan dengan status pending
@@ -66,17 +66,15 @@ public function exportExcel(Request $request)
             'sid' => 'required|string',
         ]);
 
-        // Ambil pelanggan berdasarkan nomerid
-        $pelanggan = Pelanggan::where('nomer_id', $nomerid)->first();
+        $pelanggan = $request->user('customer');
 
-        if (! $pelanggan) {
+        if (!$pelanggan || (string) $pelanggan->nomer_id !== (string) $nomerid) {
             return response()->json([
                 'success' => false,
-                'message' => 'Pelanggan tidak ditemukan',
-            ], 404);
+                'message' => 'Tidak diizinkan memperbarui SID pelanggan lain',
+            ], 403);
         }
 
-        // Update SID
         $pelanggan->update([
             'webpushr_sid' => $request->sid,
         ]);
@@ -85,25 +83,82 @@ public function exportExcel(Request $request)
             'success' => true,
             'message' => 'SID berhasil disimpan',
             'data' => [
-                'nomerid' => $pelanggan->nomerid,
+                'nomerid' => $pelanggan->nomer_id,
                 'sid' => $request->sid,
             ],
         ]);
     }
 
-   public function status(Request $request) 
+    public function updateFcmToken(Request $request, $nomerid)
+    {
+        $request->validate([
+            'fcm_token' => 'required|string',
+            'device_id' => 'nullable|string|max:100',
+        ]);
+
+        $pelanggan = $request->user('customer');
+
+        if (!$pelanggan || (string) $pelanggan->nomer_id !== (string) $nomerid) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak diizinkan memperbarui token pelanggan lain',
+            ], 403);
+        }
+
+        $pelanggan->update([
+            'fcm_token' => $request->fcm_token,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'FCM token berhasil disimpan',
+            'data' => [
+                'nomerid' => $pelanggan->nomer_id,
+                'device_id' => $request->device_id,
+            ],
+        ]);
+    }
+
+    public function deleteFcmToken(Request $request, $nomerid)
+    {
+        $pelanggan = $request->user('customer');
+
+        if (!$pelanggan || (string) $pelanggan->nomer_id !== (string) $nomerid) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak diizinkan menghapus token pelanggan lain',
+            ], 403);
+        }
+
+        $pelanggan->update([
+            'fcm_token' => null,
+            'webpushr_sid' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notifikasi berhasil dinonaktifkan',
+            'data' => [
+                'nomerid' => $pelanggan->nomer_id,
+                'fcm_token' => null,
+                'webpushr_sid' => null,
+            ],
+        ]);
+    }
+
+    public function status(Request $request)
     {
         // ? Base query dengan eager loading (Hanya JMK-GK)
-        $baseCondition = function($q) {
+        $baseCondition = function ($q) {
             $q->where('progres', Pelanggan::PROGRES_REGISTRASI)
-              ->orWhere('status', 'approve')
-              ->orWhere('status', 'pending')
-              ->orWhere('status', 'reject');
+                ->orWhere('status', 'approve')
+                ->orWhere('status', 'pending')
+                ->orWhere('status', 'reject');
         };
 
         $query = Pelanggan::with([
             'paket:id,nama_paket,harga,kecepatan,masa_pembayaran',
-            'loginStatus' => function($q) {
+            'loginStatus' => function ($q) {
                 $q->latest()->limit(1);
             }
         ])->where($baseCondition);
@@ -111,14 +166,14 @@ public function exportExcel(Request $request)
         // ? Filter Status Active/Inactive
         if ($request->filled('status_filter')) {
             $statusFilter = $request->status_filter;
-            
+
             if ($statusFilter === 'Active') {
-                $query->whereHas('loginStatus', function($q) {
+                $query->whereHas('loginStatus', function ($q) {
                     $q->where('is_active', true);
                 });
             } elseif ($statusFilter === 'Inactive') {
-                $query->where(function($q) {
-                    $q->whereHas('loginStatus', function($subQ) {
+                $query->where(function ($q) {
+                    $q->whereHas('loginStatus', function ($subQ) {
                         $subQ->where('is_active', false);
                     })->orWhereDoesntHave('loginStatus');
                 });
@@ -128,14 +183,14 @@ public function exportExcel(Request $request)
         // ? Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nama_lengkap', 'LIKE', "%{$search}%")
-                  ->orWhere('no_whatsapp', 'LIKE', "%{$search}%")
-                  ->orWhere('nomer_id', 'LIKE', "%{$search}%")
-                  ->orWhere('alamat_jalan', 'LIKE', "%{$search}%")
-                  ->orWhereHas('paket', function($subQ) use ($search) {
-                      $subQ->where('nama_paket', 'LIKE', "%{$search}%");
-                  });
+                    ->orWhere('no_whatsapp', 'LIKE', "%{$search}%")
+                    ->orWhere('nomer_id', 'LIKE', "%{$search}%")
+                    ->orWhere('alamat_jalan', 'LIKE', "%{$search}%")
+                    ->orWhereHas('paket', function ($subQ) use ($search) {
+                        $subQ->where('nama_paket', 'LIKE', "%{$search}%");
+                    });
             });
         }
 
@@ -145,11 +200,11 @@ public function exportExcel(Request $request)
         // ? Statistik untuk cards
         $statistics = [
             'total' => Pelanggan::where($baseCondition)->count(),
-            'active' => Pelanggan::where($baseCondition)->whereHas('loginStatus', function($q) {
+            'active' => Pelanggan::where($baseCondition)->whereHas('loginStatus', function ($q) {
                 $q->where('is_active', true);
             })->count(),
-            'inactive' => Pelanggan::where($baseCondition)->where(function($q) {
-                $q->whereDoesntHave('loginStatus', function($subQ) {
+            'inactive' => Pelanggan::where($baseCondition)->where(function ($q) {
+                $q->whereDoesntHave('loginStatus', function ($subQ) {
                     $subQ->where('is_active', true);
                 })->orWhereDoesntHave('loginStatus');
             })->count(),
@@ -158,69 +213,87 @@ public function exportExcel(Request $request)
         return view('content.apps.Pelanggan.status', compact('pelanggan', 'statistics'));
     }
 
- 
- 
 
- 
-public function index(Request $request)
-{
-    $search = $request->get('search');
-    $statusFilter = $request->get('status');
 
-    $baseCondition = function($q) {
-        $q->where('progres', Pelanggan::PROGRES_REGISTRASI)
-          ->orWhere('status', 'approve')
-          ->orWhere('status', 'pending')
-          ->orWhere('status', 'reject');
-    };
 
-    // Status counts (unfiltered by user search, but filtered by base condition)
-    $countTotal = Pelanggan::where($baseCondition)->count();
-    $countApprove = Pelanggan::where($baseCondition)->where('status', 'approve')->count();
-    $countPending = Pelanggan::where($baseCondition)->whereIn('status', ['proses', 'pending'])->count();
 
-    // Query with filters
-    $pelanggan = Pelanggan::with([
+    public function index(Request $request)
+    {
+        $search = $request->get('search');
+        $statusFilter = $request->get('status');
+
+        $baseCondition = function ($q) {
+            $q->where('progres', Pelanggan::PROGRES_REGISTRASI)
+                ->orWhere('status', 'approve')
+                ->orWhere('status', 'pending')
+                ->orWhere('status', 'reject');
+        };
+
+        // Status counts (unfiltered by user search, but filtered by base condition)
+        $countTotal = Pelanggan::where($baseCondition)->count();
+        $countApprove = Pelanggan::where($baseCondition)->where('status', 'approve')->count();
+        $countPending = Pelanggan::where($baseCondition)->whereIn('status', ['proses', 'pending'])->count();
+
+        // Query with filters
+        $pelanggan = Pelanggan::with([
             'user:id,name,email',
             'paket:id,nama_paket'
         ])
-        ->where($baseCondition)
-        ->select([
-            'id', 'nomer_id', 'nama_lengkap', 'no_whatsapp',
-            'alamat_jalan', 'rt', 'rw', 'kecamatan', 'kabupaten',
-            'tanggal_mulai', 'foto_ktp', 'status', 'user_id', 'created_at',
-            'deskripsi', 'progress_note', 'progres'
-        ])
-        // Filter by status if provided
-        ->when($statusFilter, function($query) use ($statusFilter) {
-            if ($statusFilter === 'proses') {
-                return $query->whereIn('status', ['proses', 'pending']);
-            }
+            ->where($baseCondition)
+            ->select([
+                'id',
+                'nomer_id',
+                'nama_lengkap',
+                'no_whatsapp',
+                'alamat_jalan',
+                'rt',
+                'rw',
+                'fcm_token',
+                'kecamatan',
+                'kabupaten',
+                'tanggal_mulai',
+                'foto_ktp',
+                'status',
+                'user_id',
+                'created_at',
+                'deskripsi',
+                'progress_note',
+                'progres'
+            ])
+            // Filter by status if provided
+            ->when($statusFilter, function ($query) use ($statusFilter) {
+                if ($statusFilter === 'proses') {
+                    return $query->whereIn('status', ['proses', 'pending']);
+                }
 
-            return $query->where('status', $statusFilter);
-        })
-        // Search filter
-        ->when($search, function($query) use ($search) {
-            return $query->where(function($q) use ($search) {
-                $q->where('nomer_id', 'LIKE', "%{$search}%")
-                  ->orWhere('nama_lengkap', 'LIKE', "%{$search}%")
-                  ->orWhere('no_whatsapp', 'LIKE', "%{$search}%")
-                  ->orWhere('alamat_jalan', 'LIKE', "%{$search}%")
-                  ->orWhere('kecamatan', 'LIKE', "%{$search}%")
-                  ->orWhere('kabupaten', 'LIKE', "%{$search}%")
-                  ->orWhere('status', 'LIKE', "%{$search}%")
-                  ->orWhere('rt', 'LIKE', "%{$search}%")
-                  ->orWhere('rw', 'LIKE', "%{$search}%");
-            });
-        })
-        ->latest()
-        ->paginate(40)
-        ->withQueryString();
+                return $query->where('status', $statusFilter);
+            })
+            // Search filter
+            ->when($search, function ($query) use ($search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('nomer_id', 'LIKE', "%{$search}%")
+                        ->orWhere('nama_lengkap', 'LIKE', "%{$search}%")
+                        ->orWhere('no_whatsapp', 'LIKE', "%{$search}%")
+                        ->orWhere('alamat_jalan', 'LIKE', "%{$search}%")
+                        ->orWhere('kecamatan', 'LIKE', "%{$search}%")
+                        ->orWhere('kabupaten', 'LIKE', "%{$search}%")
+                        ->orWhere('status', 'LIKE', "%{$search}%")
+                        ->orWhere('rt', 'LIKE', "%{$search}%")
+                        ->orWhere('rw', 'LIKE', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate(40)
+            ->withQueryString();
 
-    return view('content.apps.Pelanggan.pelanggan', compact(
-        'pelanggan', 'countTotal', 'countApprove', 'countPending', 'statusFilter'
-    ));
-}
+        return view('content.apps.Pelanggan.pelanggan', compact(
+            'pelanggan',
+            'countTotal',
+            'countApprove',
+            'countPending',
+            'statusFilter'
+        ));
+    }
 
     // Halaman tambah pelanggan
     public function create()
@@ -308,7 +381,7 @@ public function index(Request $request)
         } catch (\Throwable $th) {
             DB::rollBack();
 
-            return back()->with('error', '? Terjadi kesalahan: '.$th->getMessage());
+            return back()->with('error', '? Terjadi kesalahan: ' . $th->getMessage());
         }
     }
 
@@ -349,7 +422,7 @@ public function index(Request $request)
 
             // Paket
             'paket_id' => 'required|exists:pakets,id',
-            'nomer_id' => 'required|string|max:50|unique:pelanggans,nomer_id,'.$pelanggan->id,
+            'nomer_id' => 'required|string|max:50|unique:pelanggans,nomer_id,' . $pelanggan->id,
 
             // Tanggal
             'tanggal_mulai' => 'nullable|date',
@@ -369,8 +442,8 @@ public function index(Request $request)
         // Upload foto baru jika ada
         if ($request->hasFile('foto_ktp')) {
             // Hapus foto lama jika ada
-            if ($pelanggan->foto_ktp && file_exists(storage_path('app/public/'.$pelanggan->foto_ktp))) {
-                unlink(storage_path('app/public/'.$pelanggan->foto_ktp));
+            if ($pelanggan->foto_ktp && file_exists(storage_path('app/public/' . $pelanggan->foto_ktp))) {
+                unlink(storage_path('app/public/' . $pelanggan->foto_ktp));
             }
             $pelanggan->foto_ktp = $request->file('foto_ktp')->store('foto_ktp', 'public');
         }

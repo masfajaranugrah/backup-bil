@@ -6,8 +6,120 @@ $containerNav = ($configData['contentLayout'] === 'compact') ? 'container-xxl' :
 $navbarDetached = $navbarDetached ?? '';
 @endphp
 
+<style>
+  #layout-navbar {
+    height: 64px !important;
+    min-height: 64px !important;
+    max-height: 64px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    transform: none !important;
+  }
+
+  html.window-scrolled #layout-navbar,
+  .window-scrolled #layout-navbar,
+  .layout-navbar-fixed .window-scrolled #layout-navbar,
+  .layout-navbar-fixed .window-scrolled .layout-navbar.navbar-detached {
+    height: 64px !important;
+    min-height: 64px !important;
+    max-height: 64px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    transform: none !important;
+  }
+
+  #layout-navbar > .container-fluid,
+  #layout-navbar > .container-xxl,
+  #layout-navbar .navbar-nav-right,
+  #layout-navbar .navbar-nav {
+    min-height: 64px !important;
+    align-items: center !important;
+  }
+
+  #layout-navbar .navbar-nav-right {
+    margin-left: auto !important;
+    flex: 0 0 auto !important;
+  }
+
+  #layout-navbar .navbar-nav {
+    flex-wrap: nowrap !important;
+    transform: none !important;
+  }
+
+  #layout-navbar .layout-menu-toggle {
+    height: 100% !important;
+    min-height: inherit !important;
+    align-self: stretch !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  #layout-navbar .layout-menu-toggle .nav-link {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    align-self: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+  }
+
+  #layout-navbar .layout-menu-toggle .nav-link i {
+    display: block !important;
+    line-height: 1 !important;
+  }
+
+  #layout-navbar .nav-item,
+  #layout-navbar .nav-link,
+  #layout-navbar .btn-icon,
+  #layout-navbar #sbNavbarCollapseBtn,
+  #layout-navbar .avatar {
+    flex: 0 0 auto !important;
+    transform: none !important;
+  }
+
+  #layout-navbar .btn-icon {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+
+  #layout-navbar .navbar-dropdown,
+  #layout-navbar .dropdown-user,
+  #layout-navbar .dropdown-user > .nav-link {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  #layout-navbar .dropdown-user .avatar {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+  }
+
+  @media (min-width: 992px) {
+    #layout-navbar .layout-menu-toggle.d-lg-none {
+      display: none !important;
+    }
+  }
+</style>
+
 <!-- Navbar -->
-<nav class="layout-navbar navbar navbar-expand-xl align-items-center {{ $navbarDetached }} {{ $containerNav }}" id="layout-navbar" style="background: rgba(255, 255, 255, 0.65) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.05); box-shadow: none;">
+<nav class="layout-navbar navbar navbar-expand-xl align-items-center {{ $navbarDetached }} {{ $containerNav }}" id="layout-navbar" style="backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.05); box-shadow: none;">
 
   <div class="{{ $containerNav }} d-flex justify-content-between align-items-center w-100">
 
@@ -15,14 +127,17 @@ $navbarDetached = $navbarDetached ?? '';
     <div class="d-flex align-items-center">
       {{-- Menu Toggle --}}
       @if(!isset($navbarHideToggle))
-        <div class="layout-menu-toggle navbar-nav align-items-xl-center me-3 {{ isset($menuHorizontal) || isset($contentNavbar) ? 'd-xl-none' : '' }}">
+        <div class="layout-menu-toggle navbar-nav align-items-center me-3 d-lg-none">
           <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0)">
             <i class="ri-menu-fill ri-22px text-dark"></i>
           </a>
         </div>
       @endif
 
- 
+      <button type="button" class="d-none d-lg-inline-flex align-items-center justify-content-center me-3 border-0 bg-white text-dark shadow-sm" id="sbNavbarCollapseBtn" aria-label="Toggle sidebar" style="width: 40px; height: 40px; border-radius: 14px;">
+        <span class="material-symbols-rounded" style="font-size: 22px;">left_panel_close</span>
+      </button>
+
     </div>
 
     {{-- Right Side --}}
@@ -31,19 +146,15 @@ $navbarDetached = $navbarDetached ?? '';
       <ul class="navbar-nav flex-row align-items-center ms-auto gap-1 gap-md-3">
 
         {{-- Search Command (Desktop) --}}
-        <li class="nav-item d-none d-md-flex align-items-center">
+        <li class="nav-item d-none d-lg-flex align-items-center">
           <div id="navSearchTrigger" onclick="openNavSearch()" class="d-flex align-items-center bg-light border rounded-pill px-3 py-1 cursor-pointer" style="height: 38px; user-select:none;">
             <i class="ri-search-line text-muted ri-16px"></i>
             <div class="ms-2 d-flex align-items-center">
-              <span class="border rounded bg-white text-muted px-1 shadow-sm d-flex align-items-center justify-content-center" style="font-size: 0.7rem; height: 20px; min-width: 20px;">?</span>
+              <span class="border rounded bg-white text-muted px-1 shadow-sm d-flex align-items-center justify-content-center" style="font-size: 0.7rem; height: 20px; min-width: 20px;">⌘</span>
               <span class="border rounded bg-white text-muted px-1 shadow-sm ms-1 d-flex align-items-center justify-content-center" style="font-size: 0.7rem; height: 20px; min-width: 20px;">K</span>
             </div>
           </div>
         </li>
-
- 
-
- 
 
         {{-- User Dropdown --}}
         @php
@@ -63,7 +174,7 @@ $navbarDetached = $navbarDetached ?? '';
             }
         @endphp
 
-        <li class="nav-item navbar-dropdown dropdown-user dropdown ms-1">
+        <li class="nav-item navbar-dropdown dropdown-user dropdown ms-1 d-none d-lg-flex">
           <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown" style="outline: none; box-shadow: none;">
             <div class="avatar avatar-online text-white d-flex justify-content-center align-items-center rounded-circle border border-2 border-success" style="width: 38px; height: 38px; background: #0f172a;">
               <span class="fw-bold" style="font-size: 0.9rem;">{{ $roleInitials }}</span>
@@ -146,6 +257,27 @@ $navbarDetached = $navbarDetached ?? '';
 #navSearchInput::placeholder { color:#a0aec0; }
 </style>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const navbar = document.getElementById('layout-navbar');
+  if (!navbar) return;
+
+  function lockNavbarItems() {
+    navbar.style.height = '64px';
+    navbar.style.minHeight = '64px';
+    navbar.style.maxHeight = '64px';
+    navbar.style.transform = 'none';
+  }
+
+  lockNavbarItems();
+  window.addEventListener('scroll', lockNavbarItems, { passive: true });
+
+  const observer = new MutationObserver(lockNavbarItems);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+});
+</script>
+
 <div id="navSearchOverlay" onclick="closeNavSearch()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:99999; align-items:flex-start; justify-content:center; padding-top:72px;">
   <div onclick="event.stopPropagation()" style="background:#ffffff; border-radius:12px; width:100%; max-width:600px; box-shadow:0 32px 64px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.06); overflow:hidden; margin:0 16px;">
 
@@ -164,15 +296,15 @@ $navbarDetached = $navbarDetached ?? '';
     <!-- Footer Hints -->
     <div style="display:flex; align-items:center; gap:20px; padding:9px 18px; border-top:1px solid #f1f5f9; background:#fafafa;">
       <span style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:#64748b;">
-        <kbd style="display:inline-flex; align-items:center; justify-content:center; background:#fff; border:1px solid #e2e8f0; border-bottom-width:2px; border-radius:5px; padding:2px 6px; font-size:0.7rem; color:#374151; font-family:inherit; line-height:1.4;">??</kbd>
+        <kbd style="display:inline-flex; align-items:center; justify-content:center; background:#fff; border:1px solid #e2e8f0; border-bottom-width:2px; border-radius:5px; padding:2px 6px; font-size:0.7rem; color:#374151; font-family:inherit; line-height:1.4;">↑↓</kbd>
         <span>Navigasi</span>
       </span>
       <span style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:#64748b;">
-        <kbd style="display:inline-flex; align-items:center; justify-content:center; background:#fff; border:1px solid #e2e8f0; border-bottom-width:2px; border-radius:5px; padding:2px 6px; font-size:0.7rem; color:#374151; font-family:inherit; line-height:1.4;">?</kbd>
+        <kbd style="display:inline-flex; align-items:center; justify-content:center; background:#fff; border:1px solid #e2e8f0; border-bottom-width:2px; border-radius:5px; padding:2px 6px; font-size:0.7rem; color:#374151; font-family:inherit; line-height:1.4;">↵</kbd>
         <span>Buka</span>
       </span>
       <span style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:#64748b;">
-        <kbd style="display:inline-flex; align-items:center; justify-content:center; background:#fff; border:1px solid #e2e8f0; border-bottom-width:2px; border-radius:5px; padding:2px 6px; font-size:0.7rem; color:#374151; font-family:inherit; line-height:1.4;">?K</kbd>
+        <kbd style="display:inline-flex; align-items:center; justify-content:center; background:#fff; border:1px solid #e2e8f0; border-bottom-width:2px; border-radius:5px; padding:2px 6px; font-size:0.7rem; color:#374151; font-family:inherit; line-height:1.4;">⌘K</kbd>
         <span>Tutup</span>
       </span>
     </div>

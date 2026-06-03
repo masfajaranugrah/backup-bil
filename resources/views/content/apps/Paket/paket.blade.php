@@ -5,14 +5,7 @@
 {{-- VENDOR STYLE --}}
 @section('vendor-style')
 @vite([
-  'resources/assets/vendor/libs/apex-charts/apex-charts.scss',
-  'resources/assets/vendor/libs/swiper/swiper.scss',
-  'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
-  'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
-  'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
-  'resources/assets/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.scss',
-  'resources/assets/vendor/libs/select2/select2.scss',
-  'resources/assets/vendor/libs/@form-validation/form-validation.scss',
+  'resources/css/app.css',
   'resources/assets/vendor/libs/animate-css/animate.scss',
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'
 ])
@@ -43,9 +36,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 showCancelButton: true,
                 confirmButtonText: 'Ya, hapus!',
                 cancelButtonText: 'Batal',
+                reverseButtons: true,
                 customClass: {
-                    confirmButton: 'btn btn-danger me-2',
-                    cancelButton: 'btn btn-secondary'
+                    container: 'swal-tailwind-backdrop',
+                    popup: 'swal-tailwind-popup',
+                    confirmButton: 'swal-tailwind-confirm swal-tailwind-confirm-danger',
+                    cancelButton: 'swal-tailwind-cancel'
+                },
+                showClass: {
+                    popup: 'animate__animated animate__fadeInUp animate__faster'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutDown animate__faster'
                 },
                 buttonsStyling: false
             }).then((result) => {
@@ -152,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h5 class="card-title mb-2 fw-bold text-truncate">{{ $paket->nama_paket }}</h5>
                 <div class="d-flex align-items-center gap-2 mb-2">
                   <span class="badge bg-success text-white px-3 py-2 fw-semibold rounded-pill shadow-sm">
-                    Rp {{ number_format($paket->harga, 0, ',', '.') }}
+                    Rp {{ number_format(floatval($paket->harga), 0, ',', '.') }}
                   </span>
                 </div>
               </div>
@@ -210,12 +212,13 @@ document.addEventListener('DOMContentLoaded', function() {
 @if($pakets->hasPages())
 <div class="row mt-4">
     <div class="col-12">
-        <div class="pagination-wrapper p-3 d-flex justify-content-between align-items-center border rounded-3 bg-white shadow-sm">
-            <div class="pagination-info text-muted small fw-medium">
-              Menampilkan <strong>{{ $pakets->firstItem() ?? 0 }}</strong> - <strong>{{ $pakets->lastItem() ?? 0 }}</strong> dari <strong>{{ $pakets->total() }}</strong> paket
-            </div>
+        <div class="pagination-wrapper card border-0 shadow-sm" style="border-radius: var(--border-radius); border: 1px solid #e4e4e7 !important;">
+            <label class="dense-toggle-wrap mb-0" style="visibility: hidden;">
+                <input type="checkbox">
+                <span>Dense padding</span>
+            </label>
             <div>
-              {{ $pakets->appends(request()->query())->onEachSide(1)->links('pagination::bootstrap-5') }}
+                {{ $pakets->appends(request()->query())->onEachSide(1)->links('vendor.pagination.tagihan-compact') }}
             </div>
         </div>
     </div>
@@ -484,6 +487,82 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Hide duplicate pagination summary from Laravel Links */
 .pagination-wrapper nav .text-muted {
     display: none !important;
+}
+
+/* ========================================= */
+/* EXACT PAGINATION STYLES (MATCH OUTSTANDING) */
+/* ========================================= */
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: #fafafa;
+}
+
+.pagination-wrapper .pagination {
+  margin: 0;
+  gap: 0.5rem;
+}
+
+.pagination-wrapper .page-item .page-link {
+  border-radius: 50% !important;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e4e4e7;
+  color: #18181b;
+  font-weight: 600;
+  background-color: #fff;
+  margin: 0 2px;
+  transition: all 0.3s ease;
+}
+
+.pagination-wrapper .page-item .page-link:hover {
+  background-color: #18181b;
+  border-color: #18181b;
+  color: #fafafa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(24, 24, 27, 0.2);
+}
+
+.pagination-wrapper .page-item.active .page-link {
+  background-color: #18181b !important;
+  border-color: #18181b !important;
+  color: #fafafa !important;
+  box-shadow: 0 4px 12px rgba(24, 24, 27, 0.4);
+}
+
+.pagination-wrapper .page-item.disabled .page-link {
+  background-color: #f4f4f5;
+  border-color: #e4e4e7;
+  color: #a1a1aa;
+  cursor: not-allowed;
+}
+
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #111827;
+}
+
+@media (max-width: 768px) {
+  .pagination-wrapper {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
 }
 </style>
 @endsection

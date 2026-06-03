@@ -54,6 +54,12 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'wilayah' => env('APP_WILAYAH', 'gunung_kidul'),
+
+    'jmk_app_url' => env('JMK_APP_URL', 'https://layanan.jernih.net.id'),
+
+    'jmkgk_app_url' => env('JMKGK_APP_URL', 'https://beningmedia.co.id'),
+
     /*
   |--------------------------------------------------------------------------
   | Application Timezone

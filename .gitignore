@@ -1,6 +1,9 @@
 /.phpunit.cache
 /node_modules
-
+# Laravel storage
+/storage/
+/storage/**
+!/storage/app/public
 /public/build
 /public/hot
 /vendor
@@ -24,3 +27,5 @@ yarn-error.log
 !/public/assets/*
 /public/css
 /public/js
+rr
+.rr.yaml

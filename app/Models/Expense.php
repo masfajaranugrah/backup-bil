@@ -24,7 +24,7 @@ class Expense extends Model
 
         // Generate UUID sebelum create
         static::creating(function ($expense) {
-            if (! $expense->id) {
+            if (!$expense->id) {
                 $expense->id = (string) Str::uuid();
             }
 
@@ -32,7 +32,27 @@ class Expense extends Model
             if ($expense->kategori === 'DLL') {
                 $last = self::where('kategori', 'DLL')->orderBy('id', 'desc')->first();
                 $nextNumber = $last ? intval(substr($last->kode, 2)) + 1 : 1;
-                $expense->kode = 'DL'.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+                $expense->kode = 'DL' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+            }
+        });
+
+        // Auto-update ledger_dailies saat expense disimpan (create/update)
+        static::saved(function ($expense) {
+            if ($expense->tanggal_keluar) {
+                LedgerDaily::recalculateForDate($expense->tanggal_keluar);
+            }
+
+            // Jika tanggal berubah, recalculate juga tanggal lama
+            $originalTanggal = $expense->getOriginal('tanggal_keluar');
+            if ($originalTanggal && $originalTanggal != $expense->tanggal_keluar) {
+                LedgerDaily::recalculateForDate($originalTanggal);
+            }
+        });
+
+        // Auto-update ledger_dailies saat expense dihapus
+        static::deleted(function ($expense) {
+            if ($expense->tanggal_keluar) {
+                LedgerDaily::recalculateForDate($expense->tanggal_keluar);
             }
         });
     }

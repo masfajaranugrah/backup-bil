@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .swal2-container.swal2-backdrop-show {
+    background: rgba(15, 23, 42, 0.5) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .swal2-popup {
+    border-radius: 1.5rem !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    background: #ffffff !important;
+    box-shadow: 0 25px 70px rgba(15, 23, 42, 0.22) !important;
+  }
+
+  .swal2-confirm {
+    border: 0 !important;
+    border-radius: 0.75rem !important;
+    padding: 0.625rem 1.25rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
+  }
+
+  .swal2-cancel {
+    border: 0 !important;
+    border-radius: 0.75rem !important;
+    background: #f1f5f9 !important;
+    padding: 0.625rem 1.25rem !important;
+    font-weight: 700 !important;
+    color: #334155 !important;
+  }
+
+  .swal2-confirm.btn-danger,
+  .swal2-confirm.swal-tailwind-confirm-danger,
+  .swal2-confirm.swal-tagihan-confirm,
+  .swal2-confirm.swal-outstanding-confirm,
+  .swal2-confirm.swal-karyawan-confirm {
+    background: #ef4444 !important;
+  }
+
+  .swal2-confirm.btn-success,
+  .swal2-confirm.swal-tailwind-confirm-success {
+    background: #10b981 !important;
+  }
+
+  .swal2-confirm.btn-warning,
+  .swal2-confirm.swal-tailwind-confirm-warning {
+    background: #f59e0b !important;
+  }
+
+  .swal2-confirm.btn-info,
+  .swal2-confirm.swal-tailwind-confirm-info {
+    background: #0ea5e9 !important;
+  }
+
+  .swal2-confirm.btn-primary,
+  .swal2-confirm.swal-tailwind-confirm-primary {
+    background: #0f172a !important;
+  }
+
+  .swal-tailwind-backdrop {
+    @apply tw-bg-slate-950/50 tw-backdrop-blur-md;
+  }
+
+  .swal-tailwind-popup {
+    @apply tw-rounded-3xl tw-border tw-border-slate-200/90 tw-bg-white tw-p-7 tw-shadow-2xl;
+  }
+
+  .swal-tailwind-popup .swal2-title {
+    @apply tw-text-[1.35rem] tw-font-extrabold tw-tracking-normal tw-text-slate-900;
+  }
+
+  .swal-tailwind-popup .swal2-html-container {
+    @apply tw-text-[0.95rem] tw-leading-6 tw-text-slate-500;
+  }
+
+  .swal-tailwind-popup .swal2-actions {
+    @apply tw-mt-6 tw-gap-3;
+  }
+
+  .swal-tailwind-confirm {
+    @apply tw-rounded-xl tw-border-0 tw-px-5 tw-py-2.5 tw-font-semibold tw-text-white tw-shadow-sm tw-transition-all tw-duration-200;
+  }
+
+  .swal-tailwind-confirm-danger {
+    @apply tw-bg-red-500 hover:tw-bg-red-600;
+  }
+
+  .swal-tailwind-confirm-success {
+    @apply tw-bg-emerald-500 hover:tw-bg-emerald-600;
+  }
+
+  .swal-tailwind-confirm-primary {
+    @apply tw-bg-slate-900 hover:tw-bg-slate-800;
+  }
+
+  .swal-tailwind-confirm-info {
+    @apply tw-bg-sky-500 hover:tw-bg-sky-600;
+  }
+
+  .swal-tailwind-confirm-warning {
+    @apply tw-bg-amber-500 hover:tw-bg-amber-600;
+  }
+
+  .swal-tailwind-cancel {
+    @apply tw-rounded-xl tw-border-0 tw-bg-slate-100 tw-px-5 tw-py-2.5 tw-font-semibold tw-text-slate-700 tw-transition-all tw-duration-200 hover:tw-bg-slate-200;
+  }
+
+  /* Scope khusus modal tagihan agar dashboard lain tetap aman */
+  #modalTambahTagihan .modal-body,
+  #modalMassTagihan .modal-body,
+  [id^='modalEditTagihan-'] .modal-body {
+    @apply tw-bg-slate-50;
+  }
+
+  #modalTambahTagihan .modal-body .row,
+  [id^='modalEditTagihan-'] .modal-body .row {
+    @apply tw-rounded-2xl tw-border tw-border-slate-200 tw-bg-white tw-p-5 tw-shadow-soft;
+  }
+
+  #modalTambahTagihan .form-label,
+  [id^='modalEditTagihan-'] .form-label {
+    @apply tw-text-xs tw-font-bold tw-tracking-wide tw-text-slate-600;
+  }
+
+  #modalTambahTagihan .form-control,
+  #modalTambahTagihan .form-select,
+  [id^='modalEditTagihan-'] .form-control,
+  [id^='modalEditTagihan-'] .form-select {
+    @apply tw-rounded-xl tw-border-slate-300 tw-bg-white tw-text-slate-900;
+  }
+
+  #modalTambahTagihan .form-control:focus,
+  #modalTambahTagihan .form-select:focus,
+  [id^='modalEditTagihan-'] .form-control:focus,
+  [id^='modalEditTagihan-'] .form-select:focus {
+    @apply tw-border-slate-900 tw-ring-4 tw-ring-slate-900/10;
+  }
+
+  #modalTambahTagihan .form-control.bg-light,
+  [id^='modalEditTagihan-'] .form-control.bg-light {
+    @apply tw-bg-slate-100 tw-text-slate-600;
+  }
+
+  #modalTambahTagihan .modal-header,
+  [id^='modalEditTagihan-'] .modal-header,
+  #modalMassTagihan .modal-header {
+    @apply tw-bg-gradient-to-r tw-from-slate-950 tw-via-slate-900 tw-to-slate-800;
+  }
+
+  #modalTambahTagihan .modal-footer,
+  [id^='modalEditTagihan-'] .modal-footer,
+  #modalMassTagihan .modal-footer {
+    @apply tw-border-t tw-border-slate-200 tw-bg-white/90 tw-backdrop-blur;
+  }
+
+  #modalMassTagihan .mode-card {
+    @apply tw-rounded-2xl tw-border-slate-200 tw-bg-white tw-shadow-soft tw-transition;
+  }
+
+  #modalMassTagihan .mode-card:hover {
+    @apply tw--translate-y-0.5 tw-border-slate-300 tw-shadow-lg;
+  }
+
+  #modalMassTagihan .active-mode {
+    @apply tw-border-amber-400 tw-ring-4 tw-ring-amber-300/30;
+  }
+}

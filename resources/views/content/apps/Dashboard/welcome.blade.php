@@ -13,11 +13,16 @@
 /* MODERN DASHBOARD UI - PREMIUM AESTHETIC */
 /* ========================================= */
 :root {
-  --radius: 1rem;
+  --radius: 1.15rem;
+  --glass-bg: rgba(255, 255, 255, 0.58);
+  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.78);
+  --glass-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
+  --glass-shadow-hover: 0 24px 64px rgba(14, 165, 233, 0.16), 0 14px 34px rgba(15, 23, 42, 0.12);
 }
 
 body {
-  background: #f8fafc;
+  background: #ffffff !important;
 }
 
 /* Typography & General */
@@ -31,25 +36,39 @@ body {
     justify-content: flex-end;
     margin-bottom: 1.5rem;
 }
+.filter-container #periodeTrigger {
+  background: var(--glass-bg-strong) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08) !important;
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
 
 /* Welcome Card (Left) */
 .card-welcome {
-  background: #0f172a;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.86), rgba(30, 41, 59, 0.72)),
+    radial-gradient(circle at 10% 0%, rgba(14, 165, 233, 0.34), transparent 36%),
+    radial-gradient(circle at 100% 100%, rgba(99, 102, 241, 0.28), transparent 42%);
   border-radius: var(--radius);
   position: relative;
   overflow: hidden;
-  border: none;
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
   min-height: 280px;
   display: flex;
   align-items: center;
+  backdrop-filter: blur(18px) saturate(155%);
+  -webkit-backdrop-filter: blur(18px) saturate(155%);
 }
 .card-welcome::before {
   content: '';
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.15), transparent 50%),
-              radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.1), transparent 40%);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02) 42%, rgba(255,255,255,0.1)),
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.22), transparent 50%),
+    radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.18), transparent 40%);
   pointer-events: none;
 }
 .welcome-content {
@@ -72,17 +91,19 @@ body {
   margin-bottom: 2rem;
 }
 .btn-go-now {
-  background: #10b981;
+  background: rgba(255, 255, 255, 0.18);
   color: #fff;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.32);
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   font-weight: 600;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.36), 0 12px 30px rgba(14, 165, 233, 0.22);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
 }
 .btn-go-now:hover {
-  background: #059669;
+  background: rgba(255, 255, 255, 0.28);
   transform: translateY(-2px);
   color: #fff;
 }
@@ -100,9 +121,9 @@ body {
   border-radius: var(--radius);
   position: relative;
   overflow: hidden;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   min-height: 280px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -111,7 +132,9 @@ body {
   content: '';
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
+  background:
+    linear-gradient(to top, rgba(15,23,42,0.78) 0%, rgba(15,23,42,0.24) 60%, rgba(255,255,255,0.08) 100%),
+    linear-gradient(135deg, rgba(255,255,255,0.16), transparent 48%);
 }
 .featured-content {
   position: relative;
@@ -140,18 +163,36 @@ body {
 
 /* Stat Cards */
 .stat-card {
-  background: #fff;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.76), rgba(255,255,255,0.40)),
+    rgba(255, 255, 255, 0.58);
   border-radius: var(--radius);
   padding: 1.5rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-  transition: all 0.2s;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
   height: 100%;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(18px) saturate(165%);
+  -webkit-backdrop-filter: blur(18px) saturate(165%);
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(255,255,255,0.86), transparent 32%),
+    radial-gradient(circle at 100% 100%, rgba(14,165,233,0.16), transparent 42%);
+  pointer-events: none;
+  opacity: 0.9;
 }
 .stat-card:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-  border-color: #cbd5e1;
+  box-shadow: var(--glass-shadow-hover);
+  border-color: rgba(255, 255, 255, 0.96);
+  transform: translateY(-4px);
 }
+.stat-card > * { position: relative; z-index: 1; }
 .stat-title {
   font-size: 0.875rem;
   color: #64748b;
@@ -182,25 +223,34 @@ body {
 
 /* Quick Links Grid */
 .quick-links-container {
-  background: #fff;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.76), rgba(255,255,255,0.42)),
+    rgba(255, 255, 255, 0.58);
   border-radius: var(--radius);
   padding: 1.5rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px) saturate(165%);
+  -webkit-backdrop-filter: blur(18px) saturate(165%);
 }
 .quick-link-item {
   display: flex;
   align-items: center;
   padding: 1rem;
   border-radius: 0.75rem;
-  border: 1px solid #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  background: rgba(255, 255, 255, 0.34);
   transition: all 0.2s;
   text-decoration: none;
   color: inherit;
   margin-bottom: 1rem;
 }
 .quick-link-item:hover {
-  background: #f8fafc;
-  border-color: #e2e8f0;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.82), rgba(255,255,255,0.48)),
+    rgba(14, 165, 233, 0.08);
+  border-color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 28px rgba(14, 165, 233, 0.12), 0 8px 18px rgba(15, 23, 42, 0.08);
   transform: translateX(4px);
 }
 .ql-icon {
@@ -217,6 +267,24 @@ body {
 .ql-icon.bg-success-light { background: #d1fae5; color: #10b981; }
 .ql-icon.bg-info-light { background: #e0f2fe; color: #0ea5e9; }
 .ql-icon.bg-warning-light { background: #fef3c7; color: #f59e0b; }
+
+.dashboard-glass-card {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.78), rgba(255,255,255,0.42)),
+    rgba(255,255,255,0.58) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  border-radius: var(--radius) !important;
+  overflow: hidden;
+  backdrop-filter: blur(18px) saturate(165%);
+  -webkit-backdrop-filter: blur(18px) saturate(165%);
+}
+
+.dashboard-glass-card .card-header,
+.dashboard-glass-card .card-body {
+  position: relative;
+  z-index: 1;
+}
 
 .ql-content h6 {
   font-size: 1rem;
@@ -275,7 +343,7 @@ body {
     <div class="col-12 col-xl-8 animate-in delay-1">
       <div class="card-welcome">
         <div class="welcome-content">
-          <h2>Welcome back <span class="wave">👋</span><br>{{ auth()->user()->name ?? 'Admin' }}</h2>
+          <h2>Welcome back <span class="wave">??</span><br>{{ auth()->user()->name ?? 'Admin' }}</h2>
           <p>If you are going to manage billing, customers, and operations, you need to be sure everything is on track. Here is your dashboard overview.</p>
           <a href="{{ route('tagihan.get') }}" class="btn-go-now">Go to Tagihan</a>
         </div>
@@ -351,7 +419,7 @@ body {
   <div class="row g-4">
     <!-- Area / Donut Chart -->
     <div class="col-12 col-lg-8 animate-in delay-3">
-      <div class="card h-100 border-0 shadow-sm" style="border-radius: var(--radius);">
+      <div class="card h-100 dashboard-glass-card">
         <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 pb-0">
           <div>
             <h5 class="mb-1 fw-bold text-dark">Status Pelanggan Aktif</h5>
@@ -383,7 +451,7 @@ body {
 
     <!-- Quick Links -->
     <div class="col-12 col-lg-4 animate-in delay-3">
-      <div class="quick-links-container h-100 shadow-sm">
+      <div class="quick-links-container h-100">
         <h5 class="fw-bold mb-4">Quick Links</h5>
         
         <a href="{{ route('tagihan.get') }}" class="quick-link-item">

@@ -241,17 +241,14 @@ class ExpenseController extends Controller
     }
 
     /**
-     * Update ledger harian otomatis sesuai tanggal
+     * Update ledger harian otomatis sesuai tanggal.
+     * Sekarang menggunakan LedgerDaily::recalculateForDate() yang terpusat.
+     * Note: Method ini juga dipanggil otomatis oleh Expense model events,
+     * tapi tetap tersedia sebagai fallback jika dibutuhkan.
      */
     private function updateLedger($tanggal)
     {
-        $ledger = LedgerDaily::firstOrCreate(['tanggal' => $tanggal]);
-
-        $ledger->total_masuk = Income::whereDate('tanggal_masuk', $tanggal)->sum('jumlah');
-        $ledger->total_keluar = Expense::whereDate('tanggal_keluar', $tanggal)->sum('jumlah');
-        $ledger->saldo = $ledger->total_masuk - $ledger->total_keluar;
-
-        $ledger->save();
+        LedgerDaily::recalculateForDate($tanggal);
     }
 
     private function getKode($kategori)
@@ -309,7 +306,7 @@ class ExpenseController extends Controller
             'BEBAN GUNUNGKIDUL' => ['kode' => '205', 'jumlah' => 0, 'items' => []],
         ];
 
-        $kategori206 = []; // Tampung kategori 206 (DLL) — nama bebas dari admin
+        $kategori206 = []; // Tampung kategori 206 (DLL)  nama bebas dari admin
 
         foreach ($expenses as $expense) {
             $kategori = strtoupper(trim($expense->kategori ?? ''));
@@ -322,7 +319,7 @@ class ExpenseController extends Controller
                     'jumlah'     => $expense->jumlah,
                 ];
             } elseif (!empty($kategori)) {
-                // Kategori 206 (DLL) — nama bebas yang diinput admin
+                // Kategori 206 (DLL)  nama bebas yang diinput admin
                 if (!isset($kategori206[$kategori])) {
                     $kategori206[$kategori] = ['kode' => '206', 'jumlah' => 0, 'items' => []];
                 }
@@ -345,7 +342,7 @@ class ExpenseController extends Controller
             ];
         }
 
-        // Tambahkan sheet 206 (DLL) — satu sheet per nama kategori unik
+        // Tambahkan sheet 206 (DLL)  satu sheet per nama kategori unik
         foreach ($kategori206 as $nama => $data) {
             $pengeluaranGrouped[] = [
                 'kode'     => '206',

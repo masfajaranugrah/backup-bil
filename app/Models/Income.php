@@ -16,6 +16,7 @@ class Income extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'tagihan_id',
         'kode',
         'kategori',
         'jumlah',
@@ -31,7 +32,7 @@ class Income extends Model
 
         // Generate UUID
         static::creating(function ($income) {
-            if (! $income->getKey()) {
+            if (!$income->getKey()) {
                 $income->{$income->getKeyName()} = (string) Str::uuid();
             }
 
@@ -39,7 +40,27 @@ class Income extends Model
             if ($income->kategori === 'DLL') {
                 $last = self::where('kategori', 'DLL')->orderBy('id', 'desc')->first();
                 $nextNumber = $last ? intval(substr($last->kode, 2)) + 1 : 1;
-                $income->kode = 'DL'.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+                $income->kode = 'DL' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+            }
+        });
+
+        // Auto-update ledger_dailies saat income disimpan (create/update)
+        static::saved(function ($income) {
+            if ($income->tanggal_masuk) {
+                LedgerDaily::recalculateForDate($income->tanggal_masuk);
+            }
+
+            // Jika tanggal berubah, recalculate juga tanggal lama
+            $originalTanggal = $income->getOriginal('tanggal_masuk');
+            if ($originalTanggal && $originalTanggal != $income->tanggal_masuk) {
+                LedgerDaily::recalculateForDate($originalTanggal);
+            }
+        });
+
+        // Auto-update ledger_dailies saat income dihapus
+        static::deleted(function ($income) {
+            if ($income->tanggal_masuk) {
+                LedgerDaily::recalculateForDate($income->tanggal_masuk);
             }
         });
     }

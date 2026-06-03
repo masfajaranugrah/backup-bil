@@ -411,18 +411,159 @@ body {
 
 .pagination .page-item .page-link {
   border-radius: 50% !important;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  display: flex;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  flex: 0 0 32px;
+  padding: 0 !important;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid #e4e4e7;
   color: #18181b;
   font-weight: 600;
   background-color: #fff;
-  margin: 0 4px;
+  margin: 0 2px;
   transition: all 0.3s ease;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.pagination-wrapper .mui-pagination .page-link {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  flex: 0 0 32px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-wrapper nav .pagination.mui-pagination .page-item,
+.pagination-wrapper nav .pagination.mui-pagination .page-link {
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  flex: 0 0 38px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+.dense-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dense-toggle-wrap input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: #18181b;
+}
+
+.table-modern.is-dense th,
+.table-modern.is-dense td {
+  padding: 0.55rem 0.85rem !important;
+}
+
+.expense-check {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 5px;
+  background: #ffffff;
+  cursor: pointer;
+  position: relative;
+  display: block;
+  margin: 0 auto;
+  transition: all 0.2s;
+}
+
+.expense-check:hover { border-color: #18181b; }
+.expense-check:checked { background: #18181b; border-color: #18181b; }
+.expense-check:checked::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 7px;
+  width: 6px;
+  height: 11px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.selection-toolbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 1rem;
+  padding: 0.9rem 1.2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.selection-toolbar.active { display: flex; }
+.selection-toolbar .selected-text { color: #18181b; font-size: 1rem; font-weight: 700; }
+.selection-toolbar .toolbar-delete-btn {
+  border: 0;
+  background: #fee2e2;
+  color: #dc2626;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.selection-toolbar .toolbar-delete-btn:hover { background: #fecaca; transform: translateY(-1px); }
+
+.expense-snackbar {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  z-index: 12000;
+  min-width: 420px;
+  max-width: min(720px, calc(100vw - 48px));
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.4rem;
+  border-radius: 22px;
+  background: #111827;
+  color: #ffffff;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.28);
+  transform: translateY(18px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+.expense-snackbar.show { transform: translateY(0); opacity: 1; }
+.expense-snackbar i { color: #86efac; font-size: 1.35rem; }
+.expense-snackbar span { color: #ffffff; font-size: 1.05rem; font-weight: 700; line-height: 1.3; }
+
+@media (max-width: 576px) {
+  .expense-snackbar {
+    right: 16px;
+    bottom: 16px;
+    min-width: 0;
+    width: calc(100vw - 32px);
+    border-radius: 18px;
+  }
 }
 
 .pagination .page-item .page-link:hover {
@@ -659,6 +800,33 @@ nav[role="navigation"] > div > p {
 @section('page-script')
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    function showExpenseSnackbar(message) {
+        if (!message) return;
+        const existing = document.querySelector('.expense-snackbar');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'expense-snackbar';
+        toast.innerHTML = `<i class="ri-checkbox-circle-line"></i><span>${message}</span>`;
+        document.body.appendChild(toast);
+        toast.offsetHeight;
+        setTimeout(() => toast.classList.add('show'), 50);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3200);
+    }
+
+    @if(session('success'))
+      showExpenseSnackbar(@json(session('success')));
+    @endif
+
+    const pendingExpenseSnackbar = localStorage.getItem('expense_snackbar_success');
+    if (pendingExpenseSnackbar) {
+        localStorage.removeItem('expense_snackbar_success');
+        showExpenseSnackbar(pendingExpenseSnackbar);
+    }
+
     // Helper function untuk loading overlay
     function showLoading() {
         $('.loading-overlay').css('display', 'flex');
@@ -686,6 +854,84 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     @endif
+
+    const denseToggleExpense = document.getElementById('densePaddingToggleExpense');
+    const expenseTableEl = document.querySelector('.datatables-expense.table-modern');
+    if (denseToggleExpense && expenseTableEl) {
+        const savedDense = localStorage.getItem('expense_dense_padding') === '1';
+        denseToggleExpense.checked = savedDense;
+        expenseTableEl.classList.toggle('is-dense', savedDense);
+
+        denseToggleExpense.addEventListener('change', function() {
+            const isDense = denseToggleExpense.checked;
+            expenseTableEl.classList.toggle('is-dense', isDense);
+            localStorage.setItem('expense_dense_padding', isDense ? '1' : '0');
+        });
+    }
+
+    function updateExpenseSelectionState() {
+        const $all = $('.expense-row-checkbox');
+        const $checked = $('.expense-row-checkbox:checked');
+        const count = $checked.length;
+        $('#selectAllExpenses').prop('checked', $all.length > 0 && count === $all.length);
+        $('#expenseSelectedCount').text(`${count} dipilih`);
+        $('#expenseSelectionToolbar').toggleClass('active', count > 0);
+    }
+
+    $('#selectAllExpenses').on('change', function() {
+        $('.expense-row-checkbox').prop('checked', this.checked);
+        updateExpenseSelectionState();
+    });
+
+    $(document).on('change', '.expense-row-checkbox', updateExpenseSelectionState);
+
+    $('#btnBulkDeleteExpense').on('click', async function() {
+        const checked = $('.expense-row-checkbox:checked').toArray();
+        if (!checked.length) return;
+
+        const result = await Swal.fire({
+            title: 'Hapus Data?',
+            text: `Yakin ingin menghapus ${checked.length} data pengeluaran terpilih?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                confirmButton: 'btn btn-danger me-2',
+                cancelButton: 'btn btn-secondary'
+            },
+            buttonsStyling: false
+        });
+
+        if (!result.isConfirmed) return;
+
+        showLoading();
+        let successCount = 0;
+        for (const cb of checked) {
+            const id = $(cb).val();
+            try {
+                const response = await fetch(`{{ url('/dashboard/admin/expenses') }}/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ _method: 'DELETE' })
+                });
+                if (response.ok) successCount++;
+            } catch (e) {}
+        }
+
+        hideLoading();
+        if (successCount > 0) {
+            localStorage.setItem('expense_snackbar_success', `${successCount} data pengeluaran berhasil dihapus.`);
+            window.location.reload();
+        } else {
+            Swal.fire('Gagal', 'Data belum berhasil dihapus. Coba ulangi lagi.', 'error');
+        }
+    });
 
     // Initialize Flatpickr for date pickers
     if(typeof flatpickr !== 'undefined') {
@@ -825,41 +1071,11 @@ document.addEventListener("DOMContentLoaded", function() {
     </div>
 </div>
 
-<!-- Date Info -->
-<div class="date-info mb-4">
-    <div class="d-flex align-items-center">
-        <i class="ri-calendar-check-line fs-4 me-3 text-primary"></i>
-        <div>
-            <h6 class="mb-0 fw-bold">Pengeluaran Hari Ini</h6>
-            <small class="text-muted">{{ \Carbon\Carbon::parse($today)->locale('id')->translatedFormat('l, d F Y') }}</small>
-        </div>
-    </div>
-</div>
+ 
 
 <!-- Daily Summary Cards -->
 <div class="row g-3 mb-4">
-    @foreach($todayTotals as $kategori => $total)
-    @if($total > 0)
-    <div class="col-12 col-sm-6 col-lg-3">
-        <div class="card summary-card h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 me-3">
-                        <div class="avatar avatar-md bg-light rounded-circle">
-                            <i class="ri-wallet-3-line fs-5 text-primary"></i>
-                        </div>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="card-title mb-1">{{ $kategori }}</h6>
-                        <span class="card-value text-success">Rp {{ number_format($total, 0, ',', '.') }}</span>
-                        <p class="card-code mb-0">Kode: {{ $kategori_list[$kategori] ?? '-' }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-    @endforeach
+ 
 
     <!-- Total Per Tanggal (NEW FEATURE) -->
     <div class="col-12">
@@ -1044,19 +1260,27 @@ document.addEventListener("DOMContentLoaded", function() {
     <div class="card-body p-0">
         <div class="table-responsive p-3">
             @if($expenses->count() > 0)
+                <div class="selection-toolbar" id="expenseSelectionToolbar">
+                    <span class="selected-text" id="expenseSelectedCount">0 dipilih</span>
+                    <button type="button" class="toolbar-delete-btn" id="btnBulkDeleteExpense" title="Hapus Terpilih">
+                        <i class="ri-delete-bin-line fs-5"></i>
+                    </button>
+                </div>
                 <table class="datatables-expense table table-modern table-hover">
                     <thead>
                         <tr>
-                            <th><i class="ri-hashtag me-1"></i>No</th>
-                            <th><i class="ri-eye-line me-1"></i>Detail</th>
-                            <th><i class="ri-barcode-line me-1"></i>Kode</th>
-                            <th><i class="ri-folder-line me-1"></i>Kategori</th>
-                            <th><i class="ri-bank-card-line me-1"></i>Sumber</th>
-                            <th><i class="ri-money-dollar-circle-line me-1"></i>Jumlah</th>
-                            <th><i class="ri-file-text-line me-1"></i>Keterangan</th>
-                            <th><i class="ri-calendar-line me-1"></i>Tanggal</th>
-                            <th><i class="ri-time-line me-1"></i>Jam</th>
-                            <th class="text-center"><i class="ri-settings-3-line me-1"></i>Aksi</th>
+                            <th style="width: 56px; text-align: center;">
+                                <input type="checkbox" class="expense-check" id="selectAllExpenses">
+                            </th>
+                            <th>Detail</th>
+                            <th>Kode</th>
+                            <th>Kategori</th>
+                            <th>Sumber</th>
+                            <th>Jumlah</th>
+                            <th>Keterangan</th>
+                            <th>Tanggal</th>
+                            <th>Jam</th>
+                            <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1069,7 +1293,9 @@ document.addEventListener("DOMContentLoaded", function() {
                             data-tanggal="{{ \Carbon\Carbon::parse($e->tanggal_keluar)->format('d M Y') }}"
                             data-jam="{{ \Carbon\Carbon::parse($e->tanggal_keluar)->format('H:i') }}"
                         >
-                            <td class="text-muted fw-semibold">{{ ($expenses->firstItem() ?? 1) + $loop->index }}</td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" class="expense-check expense-row-checkbox" value="{{ $e->id }}">
+                            </td>
                             <td>
                                 <button class="btn btn-sm btn-icon btn-outline-primary btn-detail" title="Lihat Detail">
                                     <i class="ri-eye-line"></i>
@@ -1144,35 +1370,27 @@ document.addEventListener("DOMContentLoaded", function() {
             @endif
         </div>
 
-    @if($expenses->count() > 0)
       <div class="pagination-wrapper">
-        <div class="pagination-info">
-          Menampilkan <strong>{{ $expenses->firstItem() ?? 0 }}</strong> - <strong>{{ $expenses->lastItem() ?? 0 }}</strong>
-          dari <strong>{{ $expenses->total() }}</strong> data
-        </div>
+        <label class="dense-toggle-wrap mb-0">
+          <input type="checkbox" id="densePaddingToggleExpense">
+          <span class="small">Dense padding</span>
+        </label>
         <div>
           @if($expenses->hasPages())
-            {{-- Jika ada lebih dari 1 halaman, tampilkan pagination Laravel --}}
-            {{ $expenses->appends(request()->query())->onEachSide(1)->links('pagination::bootstrap-5') }}
+            {{ $expenses->appends(request()->query())->onEachSide(1)->links('pagination.mui') }}
           @else
-            {{-- Jika hanya 1 halaman, tampilkan tombol halaman 1 saja --}}
             <nav>
-              <ul class="pagination mb-0">
-                <li class="page-item disabled">
-                  <span class="page-link">&lsaquo;</span>
-                </li>
-                <li class="page-item active">
-                  <span class="page-link">1</span>
-                </li>
-                <li class="page-item disabled">
-                  <span class="page-link">&rsaquo;</span>
-                </li>
+              <ul class="pagination mui-pagination mb-0">
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                <li class="page-item disabled"><span class="page-link">&lsaquo;</span></li>
+                <li class="page-item active"><span class="page-link">1</span></li>
+                <li class="page-item disabled"><span class="page-link">&rsaquo;</span></li>
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
               </ul>
             </nav>
           @endif
         </div>
       </div>
-    @endif
     </div>
 </div>
 
