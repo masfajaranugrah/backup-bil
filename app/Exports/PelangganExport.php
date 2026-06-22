@@ -23,27 +23,27 @@ class PelangganExport implements WithMultipleSheets
             $q->where('status', 'approve');
         };
 
-        // Ambil SEMUA pelanggan (tanpa filter bulan/tahun) berdasarkan tanggal_mulai
+        // Ambil SEMUA pelanggan berdasarkan tanggal data dibuat sebagai tanggal daftar.
         $pelangganAll = Pelanggan::query()
             ->with(['paket:id,nama_paket,kecepatan,harga'])
             ->where($baseCondition)
-            ->whereNotNull('tanggal_mulai')
-            ->orderBy('tanggal_mulai', 'asc')
+            ->whereNotNull('created_at')
+            ->orderBy('created_at', 'asc')
             ->get();
 
-        // Group by tanggal_mulai
+        // Group by tanggal daftar (created_at)
         $groupedByDate = $pelangganAll->groupBy(function ($item) {
-            return Carbon::parse($item->tanggal_mulai)->format('Y-m-d');
+            return Carbon::parse($item->created_at)->format('Y-m-d');
         });
 
         $sheets = [];
 
         // Buat sheet per tanggal
         foreach ($groupedByDate as $date => $items) {
-            // Hitung total kumulatif: semua pelanggan dari awal sampai tanggal_mulai ini
+            // Hitung total kumulatif: semua pelanggan dari awal sampai tanggal daftar ini.
             $totalSampaiTanggal = Pelanggan::where($baseCondition)
-                ->whereNotNull('tanggal_mulai')
-                ->where('tanggal_mulai', '<=', Carbon::parse($date)->endOfDay())
+                ->whereNotNull('created_at')
+                ->where('created_at', '<=', Carbon::parse($date)->endOfDay())
                 ->count();
 
             $sheets[] = new PelangganDateSheetExport($date, $items, $totalSampaiTanggal);
@@ -51,7 +51,7 @@ class PelangganExport implements WithMultipleSheets
 
         // Jika tidak ada data, buat sheet kosong
         if (empty($sheets)) {
-            $dateLabel = Carbon::createFromDate($this->year, $this->month, 1)->format('Y-m-d');
+            $dateLabel = now()->format('Y-m-d');
             $sheets[] = new PelangganDateSheetExport($dateLabel, collect(), 0);
         }
 

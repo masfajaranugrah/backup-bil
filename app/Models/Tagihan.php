@@ -30,6 +30,9 @@ class Tagihan extends Model
         'bukti_pembayaran',
         'kwitansi',
         'type_pembayaran',
+        'verified_by',
+        'edited_by',
+        'edited_at',
         'read_at',
         'is_exported',
     ];
@@ -37,6 +40,7 @@ class Tagihan extends Model
     protected $casts = [
         'read_at' => 'datetime',
         'ditolak_at' => 'datetime',
+        'edited_at' => 'datetime',
     ];
 
     /**
@@ -80,5 +84,15 @@ class Tagihan extends Model
     public function rekening()
     {
         return $this->belongsTo(Rekening::class, 'type_pembayaran', 'id');
+    }
+
+    public function verifiedBy()
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    public function editedBy()
+    {
+        return $this->belongsTo(User::class, 'edited_by');
     }
 }

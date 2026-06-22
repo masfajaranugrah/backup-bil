@@ -186,6 +186,10 @@ Route::get('/layouts/blank', [Blank::class, 'index'])->name('layouts-blank');
 
 Route::middleware(['auth', 'role:administrator,admin,verifikasi'])->group(function () {
 
+  Route::get('/dashboard/admin/feedback', [CustomerFeedbackController::class, 'index'])->name('feedback.index');
+    Route::put('/dashboard/admin/feedback/{feedback}', [CustomerFeedbackController::class, 'update'])->name('feedback.update');
+    Route::delete('/dashboard/admin/feedback/{feedback}', [CustomerFeedbackController::class, 'destroy'])->name('feedback.destroy');
+
     Route::get('/dashboard/admin/employees', [EmployeeController::class, 'index'])->name('karyawan.index');
     Route::get('/dashboard/admin/employees/create', [EmployeeController::class, 'create'])->name('karyawan.create');
     Route::get('/dashboard/admin/employees/data', [EmployeeController::class, 'getDataJson'])->name('employees.data');
@@ -209,7 +213,8 @@ Route::middleware(['auth', 'role:administrator,admin,verifikasi'])->group(functi
         Route::delete('/{id}', [PaketController::class, 'destroy'])->name('paket.destroy');
     });
 
-   Route::prefix('/dashboard/admin/tagihan')->group(function () {
+
+    Route::prefix('/dashboard/admin/tagihan')->group(function () {
         Route::get('/', [TagihanController::class, 'index'])->name('tagihan.get');
         Route::get('/lunas', [TagihanController::class, 'lunas'])->name('tagihan.lunas');
         Route::get('/proses', [TagihanController::class, 'proses'])->name('tagihan.proses');
@@ -217,14 +222,17 @@ Route::middleware(['auth', 'role:administrator,admin,verifikasi'])->group(functi
         Route::get('/tagihan/data', [TagihanController::class, 'getData'])->name('tagihan.data');
         Route::put('/{id}/update', [TagihanController::class, 'update'])->name('tagihan.update');
         Route::post('/konfirmasi/{id}', [TagihanController::class, 'konfirmasiBayar']);
-        Route::post('/{id}/update-lunas', [TagihanController::class, 'updateLunas'])->name('tagihan.lunas.update');
         Route::post('/tagihan/store', [TagihanController::class, 'store'])->name('tagihan.store');
         Route::post('/{id}/bayar', [TagihanController::class, 'updateStatus'])->name('tagihan.bayar');
         Route::delete('/tagihan/{id}', [TagihanController::class, 'destroy'])->name('tagihan.destroy');
         Route::delete('/tagihan-lunas/{id}', [TagihanController::class, 'destroyLunas'])->name('tagihan.destroyLunas');
         Route::post('/{id}/bayar', [TagihanController::class, 'konfirmasiBayar'])->name('tagihan.konfirmasi');
         Route::post('/{id}/kembalikan-belum-bayar', [TagihanController::class, 'updateStatusToBelumBayar'])->name('tagihan.kembalikan.belum.bayar');
+        Route::post('/{id}/tolak-lunas', [TagihanController::class, 'rejectLunas'])->name('tagihan.lunas.reject');
+        Route::post('/{id}/update-lunas', [TagihanController::class, 'updateLunas'])->name('tagihan.lunas.update');
         Route::post('/{id}/update-paket', [TagihanController::class, 'updatePaket'])->name('tagihan.update.paket');
+        Route::get('/{id}/bukti-pembayaran', [TagihanController::class, 'previewBuktiPembayaran'])->name('tagihan.bukti.preview');
+
         Route::get('/ostanding', [OutstandingController::class, 'index'])->name('tagihan.outstanding');
         Route::get('/pdf', [TagihanController::class, 'lihat']);
         // Broadcast Tagihan - AJAX endpoints
@@ -232,15 +240,16 @@ Route::middleware(['auth', 'role:administrator,admin,verifikasi'])->group(functi
         Route::get('/broadcast/ids', [TagihanController::class, 'getBroadcastIds'])->name('tagihan.broadcast.ids');
         Route::post('/broadcast/store', [TagihanController::class, 'massStore'])->name('tagihan.broadcast.store'); // Point to massStore which supports JSON & Batching
         Route::get('/export-belum-lunas', [TagihanController::class, 'exportBelumLunas'])->name('tagihan.export.belumlunas');
-
         Route::get('/export-tanggal-bayar', [TagihanController::class, 'exportTanggalBayar'])->name('tagihan.export.tanggal_bayar');
 
-	// Status Baca Tagihan
+
+        // Status Baca Tagihan
         Route::get('/status-baca', [TagihanReadController::class, 'index'])->name('tagihan.read.status');
         Route::get('/status-baca/data', [TagihanReadController::class, 'getDataJson'])->name('tagihan.read.data');
 
 
-    });
+    }); 
+
       Route::prefix('/dashboard/admin/laporan')->group(function () {
 
         // Laporan
@@ -434,7 +443,12 @@ Route::middleware(['auth', 'role:karyawan'])->group(function () {
  });
 
 
+Route::get('pwa-launch', fn () => view('content.apps.Customer.tagihan.pwa-launch'))
+    ->name('customer.pwa.launch');
+
 Route::middleware(['auth:customer', 'customer_status'])->group(function () {
+ 
+
     Route::get('dashboard/customer/tagihan/home', [CustomerTagihanController::class, 'indexHome'])->name('customer.tagihan.home');
     Route::get('dashboard/customer/tagihan/selesai', [CustomerTagihanController::class, 'selesai'])->name('customer.tagihan.lunas');
     Route::get('dashboard/customer/kwitansi/{id}/preview', [CustomerTagihanController::class, 'previewKwitansi'])->name('customer.kwitansi.preview');
@@ -442,6 +456,8 @@ Route::middleware(['auth:customer', 'customer_status'])->group(function () {
     Route::get('dashboard/customer/tagihan', [CustomerTagihanController::class, 'index'])->name('customer.tagihan');
     Route::get('dashboard/customer/tagihan/json', [CustomerTagihanController::class, 'getTagihanJson'])->name('customer.tagihan.json');
     Route::get('dashboard/customer/tagihan/selesai/json', [CustomerTagihanController::class, 'getInvoiceJson'])->name('customer.tagihan.selesai.json');
+    Route::get('dashboard/customer/tagihan/{id}/bukti/preview', [CustomerTagihanController::class, 'previewBuktiPembayaran'])->name('customer.tagihan.bukti.preview');
+
     Route::put('dashboard/customer/tagihan/{id}', [CustomerTagihanController::class, 'update'])
         ->name('customer.tagihan.update');
     Route::get('/customer/tagihan/{id}', [CustomerTagihanController::class, 'show'])->name('customer.tagihan.show');
@@ -468,7 +484,8 @@ Route::middleware(['auth:customer', 'customer_status'])->group(function () {
     Route::get('dashboard/customer/feedback', [CustomerFeedbackController::class, 'create'])->name('customer.feedback.create');
     Route::post('dashboard/customer/feedback', [CustomerFeedbackController::class, 'store'])->name('customer.feedback.store');
 
-});// Admin Billing Chat API endpoints (for customer and admin)
+});
+// Admin Billing Chat API endpoints (for customer and admin)
 Route::middleware('auth:web,customer')->prefix('admin-chat')->group(function () {
     Route::get('/messages/{userId?}', [ChatController::class, 'getAdminChatMessages'])->name('admin.chat.messages');
     Route::post('/send', [ChatController::class, 'sendAdminChat'])->name('admin.chat.send');
@@ -479,8 +496,11 @@ Route::middleware('auth:web,customer')->prefix('admin-chat')->group(function () 
     Route::post('/mark-read/{userId}', [ChatController::class, 'markReadAdminChat'])->name('admin.chat.markRead');
     Route::get('/unread-count', [ChatController::class, 'getAdminChatUnreadCount'])->name('admin.chat.unreadCount');
     Route::get('/users', [ChatController::class, 'getAdminChatUserList'])->name('admin.chat.users');
+    Route::post('/handoff-to-cs/{pelangganId}', [ChatController::class, 'handoffAdminChatToCs'])->name('admin.chat.handoffToCs');
+    Route::get('/pins', [ChatController::class, 'getAdminChatPins'])->name('admin.chat.pins');
+    Route::post('/pins/{pelangganId}', [ChatController::class, 'pinAdminChat'])->name('admin.chat.pin');
+    Route::delete('/pins/{pelangganId}', [ChatController::class, 'unpinAdminChat'])->name('admin.chat.unpin');
 });
-
 // Admin Billing Chat Panel (for admin role only)
 Route::middleware(['auth', 'role:admin,administrator'])->group(function () {
     Route::get('/dashboard/admin/billing-chat', [ChatController::class, 'adminBilling'])->name('admin.billing.chat');
@@ -661,6 +681,7 @@ Route::middleware('auth')->group(function () {
 
 // Chat API endpoints - support both web and customer guards
 Route::middleware('auth:web,customer')->group(function () {
+    Route::get('/chat/media/{messageId}', [ChatController::class, 'streamChatMedia'])->name('chat.media');
     Route::get('/chat/messages/{userId?}', [ChatController::class, 'getMessages'])->name('chat.messages');
     Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
     Route::put('/chat/messages/{messageId}', [ChatController::class, 'updateMessage']);
@@ -668,6 +689,11 @@ Route::middleware('auth:web,customer')->group(function () {
     Route::get('/chat/users', [ChatController::class, 'getUserList'])->name('chat.users');
     Route::post('/chat/mark-read/{userId}', [ChatController::class, 'markRead'])->name('chat.markRead');
     Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unreadCount');
+    Route::get('/chat/pins', [ChatController::class, 'getCsChatPins'])->name('chat.pins');
+    Route::post('/chat/pins/{pelangganId}', [ChatController::class, 'pinCsChat'])->name('chat.pin');
+    Route::delete('/chat/pins/{pelangganId}', [ChatController::class, 'unpinCsChat'])->name('chat.unpin');
+    Route::post('/chat/transfer/{pelangganId}', [ChatController::class, 'transferCsChat'])->name('chat.transfer');
+    Route::get('/chat/sessions/{sessionId}/chain', [ChatController::class, 'getCsChatChain'])->name('chat.sessions.chain');
 });
 
  
@@ -886,6 +912,7 @@ Route::prefix('mobile/customer')->middleware(['webview.token'])
 });
 
 Route::get('/pelanggan/export', [PelangganController::class, 'exportExcel']);
+Route::get('/pelanggan/export-progress', [PelangganController::class, 'exportProgressExcel'])->name('pelanggan.export.progress');
 
 Route::get('/dashboard/admin/pelanggan/search', [TagihanController::class, 'searchPelanggan'])
     ->name('pelanggan.search');

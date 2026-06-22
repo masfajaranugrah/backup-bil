@@ -6,23 +6,87 @@ use App\Events\MessageSent;
 use App\Events\MessageRead;
 use App\Events\MessageUpdated;
 use App\Models\Message;
+use App\Models\AdminChatPin;
+use App\Models\ChatSession;
 use App\Models\CustomerFriendship;
 use App\Models\CustomerFriendMessage;
+use App\Models\QuickReply;
 use App\Models\User;
 use App\Models\Pelanggan;
 use App\Jobs\BroadcastAdminChatJob;
+use App\Services\CustomerPushService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-
 
 class ChatController extends Controller
 {
     private const MESSAGE_EDIT_WINDOW_MINUTES = 15;
+
+    private function isChatAdmin($user): bool
+    {
+        return $user && in_array($user->role ?? '', ['administrator', 'admin', 'customer_service'], true);
+    }
+
+    private function quickReplyPayload(QuickReply $quickReply): array
+    {
+        return [
+            'id' => $quickReply->id,
+            'shortcut' => $quickReply->shortcut,
+            'title' => $quickReply->title,
+            'message' => $quickReply->message,
+            'is_active' => (bool) $quickReply->is_active,
+        ];
+    }
+
+    private function messagesHasColumn(string $column): bool
+    {
+        try {
+            return Schema::hasColumn('messages', $column);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    private function messageSelectColumns(bool $includeChatSession = true): array
+    {
+        $columns = [
+            'id',
+            'sender_id',
+            'receiver_id',
+            'chat_type',
+            'message',
+            'media_path',
+            'media_type',
+            'media_original_name',
+            'is_read',
+            'is_deleted',
+            'edited_at',
+            'deleted_at',
+            'created_at',
+            'updated_at',
+        ];
+
+        if ($this->messagesHasColumn('message_type')) {
+            $columns[] = 'message_type';
+        }
+
+        if ($this->messagesHasColumn('reply_to_message_id')) {
+            $columns[] = 'reply_to_message_id';
+        }
+
+        if ($includeChatSession && $this->messagesHasColumn('chat_session_id')) {
+            $columns[] = 'chat_session_id';
+        }
+
+        return $columns;
+    }
 
     /**
      * Get authenticated user from multiple guards
@@ -63,6 +127,340 @@ class ChatController extends Controller
         return array_values(array_unique(array_filter($ids)));
     }
 
+    private function getCsAdminIds(): array
+    {
+        $ids = User::whereIn('role', ['administrator', 'admin', 'customer_service'])
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->filter()
+            ->values()
+            ->toArray();
+
+        $currentWebId = Auth::guard('web')->id();
+        if ($currentWebId) {
+            $ids[] = (string) $currentWebId;
+        }
+
+        return array_values(array_unique(array_filter($ids)));
+    }
+
+    private function canAccessChatMessage(Message $message, $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        if (in_array($user->role ?? '', ['administrator', 'admin', 'customer_service'])) {
+            return true;
+        }
+
+        $userId = (string) $user->id;
+
+        return $userId === (string) $message->sender_id || $userId === (string) $message->receiver_id;
+    }
+
+    private function audioMimeTypeForMessage(Message $message): string
+    {
+        $path = strtolower((string) $message->media_path);
+        $originalName = strtolower((string) $message->media_original_name);
+
+        if (str_ends_with($path, '.m4a') || str_ends_with($path, '.mp4') || str_ends_with($originalName, '.m4a')) {
+            return 'audio/mp4';
+        }
+
+        if (str_ends_with($path, '.ogg') || str_ends_with($originalName, '.ogg')) {
+            return 'audio/ogg';
+        }
+
+        if (str_ends_with($path, '.mp3') || str_ends_with($originalName, '.mp3')) {
+            return 'audio/mpeg';
+        }
+
+        if (str_ends_with($path, '.wav') || str_ends_with($originalName, '.wav')) {
+            return 'audio/wav';
+        }
+
+        return 'audio/webm';
+    }
+
+    private function mediaUrlForMessage(Message $message): ?string
+    {
+        if (!$message->media_path) {
+            return null;
+        }
+
+        if ($message->media_type === 'audio') {
+            return '/chat/media/' . $message->id;
+        }
+
+        return '/storage/' . ltrim($message->media_path, '/');
+    }
+
+    public function streamChatMedia(string $messageId)
+    {
+        $user = $this->getAuthUser();
+        $message = Message::find($messageId);
+
+        if (!$message || !$message->media_path) {
+            abort(404);
+        }
+
+        if (!$this->canAccessChatMessage($message, $user)) {
+            abort(403);
+        }
+
+        $disk = Storage::disk('public');
+        if (!$disk->exists($message->media_path)) {
+            abort(404);
+        }
+
+        return redirect('/storage/' . ltrim($message->media_path, '/'));
+    }
+
+    private function buildChatMessagePayload($messages)
+    {
+        $replyMessageIds = $this->messagesHasColumn('reply_to_message_id')
+            ? $messages->pluck('reply_to_message_id')->filter()->map(fn ($id) => (string) $id)->unique()->values()
+            : collect();
+
+        $replyMessagesById = $replyMessageIds->isNotEmpty()
+            ? Message::query()
+                ->whereIn('id', $replyMessageIds)
+                ->get($this->messageSelectColumns(false))
+                ->keyBy(fn ($item) => (string) $item->id)
+            : collect();
+
+        $senderIds = $messages->pluck('sender_id')
+            ->merge($replyMessagesById->pluck('sender_id'))
+            ->filter()
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values();
+
+        $usersById = User::query()
+            ->whereIn('id', $senderIds)
+            ->select('id', 'name', 'email', 'role')
+            ->get()
+            ->keyBy(fn ($item) => (string) $item->id);
+
+        $pelanggansById = Pelanggan::query()
+            ->whereIn('id', $senderIds)
+            ->select('id', 'nama_lengkap', 'nomer_id')
+            ->get()
+            ->keyBy(fn ($item) => (string) $item->id);
+
+        return $messages->map(function ($message) use ($usersById, $pelanggansById, $replyMessagesById) {
+            $senderId = (string) $message->sender_id;
+            $sender = null;
+
+            if ($usersById->has($senderId)) {
+                $u = $usersById->get($senderId);
+                $sender = [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email ?? null,
+                    'role' => $u->role ?? null,
+                ];
+            } elseif ($pelanggansById->has($senderId)) {
+                $p = $pelanggansById->get($senderId);
+                $sender = [
+                    'id' => $p->id,
+                    'name' => $p->nama_lengkap ?? 'Pelanggan',
+                    'email' => $p->nomer_id ?? null,
+                    'role' => 'pelanggan',
+                ];
+            }
+
+            $replyToMessage = $replyMessagesById->get((string) $message->getAttribute('reply_to_message_id'));
+
+            return [
+                'id' => $message->id,
+                'chat_session_id' => $message->getAttribute('chat_session_id'),
+                'sender_id' => $message->sender_id,
+                'receiver_id' => $message->receiver_id,
+                'chat_type' => $message->chat_type,
+                'message_type' => $message->getAttribute('message_type'),
+                'reply_to_message_id' => $message->getAttribute('reply_to_message_id'),
+                'reply_to_message' => $this->replyPayloadForMessage($replyToMessage, $usersById, $pelanggansById),
+                'message' => $message->message ?? '',
+                'media_type' => $message->media_type,
+                'media_original_name' => $message->media_original_name,
+                'media_url' => $this->mediaUrlForMessage($message),
+                'is_read' => (bool) $message->is_read,
+                'is_deleted' => (bool) $message->is_deleted,
+                'edited_at' => optional($message->edited_at)->toISOString(),
+                'deleted_at' => optional($message->deleted_at)->toISOString(),
+                'created_at' => optional($message->created_at)->toISOString(),
+                'updated_at' => optional($message->updated_at)->toISOString(),
+                'sender_name' => $sender['name'] ?? null,
+                'sender_role' => $sender['role'] ?? null,
+                'sender' => $sender,
+            ];
+        })->values();
+    }
+
+    private function replyPayloadForMessage($message, $usersById, $pelanggansById): ?array
+    {
+        if (! $message) {
+            return null;
+        }
+
+        $senderId = (string) $message->sender_id;
+        $senderName = 'Pengirim';
+
+        if ($usersById->has($senderId)) {
+            $senderName = $usersById->get($senderId)->name ?? 'Admin';
+        } elseif ($pelanggansById->has($senderId)) {
+            $senderName = $pelanggansById->get($senderId)->nama_lengkap ?? 'Pelanggan';
+        } else {
+            $senderName = User::find($senderId)?->name
+                ?: Pelanggan::find($senderId)?->nama_lengkap
+                ?: 'Pengirim';
+        }
+
+        $text = trim((string) ($message->message ?? ''));
+        if ($text === '' && $message->media_type) {
+            $text = match ($message->media_type) {
+                'image' => 'Foto',
+                'video' => 'Video',
+                'audio' => 'Audio',
+                default => 'Media',
+            };
+        }
+
+        return [
+            'id' => $message->id,
+            'sender_id' => $message->sender_id,
+            'sender_name' => $senderName,
+            'message' => Str::limit($text !== '' ? $text : 'Pesan', 140),
+            'media_type' => $message->media_type,
+        ];
+    }
+
+    private function requestedReplyToMessageId(Request $request): ?string
+    {
+        $replyToMessageId = $request->input('reply_to_message_id')
+            ?: $request->input('reply_message_id')
+            ?: $request->input('reply_id')
+            ?: $request->input('quoted_message_id');
+
+        $replyToMessageId = trim((string) $replyToMessageId);
+
+        return $replyToMessageId !== '' ? $replyToMessageId : null;
+    }
+
+    private function resolveReplyToMessageId(Request $request, ChatSession $chatSession, string $pelangganId): ?string
+    {
+        if (!$this->messagesHasColumn('reply_to_message_id')) {
+            return null;
+        }
+
+        $replyToMessageId = $this->requestedReplyToMessageId($request);
+        if (!$replyToMessageId) {
+            return null;
+        }
+
+        $adminIds = $this->getCsAdminIds();
+        $replyMessage = Message::query()
+            ->where('id', $replyToMessageId)
+            ->where(function ($query) {
+                $query->where('chat_type', 'cs')
+                    ->orWhereNull('chat_type');
+            })
+            ->where(function ($query) use ($pelangganId, $adminIds) {
+                $query->where(function ($inner) use ($pelangganId, $adminIds) {
+                    $inner->where('sender_id', $pelangganId)
+                        ->whereIn('receiver_id', $adminIds);
+                })->orWhere(function ($inner) use ($pelangganId, $adminIds) {
+                    $inner->whereIn('sender_id', $adminIds)
+                        ->where('receiver_id', $pelangganId);
+                });
+            })
+            ->first($this->messageSelectColumns());
+
+        if (!$replyMessage) {
+            abort(response()->json(['error' => 'Reply message not found in this conversation'], 422));
+        }
+
+        return (string) $replyMessage->id;
+    }
+
+    private function resolveAdminReplyToMessageId(Request $request, string $pelangganId): ?string
+    {
+        if (!$this->messagesHasColumn('reply_to_message_id')) {
+            return null;
+        }
+
+        $replyToMessageId = $this->requestedReplyToMessageId($request);
+        if (!$replyToMessageId) {
+            return null;
+        }
+
+        $adminIds = $this->getAdminIds();
+        $replyMessage = Message::query()
+            ->where('id', $replyToMessageId)
+            ->where('chat_type', 'admin')
+            ->where(function ($query) use ($pelangganId, $adminIds) {
+                $query->where(function ($inner) use ($pelangganId, $adminIds) {
+                    $inner->where('sender_id', $pelangganId)
+                        ->where(function ($receiver) use ($adminIds) {
+                            $receiver->whereIn('receiver_id', $adminIds)
+                                ->orWhereNull('receiver_id');
+                        });
+                })->orWhere(function ($inner) use ($pelangganId, $adminIds) {
+                    $inner->whereIn('sender_id', $adminIds)
+                        ->where('receiver_id', $pelangganId);
+                });
+            })
+            ->first($this->messageSelectColumns(false));
+
+        if (!$replyMessage) {
+            abort(response()->json(['error' => 'Reply message not found in this conversation'], 422));
+        }
+
+        return (string) $replyMessage->id;
+    }
+
+    private function getOrCreateChatSession(string $pelangganId, string $chatType = 'cs', string $division = 'cs', ?string $picId = null): ChatSession
+    {
+        $session = ChatSession::query()
+            ->where('pelanggan_id', $pelangganId)
+            ->where('chat_type', $chatType)
+            ->where('division', $division)
+            ->where('status', 'open')
+            ->latest('updated_at')
+            ->first();
+
+        if ($session) {
+            return $session;
+        }
+
+        return ChatSession::create([
+            'pelanggan_id' => $pelangganId,
+            'pic_id' => $picId,
+            'chat_type' => $chatType,
+            'division' => $division,
+            'status' => 'open',
+        ]);
+    }
+
+    private function resolveChatSession(?string $sessionId, string $pelangganId, string $chatType = 'cs', string $division = 'cs', ?string $picId = null): ChatSession
+    {
+        if ($sessionId) {
+            $session = ChatSession::query()
+                ->whereKey($sessionId)
+                ->where('pelanggan_id', $pelangganId)
+                ->where('chat_type', $chatType)
+                ->first();
+
+            if ($session) {
+                return $session;
+            }
+        }
+
+        return $this->getOrCreateChatSession($pelangganId, $chatType, $division, $picId);
+    }
+
     public function admin()
     {
         $user = $this->getAuthUser();
@@ -76,76 +474,61 @@ class ChatController extends Controller
             return redirect()->route('chat.users')->with('error', 'Akses ditolak');
         }
 
-        // Ambil hanya kontak dari percakapan CS (chat_type = cs / legacy null).
-        $senderIds = Message::where(function ($query) {
-            $query->where('chat_type', 'cs')
-                ->orWhereNull('chat_type');
-        })->distinct()->pluck('sender_id');
-        $receiverIds = Message::where(function ($query) {
-            $query->where('chat_type', 'cs')
-                ->orWhereNull('chat_type');
-        })->distinct()->pluck('receiver_id');
+        $adminIds = $this->getCsAdminIds();
+        $adminIdsQuoted = "'" . implode("','", $adminIds ?: ['-']) . "'";
 
-        // Gabungkan dan hilangkan duplikat
-        $userIdsFromMessages = $senderIds->merge($receiverIds)
-            ->unique()
-            ->filter(function ($id) use ($user) {
-                // Exclude admin sendiri
-                return $id !== $user->id;
+        $lastMessageSubquery = Message::query()
+            ->where(function ($query) {
+                $query->where('chat_type', 'cs')
+                    ->orWhereNull('chat_type');
             })
-            ->values();
+            ->where(function ($query) use ($adminIds) {
+                $query->whereIn('sender_id', $adminIds)
+                    ->orWhereIn('receiver_id', $adminIds);
+            })
+            ->selectRaw("
+                CASE
+                    WHEN sender_id IN ($adminIdsQuoted) THEN receiver_id
+                    ELSE sender_id
+                END as contact_id,
+                MAX(created_at) as last_at
+            ")
+            ->whereNotNull(DB::raw("CASE WHEN sender_id IN ($adminIdsQuoted) THEN receiver_id ELSE sender_id END"))
+            ->groupBy('contact_id');
 
-        // Ambil users yang pernah chat (exclude admin)
-        $users = User::whereIn('id', $userIdsFromMessages)
-            ->whereNotIn('role', ['administrator', 'admin', 'customer_service'])
+        $pelanggans = Pelanggan::query()
+            ->leftJoinSub($lastMessageSubquery, 'lm', function ($join) {
+                $join->on('pelanggans.id', '=', 'lm.contact_id');
+            })
+            ->leftJoin('admin_chat_pins as acp', function ($join) {
+                $join->on('acp.pelanggan_id', '=', 'pelanggans.id')
+                    ->where('acp.chat_type', '=', 'cs');
+            })
+            ->select([
+                'pelanggans.id',
+                DB::raw("COALESCE(pelanggans.nama_lengkap, 'Pelanggan') as name"),
+                'pelanggans.nomer_id',
+                'pelanggans.created_at',
+                DB::raw('COALESCE(lm.last_at, pelanggans.created_at) as last_message_at'),
+                DB::raw('CASE WHEN acp.pelanggan_id IS NULL THEN 0 ELSE 1 END as is_pinned'),
+            ])
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('last_message_at')
+            ->limit(100)
             ->get()
-            ->map(function ($user) {
+            ->map(function ($item) {
                 return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'nomer_id' => $user->nomer_id,
-                    'type' => 'user',
-                    'created_at' => $user->created_at,
-                ];
-            });
-
-        // Ambil pelanggans yang pernah chat
-        $pelanggans = Pelanggan::whereIn('id', $userIdsFromMessages)
-            ->get()
-            ->map(function ($pelanggan) {
-                return [
-                    'id' => $pelanggan->id,
-                    'name' => $pelanggan->nama_lengkap ?? 'Pelanggan',
-                    'nomer_id' => $pelanggan->nomer_id,
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'nomer_id' => $item->nomer_id,
                     'type' => 'pelanggan',
-                    'created_at' => $pelanggan->created_at,
+                    'created_at' => $item->created_at,
+                    'last_message_at' => $item->last_message_at,
+                    'is_pinned' => (bool) $item->is_pinned,
                 ];
             });
 
-        // Gabungkan dan sort by last message time
-        $contacts = $users->concat($pelanggans);
-
-        // Sort by last message timestamp (pesan terbaru muncul paling atas)
-        $contacts = $contacts->map(function ($contact) {
-            // Ambil pesan terakhir dari percakapan CS saja.
-            $lastMessage = Message::where(function ($query) use ($contact) {
-                $query->where('sender_id', $contact['id'])
-                    ->orWhere('receiver_id', $contact['id']);
-            })
-                ->where(function ($query) {
-                    $query->where('chat_type', 'cs')
-                        ->orWhereNull('chat_type');
-                })
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            $contact['last_message_at'] = $lastMessage ? $lastMessage->created_at : $contact['created_at'];
-            return $contact;
-        })
-            ->sortByDesc('last_message_at')
-            ->values();
-
-        return view('content.apps.chat.admin.chat', ['users' => $contacts]);
+        return view('content.apps.chat.admin.chat', ['users' => $pelanggans->values()]);
     }
 
     public function user()
@@ -164,7 +547,7 @@ class ChatController extends Controller
         return view('content.apps.Customer.chat.chat');
     }
 
-    public function getMessages($userId = null)
+    public function getMessages(Request $request, $userId = null)
     {
         $user = $this->getAuthUser();
 
@@ -174,16 +557,23 @@ class ChatController extends Controller
 
         // Cek apakah user adalah admin
         $isAdmin = isset($user->role) && in_array($user->role, ['administrator', 'admin', 'customer_service']);
+        $loadAll = $request->boolean('all', false);
+        $requestedLimit = (int) $request->query('limit', 150);
+        $safeLimit = max(20, min(($requestedLimit > 0 ? $requestedLimit : 150), 500));
+        $limit = $loadAll ? null : $safeLimit;
+        $requestedSessionId = $request->query('session_id');
+        $activeSession = null;
 
         if ($isAdmin && $userId) {
             // Admin/CS melihat chat dengan user/pelanggan tertentu
             // Ambil semua admin IDs untuk query pesan
-            $adminIds = User::whereIn('role', ['administrator', 'admin', 'customer_service'])
-                ->pluck('id')
-                ->toArray();
+            $adminIds = $this->getCsAdminIds();
+            $activeSession = $requestedSessionId
+                ? $this->resolveChatSession((string) $requestedSessionId, (string) $userId, 'cs', 'cs', (string) $user->id)
+                : null;
 
             // Ambil semua pesan antara customer dan admin manapun (CS chat)
-            $messages = Message::where(function ($query) use ($userId, $adminIds) {
+            $query = Message::where(function ($query) use ($userId, $adminIds) {
                 $query->where(function ($inner) use ($userId, $adminIds) {
                     // Pesan dari user/pelanggan ke admin manapun
                     $inner->where('sender_id', $userId)
@@ -199,20 +589,21 @@ class ChatController extends Controller
                     $query->where('chat_type', 'cs')
                         ->orWhereNull('chat_type');
                 })
-                ->orderBy('created_at', 'asc')
-                ->get();
+                ->orderByDesc('created_at');
         } else {
             // Pelanggan/User melihat chat dengan admin
-            $adminIds = User::whereIn('role', ['administrator', 'admin', 'customer_service'])
-                ->pluck('id')
-                ->toArray();
+            $adminIds = $this->getCsAdminIds();
 
             if (empty($adminIds)) {
                 return response()->json(['error' => 'Admin not found'], 404);
             }
 
+            $activeSession = $requestedSessionId
+                ? $this->resolveChatSession((string) $requestedSessionId, (string) $user->id, 'cs', 'cs')
+                : null;
+
             // Ambil semua pesan antara customer dan admin manapun
-            $messages = Message::where(function ($query) use ($user, $adminIds) {
+            $query = Message::where(function ($query) use ($user, $adminIds) {
                 $query->where(function ($inner) use ($user, $adminIds) {
                     $inner->where('sender_id', $user->id)
                         ->whereIn('receiver_id', $adminIds);
@@ -226,41 +617,102 @@ class ChatController extends Controller
                     $query->where('chat_type', 'cs')
                         ->orWhereNull('chat_type');
                 })
-                ->orderBy('created_at', 'asc')
-                ->get();
+                ->orderByDesc('created_at');
         }
 
-        return response()->json($messages);
+        if ($requestedSessionId && $activeSession && $this->messagesHasColumn('chat_session_id')) {
+            $isExplicitFollowUp = $requestedSessionId && (
+                $activeSession->parent_chat_id ||
+                $activeSession->source_chat_id ||
+                $activeSession->division !== 'cs'
+            );
+
+            $query->where(function ($sessionQuery) use ($activeSession, $isExplicitFollowUp) {
+                $sessionQuery->where('chat_session_id', $activeSession->id);
+
+                if (!$isExplicitFollowUp) {
+                    $sessionQuery->orWhereNull('chat_session_id');
+                }
+            });
+        }
+
+        if ($limit !== null) {
+            $query->limit($limit);
+        }
+
+        $messages = $query->get($this->messageSelectColumns())->reverse()->values();
+
+        return response()->json($this->buildChatMessagePayload($messages));
     }
 
-    public function getUserList()
+    public function getUserList(Request $request)
     {
-        // Untuk admin mendapatkan list semua kontak (users + pelanggans)
-        $users = User::whereNotIn('role', ['administrator', 'admin', 'customer_service'])
+        $search = trim((string) $request->query('search', ''));
+        $requestedLimit = (int) $request->query('limit', 100);
+        $limit = max(20, min(($requestedLimit > 0 ? $requestedLimit : 100), 120));
+        $offset = max(0, (int) $request->query('offset', 0));
+        $adminIds = $this->getCsAdminIds();
+        $adminIdsQuoted = "'" . implode("','", $adminIds ?: ['-']) . "'";
+
+        $lastMessageSubquery = Message::query()
+            ->where(function ($query) {
+                $query->where('chat_type', 'cs')
+                    ->orWhereNull('chat_type');
+            })
+            ->where(function ($query) use ($adminIds) {
+                $query->whereIn('sender_id', $adminIds)
+                    ->orWhereIn('receiver_id', $adminIds);
+            })
+            ->selectRaw("
+                CASE
+                    WHEN sender_id IN ($adminIdsQuoted) THEN receiver_id
+                    ELSE sender_id
+                END as contact_id,
+                MAX(created_at) as last_at
+            ")
+            ->whereNotNull(DB::raw("CASE WHEN sender_id IN ($adminIdsQuoted) THEN receiver_id ELSE sender_id END"))
+            ->groupBy('contact_id');
+
+        $pelanggans = Pelanggan::query()
+            ->leftJoinSub($lastMessageSubquery, 'lm', function ($join) {
+                $join->on('pelanggans.id', '=', 'lm.contact_id');
+            })
+            ->leftJoin('admin_chat_pins as acp', function ($join) {
+                $join->on('acp.pelanggan_id', '=', 'pelanggans.id')
+                    ->where('acp.chat_type', '=', 'cs');
+            })
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama_lengkap', 'like', "%{$search}%")
+                        ->orWhere('nomer_id', 'like', "%{$search}%");
+                });
+            })
+            ->select([
+                'pelanggans.id',
+                'pelanggans.nama_lengkap',
+                'pelanggans.nomer_id',
+                'pelanggans.created_at',
+                DB::raw('COALESCE(lm.last_at, pelanggans.created_at) as last_message_at'),
+                DB::raw('CASE WHEN acp.pelanggan_id IS NULL THEN 0 ELSE 1 END as is_pinned'),
+            ])
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('last_message_at')
+            ->offset($offset)
+            ->limit($limit)
             ->get()
-            ->map(function ($user) {
+            ->map(function ($pelanggan) {
                 return [
-                    'id' => $user->id,
-                    'nomer_id' => $user->nomer_id,
-                    'name' => $user->name,
-                    'type' => 'user',
+                    'id' => $pelanggan->id,
+                    'name' => $pelanggan->nama_lengkap ?? 'Pelanggan',
+                    'nomer_id' => $pelanggan->nomer_id ?? 'Pelanggan',
+                    'type' => 'pelanggan',
+                    'created_at' => $pelanggan->created_at,
+                    'last_message_at' => $pelanggan->last_message_at,
+                    'is_pinned' => (bool) $pelanggan->is_pinned,
                 ];
             });
 
-        $pelanggans = Pelanggan::all()->map(function ($pelanggan) {
-            return [
-                'id' => $pelanggan->id,
-                'name' => $pelanggan->nama_lengkap ?? 'Pelanggan',
-
-                'nomer_id' => $pelanggan->nomer_id ?? 'Pelanggan',
-
-                'type' => 'pelanggan',
-            ];
-        });
-
-        $contacts = $users->concat($pelanggans)->values();
-
-        return response()->json($contacts);
+        return response()->json($pelanggans->values());
     }
 
     /**
@@ -279,10 +731,15 @@ class ChatController extends Controller
 
         // Validasi berbeda untuk admin dan user
         $isAdmin = in_array($user->role, ['administrator', 'admin', 'customer_service']);
+        if ($replyToMessageId = $this->requestedReplyToMessageId($request)) {
+            $request->merge(['reply_to_message_id' => $replyToMessageId]);
+        }
 
         // Base validation rules
         $rules = [
-            'media' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,mov|max:20480', // 20MB max
+            'media' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,mov,mp3,wav,ogg,m4a,aac|max:20480', // 20MB max
+            'media_type_hint' => 'nullable|string|in:audio',
+            'reply_to_message_id' => 'nullable|string|exists:messages,id',
         ];
 
         if ($isAdmin) {
@@ -302,21 +759,40 @@ class ChatController extends Controller
         if ($isAdmin) {
             $receiverId = $request->receiver_id;
 
-            // Validasi receiver_id ada di users atau pelanggans
-            $receiverExists = User::find($receiverId) || Pelanggan::find($receiverId);
+            // CS room hanya untuk percakapan CS dengan pelanggan.
+            $receiverExists = Pelanggan::find($receiverId);
             if (!$receiverExists) {
                 return response()->json(['error' => 'Receiver not found'], 404);
             }
+
+            $chatSession = $this->resolveChatSession(
+                $request->input('chat_session_id') ?: $request->input('session_id'),
+                (string) $receiverId,
+                'cs',
+                'cs',
+                (string) $user->id
+            );
         } else {
-            // User/Pelanggan mengirim ke admin
-            $admin = User::whereIn('role', ['administrator', 'admin', 'customer_service'])->first();
+            $chatSession = $this->resolveChatSession(
+                $request->input('chat_session_id') ?: $request->input('session_id'),
+                (string) $user->id,
+                'cs',
+                'cs'
+            );
+
+            // Pelanggan mengirim ke CS. Admin/administrator hanya fallback jika belum ada akun CS.
+            $admin = $chatSession->pic_id ? User::find($chatSession->pic_id) : null;
+            $admin = $admin ?: User::where('role', 'customer_service')->first()
+                ?: User::whereIn('role', ['administrator', 'admin'])->first();
 
             if (!$admin) {
-                return response()->json(['error' => 'Admin not found'], 404);
+                return response()->json(['error' => 'Customer service not found'], 404);
             }
 
             $receiverId = $admin->id;
         }
+
+        $replyToMessageId = $this->resolveReplyToMessageId($request, $chatSession, (string) ($isAdmin ? $receiverId : $user->id));
 
         // Handle media upload
         $mediaPath = null;
@@ -327,12 +803,19 @@ class ChatController extends Controller
             $file = $request->file('media');
             $mediaOriginalName = $file->getClientOriginalName();
             $extension = strtolower($file->getClientOriginalExtension());
+            $mimeType = (string) $file->getMimeType();
+            $mediaTypeHint = (string) $request->input('media_type_hint', '');
+            $isVoiceNote = str_starts_with($mediaOriginalName, 'voice-note-');
 
             // Determine media type
             if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
                 $mediaType = 'image';
+            } elseif ($mediaTypeHint === 'audio' || $isVoiceNote || str_starts_with($mimeType, 'audio/') || in_array($extension, ['mp3', 'wav', 'ogg', 'm4a', 'aac'])) {
+                $mediaType = 'audio';
             } elseif (in_array($extension, ['mp4', 'webm', 'mov'])) {
                 $mediaType = 'video';
+            } elseif (in_array($extension, ['mp3', 'wav', 'ogg', 'm4a', 'aac'])) {
+                $mediaType = 'audio';
             }
 
             // Store file
@@ -340,7 +823,7 @@ class ChatController extends Controller
         }
 
         // Simpan message
-        $message = Message::create([
+        $messagePayload = [
             'sender_id' => $user->id,
             'receiver_id' => $receiverId,
             'chat_type' => 'cs', // CS chat type untuk broadcast ke semua customer_service
@@ -349,7 +832,21 @@ class ChatController extends Controller
             'media_type' => $mediaType,
             'media_original_name' => $mediaOriginalName,
             'is_read' => false,
-        ]);
+        ];
+
+        if ($this->messagesHasColumn('chat_session_id')) {
+            $messagePayload['chat_session_id'] = $chatSession->id;
+        }
+
+        if ($this->messagesHasColumn('reply_to_message_id')) {
+            $messagePayload['reply_to_message_id'] = $replyToMessageId;
+        }
+
+        $message = Message::create($messagePayload);
+
+        if ($replyToMessageId && !$message->getAttribute('reply_to_message_id') && $this->messagesHasColumn('reply_to_message_id')) {
+            $message->forceFill(['reply_to_message_id' => $replyToMessageId])->save();
+        }
 
         // Jika admin membalas, tandai semua pesan customer sebelumnya sebagai sudah dibaca.
         // Ini mencegah badge unread muncul lagi saat reload berikutnya.
@@ -386,7 +883,14 @@ class ChatController extends Controller
         ]);
 
         // Broadcast event ke receiver channel
-        broadcast(new MessageSent($message));
+        try {
+            broadcast(new MessageSent($message));
+        } catch (\Exception $broadcastEx) {
+            Log::error('?? Broadcast MessageSent failed (send)', [
+                'error' => $broadcastEx->getMessage(),
+                'message_id' => $message->id,
+            ]);
+        }
 
         // ===== Kirim push notification ke penerima pesan =====
         // Letakkan SETELAH broadcast agar chat realtime tidak tertahan oleh request eksternal.
@@ -395,52 +899,119 @@ class ChatController extends Controller
             $receiver = User::find($receiverId);
         }
 
-        if ($receiver && $receiver->webpushr_sid) {
-            $end_point = 'https://api.webpushr.com/v1/notification/send/sid';
-
-            $http_header = [
-                'Content-Type: application/json',
-                'webpushrKey: 2ee12b373a17d9ba5f44683cb42d4279',
-                'webpushrAuthToken: 116294',
-            ];
-
+        if ($receiver instanceof Pelanggan && ($receiver->fcm_token || $receiver->webpushr_sid)) {
             $previewText = trim((string) $request->message);
             if ($previewText === '' && $mediaType) {
-                $previewText = $mediaType === 'image' ? '[Gambar]' : '[Video]';
+                $previewText = match ($mediaType) {
+                    'image' => '[Gambar]',
+                    'audio' => '[Voice Note]',
+                    default => '[Video]',
+                };
             }
 
-            $req_data = [
-                'title' => 'Pesan Baru',
-                'message' => Str::limit($previewText, 50, '...'),
-                'target_url' => url('https://layanan.jernih.net.id/dashboard/customer/chat'),
-                'sid' => $receiver->webpushr_sid,
-            ];
+            $pushResult = app(CustomerPushService::class)->sendToPelanggan(
+                $receiver,
+                'Pesan Baru',
+                Str::limit($previewText, 50, '...'),
+                url('/dashboard/customer/chat')
+            );
 
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $http_header);
-            curl_setopt($ch, CURLOPT_URL, $end_point);
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($req_data));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 4);
-
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-
-            Log::info('Webpushr Push Notification', [
+            Log::info('Customer chat push notification', [
                 'receiver_id' => $receiverId,
-                'webpushr_sid' => $receiver->webpushr_sid,
-                'http_code' => $httpCode,
-                'response' => $response,
+                'provider' => $pushResult['provider'] ?? null,
+                'success' => $pushResult['success'] ?? false,
             ]);
         }
 
+        $messagePayload = $this->buildChatMessagePayload(collect([$message]))->first();
+
         return response()->json([
             'success' => true,
-            'message' => $message,
+            'message' => $messagePayload,
         ], 201);
+    }
+
+    public function getQuickReplies()
+    {
+        $user = $this->getAuthUser();
+        if (!$this->isChatAdmin($user)) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
+        $quickReplies = QuickReply::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('shortcut')
+            ->get()
+            ->map(fn (QuickReply $quickReply): array => $this->quickReplyPayload($quickReply))
+            ->values();
+
+        return response()->json(['quick_replies' => $quickReplies]);
+    }
+
+    public function storeQuickReply(Request $request)
+    {
+        $user = $this->getAuthUser();
+        if (!$this->isChatAdmin($user)) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
+        $validated = $request->validate([
+            'shortcut' => ['required', 'string', 'max:48', 'regex:/^\/[A-Za-z0-9_-]{1,40}$/', 'unique:quick_replies,shortcut'],
+            'title' => ['required', 'string', 'max:100'],
+            'message' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $quickReply = QuickReply::create([
+            'created_by' => $user->id,
+            'shortcut' => strtolower($validated['shortcut']),
+            'title' => $validated['title'],
+            'message' => $validated['message'],
+            'sort_order' => (int) QuickReply::max('sort_order') + 1,
+            'is_active' => true,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'quick_reply' => $this->quickReplyPayload($quickReply),
+        ], 201);
+    }
+
+    public function updateQuickReply(Request $request, QuickReply $quickReply)
+    {
+        $user = $this->getAuthUser();
+        if (!$this->isChatAdmin($user)) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
+        $validated = $request->validate([
+            'shortcut' => ['required', 'string', 'max:48', 'regex:/^\/[A-Za-z0-9_-]{1,40}$/', Rule::unique('quick_replies', 'shortcut')->ignore($quickReply->id)],
+            'title' => ['required', 'string', 'max:100'],
+            'message' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $quickReply->update([
+            'shortcut' => strtolower($validated['shortcut']),
+            'title' => $validated['title'],
+            'message' => $validated['message'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'quick_reply' => $this->quickReplyPayload($quickReply->fresh()),
+        ]);
+    }
+
+    public function deleteQuickReply(QuickReply $quickReply)
+    {
+        $user = $this->getAuthUser();
+        if (!$this->isChatAdmin($user)) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
+        $quickReply->delete();
+
+        return response()->json(['success' => true]);
     }
 
     /**
@@ -769,17 +1340,24 @@ class ChatController extends Controller
             ->groupBy('contact_id');
 
         $contacts = Pelanggan::query()
-            ->leftJoinSub($lastMessageSubquery, 'lm', function ($join) {
+            ->joinSub($lastMessageSubquery, 'lm', function ($join) {
                 $join->on('pelanggans.id', '=', 'lm.contact_id');
+            })
+            ->leftJoin('admin_chat_pins as acp', function ($join) {
+                $join->on('acp.pelanggan_id', '=', 'pelanggans.id')
+                    ->where('acp.chat_type', '=', 'admin');
             })
             ->select([
                 'pelanggans.id',
                 DB::raw("COALESCE(pelanggans.nama_lengkap, 'Pelanggan') as name"),
                 'pelanggans.nomer_id',
                 'pelanggans.created_at',
-                DB::raw('COALESCE(lm.last_at, pelanggans.created_at) as last_message_at'),
+                DB::raw('lm.last_at as last_message_at'),
+                DB::raw('CASE WHEN acp.pelanggan_id IS NULL THEN 0 ELSE 1 END as is_pinned'),
             ])
+            ->orderByDesc('is_pinned')
             ->orderByDesc('last_message_at')
+            ->limit(100)
             ->get()
             ->map(function ($item) {
                 return [
@@ -789,6 +1367,7 @@ class ChatController extends Controller
                     'type' => 'pelanggan',
                     'created_at' => $item->created_at,
                     'last_message_at' => $item->last_message_at,
+                    'is_pinned' => (bool)$item->is_pinned,
                 ];
             })
             ->values()
@@ -824,44 +1403,6 @@ class ChatController extends Controller
         }
 
         return view('content.apps.Customer.chat.chat-billing');
-    }
-
-    /**
-     * Helper: send push notification via Webpushr
-     */
-    private function sendWebpushrNotification($sid, $title, $message, $targetUrl)
-    {
-        if (!$sid) return;
-
-        $end_point = 'https://api.webpushr.com/v1/notification/send/sid';
-        $http_header = [
-            'Content-Type: application/json',
-            'webpushrKey: 2ee12b373a17d9ba5f44683cb42d4279',
-            'webpushrAuthToken: 116294',
-        ];
-
-        $req_data = [
-            'title' => $title,
-            'message' => substr($message, 0, 90) . (strlen($message) > 90 ? '...' : ''),
-            'target_url' => $targetUrl,
-            'sid' => $sid,
-        ];
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $http_header);
-        curl_setopt($ch, CURLOPT_URL, $end_point);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($req_data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        Log::info('Webpushr Broadcast', [
-            'sid' => $sid,
-            'http_code' => $httpCode,
-            'response' => $response,
-        ]);
     }
 
     /**
@@ -1011,9 +1552,10 @@ class ChatController extends Controller
 
         $isAdmin = isset($user->role) && in_array($user->role, ['administrator', 'admin']);
         $loadAll = $request->boolean('all', false);
-        $requestedLimit = (int)$request->query('limit', 150);
-        $safeLimit = max(20, min(($requestedLimit > 0 ? $requestedLimit : 150), 500));
+        $requestedLimit = (int)$request->query('limit', 100);
+        $safeLimit = max(20, min(($requestedLimit > 0 ? $requestedLimit : 100), 100));
         $limit = $loadAll ? null : $safeLimit;
+        $before = $request->query('before');
 
         // Get ALL admin IDs for multi-admin support
         $adminIds = $this->getAdminIds();
@@ -1043,85 +1585,21 @@ class ChatController extends Controller
             })
             ->orderByDesc('created_at');
 
+        if ($before) {
+            try {
+                $query->where('created_at', '<', \Carbon\Carbon::parse($before));
+            } catch (\Throwable $e) {
+                // Ignore invalid cursor and return the newest page.
+            }
+        }
+
         if ($limit !== null) {
             $query->limit($limit);
         }
 
-        // Select kolom minimal agar payload lebih ringan
-        $messages = $query->get([
-            'id',
-            'sender_id',
-            'receiver_id',
-            'chat_type',
-            'message',
-            'media_path',
-            'media_type',
-            'media_original_name',
-            'is_read',
-            'is_deleted',
-            'edited_at',
-            'deleted_at',
-            'created_at',
-            'updated_at',
-        ])->reverse()->values();
+        $messages = $query->get($this->messageSelectColumns(false))->reverse()->values();
 
-        // Preload sender info sekali (hindari accessor N+1 dari $appends)
-        $senderIds = $messages->pluck('sender_id')->filter()->map(fn ($id) => (string)$id)->unique()->values();
-
-        $usersById = User::query()
-            ->whereIn('id', $senderIds)
-            ->select('id', 'name', 'email', 'role')
-            ->get()
-            ->keyBy(fn ($item) => (string)$item->id);
-
-        $pelanggansById = Pelanggan::query()
-            ->whereIn('id', $senderIds)
-            ->select('id', 'nama_lengkap', 'nomer_id')
-            ->get()
-            ->keyBy(fn ($item) => (string)$item->id);
-
-        $payload = $messages->map(function ($message) use ($usersById, $pelanggansById) {
-            $senderId = (string)$message->sender_id;
-            $sender = null;
-
-            if ($usersById->has($senderId)) {
-                $u = $usersById->get($senderId);
-                $sender = [
-                    'id' => $u->id,
-                    'name' => $u->name,
-                    'email' => $u->email ?? null,
-                    'role' => $u->role ?? null,
-                ];
-            } elseif ($pelanggansById->has($senderId)) {
-                $p = $pelanggansById->get($senderId);
-                $sender = [
-                    'id' => $p->id,
-                    'name' => $p->nama_lengkap ?? 'Pelanggan',
-                    'email' => $p->nomer_id ?? null, // gunakan nomer_id sebagai identifikasi
-                    'role' => 'pelanggan',
-                ];
-            }
-
-            return [
-                'id' => $message->id,
-                'sender_id' => $message->sender_id,
-                'receiver_id' => $message->receiver_id,
-                'chat_type' => $message->chat_type,
-                'message' => $message->message ?? '',
-                'media_type' => $message->media_type,
-                'media_original_name' => $message->media_original_name,
-                'media_url' => $message->media_path ? '/storage/' . ltrim($message->media_path, '/') : null,
-                'is_read' => (bool)$message->is_read,
-                'is_deleted' => (bool)$message->is_deleted,
-                'edited_at' => optional($message->edited_at)->toISOString(),
-                'deleted_at' => optional($message->deleted_at)->toISOString(),
-                'created_at' => optional($message->created_at)->toISOString(),
-                'updated_at' => optional($message->updated_at)->toISOString(),
-                'sender' => $sender,
-            ];
-        });
-
-        return response()->json($payload->values());
+        return response()->json($this->buildChatMessagePayload($messages));
     }
 
     /**
@@ -1144,8 +1622,10 @@ class ChatController extends Controller
         if ($isAdmin) {
             $rules['message'] = 'nullable|string|max:5000';
             $rules['receiver_id'] = 'required|string';
+            $rules['reply_to_message_id'] = 'nullable|string|exists:messages,id';
         } else {
             $rules['message'] = 'nullable|string|max:5000';
+            $rules['reply_to_message_id'] = 'nullable|string|exists:messages,id';
         }
 
         $request->validate($rules);
@@ -1169,6 +1649,11 @@ class ChatController extends Controller
             $receiverId = $admin->id;
         }
 
+        $replyToMessageId = $this->resolveAdminReplyToMessageId(
+            $request,
+            $isAdmin ? (string) $receiverId : (string) $user->id
+        );
+
         // Handle media upload
         $mediaPath = null;
         $mediaType = null;
@@ -1188,8 +1673,7 @@ class ChatController extends Controller
             $mediaPath = $file->store('chat-media', 'public');
         }
 
-        // Create message with chat_type = 'admin'
-        $message = Message::create([
+        $messagePayload = [
             'sender_id' => $user->id,
             'receiver_id' => $receiverId,
             'chat_type' => 'admin', // KEY: This separates from CS chat
@@ -1198,45 +1682,123 @@ class ChatController extends Controller
             'media_type' => $mediaType,
             'media_original_name' => $mediaOriginalName,
             'is_read' => false,
-        ]);
+        ];
+
+        if ($this->messagesHasColumn('reply_to_message_id')) {
+            $messagePayload['reply_to_message_id'] = $replyToMessageId;
+        }
+
+        // Create message with chat_type = 'admin'
+        $message = Message::create($messagePayload);
+
+        if ($replyToMessageId && !$message->getAttribute('reply_to_message_id') && $this->messagesHasColumn('reply_to_message_id')) {
+            $message->forceFill(['reply_to_message_id' => $replyToMessageId])->save();
+        }
 
         // Push notification
         $receiver = Pelanggan::find($receiverId);
-        if ($receiver && $receiver->webpushr_sid) {
-            $end_point = 'https://api.webpushr.com/v1/notification/send/sid';
-            $http_header = [
-                'Content-Type: application/json',
-                'webpushrKey: 2ee12b373a17d9ba5f44683cb42d4279',
-                'webpushrAuthToken: 116294',
-            ];
-
-            $req_data = [
-                'title' => 'Pesan dari Admin (Billing)',
-                'message' => substr($request->message, 0, 50) . (strlen($request->message) > 50 ? '...' : ''),
-                'target_url' => url('https://layanan.jernih.net.id/dashboard/customer/chat-billing'),
-                'sid' => $receiver->webpushr_sid,
-            ];
-
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $http_header);
-            curl_setopt($ch, CURLOPT_URL, $end_point);
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($req_data));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_exec($ch);
-            curl_close($ch);
+        if ($receiver && ($receiver->fcm_token || $receiver->webpushr_sid)) {
+            app(CustomerPushService::class)->sendToPelanggan(
+                $receiver,
+                'Pesan dari Admin (Billing)',
+                Str::limit((string) $request->message, 50, '...'),
+                url('/dashboard/customer/chat-billing')
+            );
         }
 
         $message = $message->fresh();
-        $message->sender;
+        $messagePayload = $this->buildChatMessagePayload(collect([$message]))->first();
 
         // Broadcast to admin-billing channel
-        broadcast(new MessageSent($message));
+        try {
+            broadcast(new MessageSent($message));
+        } catch (\Exception $broadcastEx) {
+            Log::error('?? Broadcast MessageSent failed (sendAdminChat)', [
+                'error' => $broadcastEx->getMessage(),
+                'message_id' => $message->id,
+            ]);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => $message,
+            'message' => $messagePayload,
         ], 201);
+    }
+
+    public function handoffAdminChatToCs(string $pelangganId)
+    {
+        $user = $this->getAuthUser();
+
+        if (!$user || !in_array($user->role ?? '', ['administrator', 'admin'])) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $pelanggan = Pelanggan::find($pelangganId);
+        if (!$pelanggan) {
+            return response()->json(['error' => 'Pelanggan not found'], 404);
+        }
+
+        $csAdmin = User::whereIn('role', ['customer_service', 'administrator', 'admin'])->first();
+        if (!$csAdmin) {
+            return response()->json(['error' => 'CS not found'], 404);
+        }
+
+        $customerNotice = 'Pesan anda sudah dialihkan ke CS kami. Silakan klik di sini untuk membuka chat CS: ' . url('/dashboard/customer/chat');
+        $csNotice = 'Percakapan pelanggan ini dialihkan dari Admin Billing. Silakan lanjutkan bantuan di ruang CS.';
+
+        $billingNoticePayload = [
+            'sender_id' => $user->id,
+            'receiver_id' => $pelanggan->id,
+            'chat_type' => 'admin',
+            'message' => $customerNotice,
+            'is_read' => false,
+        ];
+
+        if ($this->messagesHasColumn('message_type')) {
+            $billingNoticePayload['message_type'] = 'handoff_to_cs';
+        }
+
+        $billingNotice = Message::create($billingNoticePayload);
+
+        $csRoomNoticePayload = [
+            'sender_id' => $csAdmin->id,
+            'receiver_id' => $pelanggan->id,
+            'chat_type' => 'cs',
+            'message' => $csNotice,
+            'is_read' => false,
+        ];
+
+        if ($this->messagesHasColumn('message_type')) {
+            $csRoomNoticePayload['message_type'] = 'handoff_to_cs';
+        }
+
+        $csRoomNotice = Message::create($csRoomNoticePayload);
+
+        try {
+            broadcast(new MessageSent($billingNotice->fresh()));
+            broadcast(new MessageSent($csRoomNotice->fresh()));
+        } catch (\Exception $broadcastEx) {
+            Log::error('Broadcast MessageSent failed (handoffAdminChatToCs)', [
+                'error' => $broadcastEx->getMessage(),
+                'billing_message_id' => $billingNotice->id,
+                'cs_message_id' => $csRoomNotice->id,
+            ]);
+        }
+
+        if ($pelanggan->fcm_token || $pelanggan->webpushr_sid) {
+            app(CustomerPushService::class)->sendToPelanggan(
+                $pelanggan,
+                'Dialihkan ke CS',
+                'Pesan Anda sudah dialihkan ke customer service kami.',
+                url('/dashboard/customer/chat')
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $billingNotice->fresh(),
+            'cs_message_id' => $csRoomNotice->id,
+        ]);
     }
 
     /**
@@ -1456,7 +2018,7 @@ class ChatController extends Controller
     /**
      * Get Admin Chat User List (for admin panel)
      */
-    public function getAdminChatUserList()
+    public function getAdminChatUserList(Request $request)
     {
         $user = $this->getAuthUser();
 
@@ -1494,9 +2056,27 @@ class ChatController extends Controller
             ")
             ->groupBy('contact_id');
 
+        $search = trim((string)$request->query('search', ''));
+        $requestedLimit = (int)$request->query('limit', 100);
+        $limit = max(20, min(($requestedLimit > 0 ? $requestedLimit : 100), 120));
+        $offset = max(0, (int)$request->query('offset', 0));
+
         $pelanggans = Pelanggan::query()
             ->leftJoinSub($lastMessageSubquery, 'lm', function ($join) {
                 $join->on('pelanggans.id', '=', 'lm.contact_id');
+            })
+            ->leftJoin('admin_chat_pins as acp', function ($join) {
+                $join->on('acp.pelanggan_id', '=', 'pelanggans.id')
+                    ->where('acp.chat_type', '=', 'admin');
+            })
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('pelanggans.nama_lengkap', 'like', "%{$search}%")
+                        ->orWhere('pelanggans.nomer_id', 'like', "%{$search}%");
+                });
+            })
+            ->when($search === '', function ($query) {
+                $query->whereNotNull('lm.last_at');
             })
             ->select([
                 'pelanggans.id',
@@ -1504,8 +2084,12 @@ class ChatController extends Controller
                 'pelanggans.nomer_id',
                 'pelanggans.created_at',
                 DB::raw('COALESCE(lm.last_at, pelanggans.created_at) as last_message_at'),
+                DB::raw('CASE WHEN acp.pelanggan_id IS NULL THEN 0 ELSE 1 END as is_pinned'),
             ])
+            ->orderByDesc('is_pinned')
             ->orderByDesc('last_message_at')
+            ->offset($offset)
+            ->limit($limit)
             ->get()
             ->map(function ($item) {
                 return [
@@ -1514,11 +2098,263 @@ class ChatController extends Controller
                     'nomer_id' => $item->nomer_id ?? 'N/A',
                     'type' => 'pelanggan',
                     'last_message_at' => $item->last_message_at,
+                    'is_pinned' => (bool)$item->is_pinned,
                 ];
             })
             ->values();
 
         return response()->json($pelanggans);
+    }
+
+    public function getAdminChatPins()
+    {
+        $user = $this->getAuthUser();
+
+        if (!$user || !in_array($user->role ?? '', ['administrator', 'admin'])) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        return response()->json(
+            AdminChatPin::query()
+                ->where('chat_type', 'admin')
+                ->pluck('pelanggan_id')
+                ->map(fn ($id) => (string)$id)
+                ->values()
+        );
+    }
+
+    public function pinAdminChat(string $pelangganId)
+    {
+        $user = $this->getAuthUser();
+
+        if (!$user || !in_array($user->role ?? '', ['administrator', 'admin'])) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        if (!Pelanggan::whereKey($pelangganId)->exists()) {
+            return response()->json(['error' => 'Pelanggan not found'], 404);
+        }
+
+        AdminChatPin::updateOrCreate(
+            ['pelanggan_id' => $pelangganId, 'chat_type' => 'admin'],
+            ['pinned_by' => $user->id]
+        );
+
+        return response()->json(['pinned' => true, 'pelanggan_id' => $pelangganId]);
+    }
+
+    public function unpinAdminChat(string $pelangganId)
+    {
+        $user = $this->getAuthUser();
+
+        if (!$user || !in_array($user->role ?? '', ['administrator', 'admin'])) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        AdminChatPin::where('pelanggan_id', $pelangganId)
+            ->where('chat_type', 'admin')
+            ->delete();
+
+        return response()->json(['pinned' => false, 'pelanggan_id' => $pelangganId]);
+    }
+
+    public function getCsChatPins()
+    {
+        $user = $this->getAuthUser();
+
+        if (!$user || !in_array($user->role ?? '', ['administrator', 'admin', 'customer_service'])) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        return response()->json(
+            AdminChatPin::query()
+                ->where('chat_type', 'cs')
+                ->pluck('pelanggan_id')
+                ->map(fn ($id) => (string) $id)
+                ->values()
+        );
+    }
+
+    public function pinCsChat(string $pelangganId)
+    {
+        $user = $this->getAuthUser();
+
+        if (!$user || !in_array($user->role ?? '', ['administrator', 'admin', 'customer_service'])) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        if (!Pelanggan::whereKey($pelangganId)->exists()) {
+            return response()->json(['error' => 'Pelanggan not found'], 404);
+        }
+
+        AdminChatPin::updateOrCreate(
+            ['pelanggan_id' => $pelangganId, 'chat_type' => 'cs'],
+            ['pinned_by' => $user->id]
+        );
+
+        return response()->json(['pinned' => true, 'pelanggan_id' => $pelangganId]);
+    }
+
+    public function unpinCsChat(string $pelangganId)
+    {
+        $user = $this->getAuthUser();
+
+        if (!$user || !in_array($user->role ?? '', ['administrator', 'admin', 'customer_service'])) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        AdminChatPin::where('pelanggan_id', $pelangganId)
+            ->where('chat_type', 'cs')
+            ->delete();
+
+        return response()->json(['pinned' => false, 'pelanggan_id' => $pelangganId]);
+    }
+
+    public function transferCsChat(Request $request, string $pelangganId)
+    {
+        $user = $this->getAuthUser();
+
+        if (!$user || !in_array($user->role ?? '', ['administrator', 'admin', 'customer_service'])) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $pelanggan = Pelanggan::find($pelangganId);
+        if (!$pelanggan) {
+            return response()->json(['error' => 'Pelanggan not found'], 404);
+        }
+
+        $data = $request->validate([
+            'division' => 'required|string|max:50',
+            'transfer_reason' => 'required|string|max:1000',
+            'source_chat_id' => 'nullable|string|exists:chat_sessions,id',
+        ]);
+
+        $division = strtolower(trim($data['division']));
+        $sourceSession = null;
+
+        if (!empty($data['source_chat_id'])) {
+            $sourceSession = ChatSession::query()
+                ->whereKey($data['source_chat_id'])
+                ->where('pelanggan_id', $pelanggan->id)
+                ->first();
+        }
+
+        $sourceSession = $sourceSession ?: $this->getOrCreateChatSession($pelanggan->id, 'cs', 'cs', $user->id);
+
+        $roleByDivision = [
+            'cs' => ['customer_service'],
+            'customer_service' => ['customer_service'],
+            'teknis' => ['team', 'karyawan'],
+            'teknisi' => ['team', 'karyawan'],
+            'billing' => ['administrator', 'admin'],
+            'admin' => ['administrator', 'admin'],
+        ];
+        $targetRoles = $roleByDivision[$division] ?? ['administrator', 'admin', 'customer_service'];
+        $pic = User::whereIn('role', $targetRoles)->first();
+
+        $newSession = ChatSession::create([
+            'pelanggan_id' => $pelanggan->id,
+            'pic_id' => $pic?->id,
+            'parent_chat_id' => $sourceSession->id,
+            'source_chat_id' => $sourceSession->id,
+            'chat_type' => 'cs',
+            'division' => $division,
+            'status' => 'open',
+            'transfer_reason' => $data['transfer_reason'],
+        ]);
+
+        $targetLabel = match ($division) {
+            'teknis', 'teknisi' => 'Tim Teknis',
+            'billing', 'admin' => 'Admin Billing',
+            default => strtoupper($division),
+        };
+
+        $openUrl = url('/dashboard/customer/chat?session_id=' . $newSession->id);
+        $systemMessagePayload = [
+            'sender_id' => $user->id,
+            'receiver_id' => $pelanggan->id,
+            'chat_type' => 'cs',
+            'message' => "Percakapan Anda telah diteruskan ke {$targetLabel}. Klik tombol \"Buka Chat {$targetLabel}\" untuk melanjutkan percakapan. {$openUrl}",
+            'is_read' => false,
+        ];
+
+        if ($this->messagesHasColumn('chat_session_id')) {
+            $systemMessagePayload['chat_session_id'] = $sourceSession->id;
+        }
+
+        if ($this->messagesHasColumn('message_type')) {
+            $systemMessagePayload['message_type'] = 'transfer_to_session';
+        }
+
+        $systemMessage = Message::create($systemMessagePayload);
+
+        $newSessionNoticePayload = [
+            'sender_id' => $user->id,
+            'receiver_id' => $pelanggan->id,
+            'chat_type' => 'cs',
+            'message' => 'Chat lanjutan dibuat dari chat sebelumnya. Alasan: ' . $data['transfer_reason'],
+            'is_read' => false,
+        ];
+
+        if ($this->messagesHasColumn('chat_session_id')) {
+            $newSessionNoticePayload['chat_session_id'] = $newSession->id;
+        }
+
+        if ($this->messagesHasColumn('message_type')) {
+            $newSessionNoticePayload['message_type'] = 'system';
+        }
+
+        Message::create($newSessionNoticePayload);
+
+        try {
+            broadcast(new MessageSent($systemMessage->fresh()));
+        } catch (\Throwable $e) {
+            Log::error('Broadcast transfer system message failed', [
+                'error' => $e->getMessage(),
+                'message_id' => $systemMessage->id,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'source_chat_id' => $sourceSession->id,
+            'new_chat_id' => $newSession->id,
+            'parent_chat_id' => $newSession->parent_chat_id,
+            'transfer_reason' => $newSession->transfer_reason,
+            'open_url' => $openUrl,
+            'message' => $systemMessage->fresh(),
+        ], 201);
+    }
+
+    public function getCsChatChain(string $sessionId)
+    {
+        $user = $this->getAuthUser();
+
+        if (!$user || !in_array($user->role ?? '', ['administrator', 'admin', 'customer_service'])) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $session = ChatSession::with(['parentChat', 'sourceChat', 'children', 'pic:id,name,role', 'pelanggan:id,nama_lengkap,nomer_id'])
+            ->find($sessionId);
+
+        if (!$session) {
+            return response()->json(['error' => 'Chat session not found'], 404);
+        }
+
+        return response()->json([
+            'id' => $session->id,
+            'pelanggan' => $session->pelanggan,
+            'pic' => $session->pic,
+            'chat_type' => $session->chat_type,
+            'division' => $session->division,
+            'status' => $session->status,
+            'parent_chat_id' => $session->parent_chat_id,
+            'source_chat_id' => $session->source_chat_id,
+            'transfer_reason' => $session->transfer_reason,
+            'parent' => $session->parentChat,
+            'source' => $session->sourceChat,
+            'children' => $session->children,
+        ]);
     }
 
     // ===================================================================

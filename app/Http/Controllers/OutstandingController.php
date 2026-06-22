@@ -6,6 +6,7 @@ use App\Models\Income;
 use App\Models\Paket;
 use App\Models\Pelanggan;
 use App\Models\Tagihan;
+use App\Services\CustomerPushService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,47 +27,43 @@ public function index(Request $request)
     $pelanggan = collect(); // Empty collection, data diload via AJAX
     $paket = Paket::all();
 
-    // ? BUILD QUERY
-    $query = Tagihan::with(['pelanggan', 'paket']);
+    // ? BUILD QUERY - JOIN OPTIMIZATION + FILTER JMK-GK + BELUM BAYAR SAJA
+    $query = Tagihan::with(['pelanggan', 'paket'])
+        ->select('tagihans.*')
+        ->join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+        ->where('tagihans.status_pembayaran', 'belum bayar') // PASTIKAN HANYA BELUM BAYAR
+        ->where('pelanggans.nomer_id', 'LIKE', '%JMK-GK%'); // PASTIKAN HANYA JMK-GK
 
     // ? FILTER OUTSTANDING: Hanya tagihan bulan sebelumnya (bukan bulan ini)
     $query->where(function($q) {
-        $q->whereYear('tanggal_berakhir', '<', now()->year)
+        $q->whereYear('tagihans.tanggal_berakhir', '<', now()->year)
           ->orWhere(function($subQ) {
-              $subQ->whereYear('tanggal_berakhir', '=', now()->year)
-                   ->whereMonth('tanggal_berakhir', '<', now()->month);
+              $subQ->whereYear('tagihans.tanggal_berakhir', '=', now()->year)
+                   ->whereMonth('tagihans.tanggal_berakhir', '<', now()->month);
           });
     });
 
-    // ? SEARCH FILTER - HANYA DI STATUS "BELUM BAYAR"
+    // ? SEARCH FILTER
     if ($request->filled('search')) {
         $search = trim($request->search);
-
-        // ? HARDCODE: Hanya cari di status "belum bayar"
-        $query->where('status_pembayaran', 'belum bayar')
-              ->whereHas('pelanggan', function($q) use ($search) {
-                  $q->where('nama_lengkap', 'like', "%{$search}%")
-                    ->orWhere('nomer_id', 'like', "%{$search}%")
-                    ->orWhere('no_whatsapp', 'like', "%{$search}%")
-                    ->orWhere('no_telp', 'like', "%{$search}%")
-                    ->orWhere('alamat_jalan', 'like', "%{$search}%")
-                    ->orWhere('rt', 'like', "%{$search}%")
-                    ->orWhere('rw', 'like', "%{$search}%")
-                    ->orWhere('desa', 'like', "%{$search}%")
-                    ->orWhere('kecamatan', 'like', "%{$search}%")
-                    ->orWhere('kabupaten', 'like', "%{$search}%")
-                    ->orWhere('kode_pos', 'like', "%{$search}%");
-              });
-    } else {
-        // ? JIKA TIDAK ADA SEARCH, TAMPILKAN SEMUA (DENGAN FILTER STATUS JIKA ADA)
-        if ($request->filled('status')) {
-            $query->where('status_pembayaran', $request->status);
-        }
+        $query->where(function ($q) use ($search) {
+            $q->where('pelanggans.nama_lengkap', 'like', "%{$search}%")
+                ->orWhere('pelanggans.nomer_id', 'like', "%{$search}%")
+                ->orWhere('pelanggans.no_whatsapp', 'like', "%{$search}%")
+                ->orWhere('pelanggans.no_telp', 'like', "%{$search}%")
+                ->orWhere('pelanggans.alamat_jalan', 'like', "%{$search}%")
+                ->orWhere('pelanggans.rt', 'like', "%{$search}%")
+                ->orWhere('pelanggans.rw', 'like', "%{$search}%")
+                ->orWhere('pelanggans.desa', 'like', "%{$search}%")
+                ->orWhere('pelanggans.kecamatan', 'like', "%{$search}%")
+                ->orWhere('pelanggans.kabupaten', 'like', "%{$search}%")
+                ->orWhere('pelanggans.kode_pos', 'like', "%{$search}%");
+        });
     }
 
     // ? PAGINATION
     $tagihans = $query->orderBy('tanggal_berakhir', 'desc')
-        ->paginate(40)
+        ->paginate(40, ['tagihans.*'])
         ->withQueryString()
         ->through(function ($item) {
             $pelanggan = $item->pelanggan;
@@ -103,23 +100,21 @@ public function index(Request $request)
             ];
         });
 
-    // Statistik - update untuk outstanding saja
-    $totalCustomer = Pelanggan::where('status', 'approve')->count();
-    $lunas = Tagihan::where('status_pembayaran', 'lunas')
-        ->where(function($q) {
-            $q->whereYear('tanggal_berakhir', '<', now()->year)
-              ->orWhere(function($subQ) {
-                  $subQ->whereYear('tanggal_berakhir', '=', now()->year)
-                       ->whereMonth('tanggal_berakhir', '<', now()->month);
-              });
-        })->count();
+    // Statistik - update untuk outstanding saja (khusus JMK-GK)
+    $totalCustomer = Pelanggan::where('status', 'approve')
+        ->where('nomer_id', 'LIKE', '%JMK-GK%')
+        ->count();
 
-    $belumLunas = Tagihan::where('status_pembayaran', 'belum bayar')
+    $lunas = 0; // Sesuai permintaan: lunas jangan ditampilkan, jadi dinolkan saja untuk performa
+
+    $belumLunas = Tagihan::join('pelanggans', 'tagihans.pelanggan_id', '=', 'pelanggans.id')
+        ->where('tagihans.status_pembayaran', 'belum bayar')
+        ->where('pelanggans.nomer_id', 'LIKE', '%JMK-GK%')
         ->where(function($q) {
-            $q->whereYear('tanggal_berakhir', '<', now()->year)
+            $q->whereYear('tagihans.tanggal_berakhir', '<', now()->year)
               ->orWhere(function($subQ) {
-                  $subQ->whereYear('tanggal_berakhir', '=', now()->year)
-                       ->whereMonth('tanggal_berakhir', '<', now()->month);
+                  $subQ->whereYear('tagihans.tanggal_berakhir', '=', now()->year)
+                       ->whereMonth('tagihans.tanggal_berakhir', '<', now()->month);
               });
         })->count();
 
@@ -341,33 +336,25 @@ public function store(Request $request)
 
     $pelanggan = Pelanggan::find($request->pelanggan_id);
 
-    // Kirim push notification jika SID tersedia
-    if ($pelanggan && $pelanggan->webpushr_sid) {
-        $ch = curl_init('https://api.webpushr.com/v1/notification/send/sid');
+    if ($pelanggan) {
+        $fcmToken = trim((string) ($pelanggan->fcm_token ?? ''));
+        $webpushrSid = trim((string) ($pelanggan->webpushr_sid ?? ''));
 
-        $payload = [
-    'title' => 'Pemberitahuan untuk Anda',
-    'message' => "Halo {$pelanggan->nama}, kami baru saja menerbitkan tagihan untuk Anda. Silakan cek detailnya.",
-    'target_url' => url('https://layanan.jernih.net.id/dashboard/customer/tagihan'),
-    'sid' => $pelanggan->webpushr_sid,
-];
-
-        $headers = [
-            'Content-Type: application/json',
-            'webpushrKey: ' . config('services.webpushr.key'),
-            'webpushrAuthToken: ' . config('services.webpushr.token'),
-        ];
-
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        $response = curl_exec($ch);
-
-
-
-        curl_close($ch);
+        if ($fcmToken !== '') {
+            app(CustomerPushService::class)->sendFcmToPelanggan(
+                $pelanggan,
+                'Pemberitahuan untuk Anda (FCM)',
+                "Halo {$pelanggan->nama_lengkap}, kami baru saja menerbitkan tagihan untuk Anda. Silakan cek detailnya. [Notifikasi via FCM]",
+                url('/dashboard/customer/tagihan')
+            );
+        } elseif ($webpushrSid !== '') {
+            app(CustomerPushService::class)->sendWebpushrToPelanggan(
+                $pelanggan,
+                'Pemberitahuan untuk Anda',
+                "Halo {$pelanggan->nama_lengkap}, kami baru saja menerbitkan tagihan untuk Anda. Silakan cek detailnya.",
+                url('/dashboard/customer/tagihan')
+            );
+        }
     }
 
     return redirect()->back()->with('success', 'Tagihan berhasil ditambahkan dan notifikasi terkirim!');
@@ -435,16 +422,40 @@ public function store(Request $request)
         // Update status tagihan
         $tagihan->status_pembayaran = 'lunas';
         $tagihan->tanggal_pembayaran = now();
+        $tagihan->verified_by = auth()->id();
         $tagihan->save();
 
         // Buat data Income baru
         Income::create([
+            'tagihan_id' => $tagihan->id,
             'kode' => $this->getCode(), // atau gunakan helper getKode() jika mau auto-generate
             'kategori' => 'Tagihan',
             'jumlah' => $tagihan->jumlah_tagihan ?? $tagihan->paket->harga,
             'keterangan' => 'Pembayaran paket '.$tagihan->paket->nama_paket.' dari '.$tagihan->pelanggan->nama_lengkap,
             'tanggal_masuk' => now(),
         ]);
+
+        $pelanggan = $tagihan->pelanggan;
+        if ($pelanggan) {
+            $fcmToken = trim((string) ($pelanggan->fcm_token ?? ''));
+            $webpushrSid = trim((string) ($pelanggan->webpushr_sid ?? ''));
+
+            if ($fcmToken !== '') {
+                app(CustomerPushService::class)->sendFcmToPelanggan(
+                    $pelanggan,
+                    '✅ Pembayaran Berhasil (FCM)',
+                    "Terima kasih, {$pelanggan->nama_lengkap}. Pembayaran Anda telah kami terima dan dikonfirmasi. [Notifikasi via FCM]",
+                    url('/dashboard/customer/tagihan/selesai')
+                );
+            } elseif ($webpushrSid !== '') {
+                app(CustomerPushService::class)->sendWebpushrToPelanggan(
+                    $pelanggan,
+                    '✅ Pembayaran Berhasil',
+                    "Terima kasih, {$pelanggan->nama_lengkap}. Pembayaran Anda telah kami terima dan dikonfirmasi.",
+                    url('/dashboard/customer/tagihan/selesai')
+                );
+            }
+        }
 
         return response()->json([
             'success' => true,

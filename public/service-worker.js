@@ -1,4 +1,4 @@
-var staticCacheName = 'jmk-pwa-v2';
+var staticCacheName = 'jmk-pwa-v4';
 var filesToCache = [
   '/offline',
   '/manifest.json',
@@ -27,7 +27,7 @@ self.addEventListener('activate', event => {
       caches.keys().then(cacheNames => {
         return Promise.all(
           cacheNames
-            .filter(cacheName => cacheName.startsWith('pwa-'))
+            .filter(cacheName => cacheName.startsWith('pwa-') || cacheName.startsWith('jmk-pwa-'))
             .filter(cacheName => cacheName !== staticCacheName)
             .map(cacheName => caches.delete(cacheName))
         );
@@ -49,6 +49,7 @@ self.addEventListener('fetch', event => {
   // Jangan cache endpoint dinamis atau file besar agar PWA tidak terasa berat/stale.
   if (
     url.pathname.startsWith('/storage/') ||
+    url.pathname.startsWith('/build/') ||
     url.pathname.startsWith('/customer/media-proxy') ||
     url.pathname.startsWith('/kwitansi/') ||
     url.pathname.includes('/json') ||
@@ -56,7 +57,9 @@ self.addEventListener('fetch', event => {
     url.pathname.includes('/chat/') ||
     url.pathname.includes('/admin-chat/')
   ) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
     return;
   }
 

@@ -665,6 +665,16 @@
         "administrator",
         "admin"
       ]
+    },
+    {
+      "name": "Laporan Kendala",
+      "icon": "menu-icon tf-icons ri-feedback-line",
+      "slug": "feedback.index",
+      "url": "/dashboard/admin/feedback",
+      "roles": [
+        "administrator",
+        "admin"
+      ]
     }
   ]
 }

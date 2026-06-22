@@ -1548,22 +1548,12 @@ document.addEventListener("DOMContentLoaded", function () {
         const value = String(raw || '').trim();
         if (!value || value === '-') return '';
 
-        // Jika sudah full URL (http/https), pakai langsung (jangan rewrite domain)
-        if (/^https?:\/\//i.test(value)) {
+        // Controller sudah mengirim URL yang sudah di-resolve sesuai storage pelanggan.
+        if (/^https?:\/\//i.test(value) || value.startsWith('/')) {
             return value;
         }
 
-        let path = value;
-        try {
-            path = new URL(value, window.location.origin).pathname;
-        } catch (e) {
-            path = value;
-        }
-
-        const fileName = path.split('/').filter(Boolean).pop();
-        if (!fileName || fileName === '-') return '';
-
-        return `${buktiBaseUrl}/${encodeURIComponent(fileName)}`;
+        return `${buktiBaseUrl}/${encodeURIComponent(value.split('/').filter(Boolean).pop())}`;
     }
 
     function escapeHtml(value) {
@@ -1746,6 +1736,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const typePembayaran = readDetail('typePembayaran', 'Belum dipilih');
         const catatan = readDetail('catatan');
         const buktiPembayaran = buildBuktiUrl(readDetail('bukti', ''));
+        const buktiType = String(readDetail('buktiType', '')).toLowerCase();
         
         // Get tagihan ID and status for button
         const tagihanId = $tr.data('tagihan-id');
@@ -1757,7 +1748,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Build bukti section
         let buktiSection = '<span class="text-muted">Belum ada bukti pembayaran.</span>';
         if (buktiPembayaran) {
-            const isPdfBukti = /\.pdf(\?|#|$)/i.test(String(buktiPembayaran));
+            const isPdfBukti = buktiType === 'pdf' || /\.pdf(\?|#|$)/i.test(String(buktiPembayaran));
             buktiSection = `
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <span class="badge ${isChecked ? 'bg-success' : 'bg-secondary'} rounded-pill px-3 py-2 bukti-checked-badge" data-tagihan-id="${tagihanId}">
@@ -1781,7 +1772,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div class="bukti-inline-container border rounded-4 overflow-hidden shadow-sm" style="height: 430px; background:#f8fafc; position:relative; cursor:${isPdfBukti ? 'default' : 'grab'};">
                     ${isPdfBukti
                         ? `<iframe src="${buktiPembayaran}" title="Bukti Pembayaran PDF" style="width:100%;height:100%;border:0;background:#fff;"></iframe>`
-                        : `<img src="${buktiPembayaran}" alt="Bukti Pembayaran" class="bukti-inline-image" style="position:absolute; top:50%; left:50%; transform: translate(calc(-50% + 0px), calc(-50% + 0px)) scale(1); transform-origin:center center; max-width:none; user-select:none; -webkit-user-drag:none;">`
+                        : `<img src="${buktiPembayaran}" alt="Bukti Pembayaran" class="bukti-inline-image" style="width:100%; height:100%; object-fit:contain; display:block; background:#fff; user-select:none; -webkit-user-drag:none;" onerror="this.closest('.bukti-inline-container').innerHTML='<div class=&quot;d-flex h-100 align-items-center justify-content-center text-center text-muted p-4&quot;><div><i class=&quot;ri-error-warning-line fs-1 d-block mb-2&quot;></i><strong>Bukti tidak bisa ditampilkan.</strong><div class=&quot;small mt-1&quot;>Klik Unduh Bukti atau minta pelanggan upload ulang.</div></div></div>'">`
                     }
                 </div>
                 <div class="mt-3 text-center">
@@ -2495,7 +2486,29 @@ document.addEventListener("DOMContentLoaded", function () {
         const scale = Number($container.attr('data-scale') || 1);
         const x = Number($container.attr('data-x') || 0);
         const y = Number($container.attr('data-y') || 0);
-        $img.css('transform', `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale})`);
+
+        if (scale <= 1 && x === 0 && y === 0) {
+            $img.css({
+                position: 'static',
+                width: '100%',
+                height: '100%',
+                maxWidth: '100%',
+                objectFit: 'contain',
+                transform: 'none'
+            });
+            return;
+        }
+
+        $img.css({
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: 'auto',
+            height: 'auto',
+            maxWidth: 'none',
+            objectFit: 'initial',
+            transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale})`
+        });
     }
 
     function initInlineViewer($container) {
@@ -2710,7 +2723,8 @@ document.addEventListener("DOMContentLoaded", function () {
               } else {
                 $typePembayaranLabel = $rawTypePembayaran;
               }
-              $buktiUrl = trim((string)($item->bukti_pembayaran_resolved ?? ''));
+              $buktiUrl = !empty($item->bukti_pembayaran) ? route('tagihan.bukti.preview', $item->id) : '';
+              $buktiType = strtolower(pathinfo((string) $item->bukti_pembayaran, PATHINFO_EXTENSION));
             @endphp
 
             <tr 
@@ -2734,6 +2748,7 @@ document.addEventListener("DOMContentLoaded", function () {
               data-catatan="{{ $item->catatan ?? '-' }}"
               data-type-pembayaran="{{ $typePembayaranLabel }}"
               data-bukti="{{ $buktiUrl }}"
+              data-bukti-type="{{ $buktiType }}"
             >
               <td>
                 <input type="checkbox" class="verification-row-checkbox verification-checkbox" value="{{ $item->id }}" aria-label="Pilih tagihan {{ $item->pelanggan->nama_lengkap ?? '-' }}">

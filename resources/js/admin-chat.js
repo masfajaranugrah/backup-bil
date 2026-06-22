@@ -2,6 +2,9 @@
 // This is separate from CS chat (/chat/ endpoints)
 
 document.addEventListener('DOMContentLoaded', function () {
+    if (window.__adminBillingChatInitialized) return;
+    window.__adminBillingChatInitialized = true;
+
     // Wait for axios to be available
     if (typeof window.axios === 'undefined') {
         console.error('[AdminChat] axios is not available. Skip chat init to avoid reload loop.');
@@ -25,6 +28,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const mediaInput = document.getElementById('mediaInput');
     const attachButton = document.getElementById('attachButton');
     const mediaPreview = document.getElementById('mediaPreview');
+    const replyPreview = document.getElementById('replyPreview');
+    const replyPreviewName = document.getElementById('replyPreviewName');
+    const replyPreviewText = document.getElementById('replyPreviewText');
+    const replyPreviewClose = document.getElementById('replyPreviewClose');
+    let replyToMessageInput = document.getElementById('replyToMessageId');
     const quickReplies = document.getElementById('quickReplies');
     const editMessageModal = document.getElementById('editMessageModal');
     const editMessageForm = document.getElementById('editMessageForm');
@@ -40,12 +48,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const adminChatContainer = document.querySelector('.admin-chat-container');
     const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
     const sidebarToggleText = document.getElementById('sidebarToggleText');
+    const handoffCsButton = document.getElementById('handoffCsButton');
     const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000;
     const messageStore = new Map();
 
     let selectedMediaFile = null;
+    let activeReplyMessage = null;
     let activeEditMessageId = null;
     let activeDeleteMessageId = null;
+    const processedRealtimeMessageIds = new Set();
+    const FALLBACK_SYNC_INTERVAL_MS = 3000;
+    let isSocketConnected = false;
+    let fallbackSyncTimer = null;
+    let lastRenderedMessagesSignature = '';
+    let currentConversationKey = '';
 
     function initSidebarToggle() {
         if (!adminChatContainer || !sidebarToggleBtn) return;
@@ -211,22 +227,33 @@ document.addEventListener('DOMContentLoaded', function () {
     const hasReceiverField = !!document.getElementById('receiverId');
     const isAdmin = window.isAdmin === true && hasReceiverField;
     const userId = window.userId;
-    const PINNED_STORAGE_KEY = `adminBillingPinnedChats:${String(userId || 'anonymous')}`;
     const HIDDEN_STORAGE_KEY = `adminBillingHiddenChats:${String(userId || 'anonymous')}`;
 
     // API Base URLs - KEY DIFFERENCE: Uses /admin-chat/ instead of /chat/
     const API_BASE = '/admin-chat';
-    const INITIAL_LOAD_LIMIT = 150;
+    const INITIAL_LOAD_LIMIT = 100;
+    const OLDER_LOAD_LIMIT = 100;
+    const CHAT_USER_PAGE_SIZE = 100;
     let pinnedChats = new Set();
     let hiddenChats = new Set();
+    let loadedMessages = [];
+    let canLoadOlderMessages = false;
+    let isLoadingOlderMessages = false;
+    let isLoadingMoreChats = false;
+    let canLoadMoreChats = true;
 
     const QUICK_REPLY_TEMPLATES = [
         'Tagihan Anda sudah terbit. Silakan lakukan pembayaran sebelum jatuh tempo agar layanan tetap aktif.',
         'Silakan kirim bukti pembayaran (foto/screenshot) agar kami bantu verifikasi lebih cepat.',
         'Terima kasih, pembayaran Anda sedang kami proses. Mohon tunggu beberapa saat.',
         'Terima kasih sudah menghubungi Admin Billing. Jika ada kendala, kami siap bantu.',
-        'Untuk kendala teknis layanan, silakan lanjutkan ke CS agar ditangani lebih cepat.'
+        'Untuk kendala teknis layanan, silakan lanjutkan ke CS agar ditangani lebih cepat.',
+        'Terima kasih atas masukan dan perhatian yang telah Anda sampaikan. Kami sangat menghargai setiap saran untuk meningkatkan kualitas pelayanan kami.\n\nSebagai tindak lanjut, kami ingin menanyakan apakah bukti pembayaran sudah diunggah melalui menu Tagihan? Mohon informasinya agar kami dapat melakukan pengecekan dan membantu proses selanjutnya dengan lebih cepat.\n\nTerima kasih atas kerja sama dan kesabarannya. 🙏'
     ];
+
+    const QUICK_REPLY_SHORTCUTS = {
+        '/bukti-tagihan': QUICK_REPLY_TEMPLATES[5]
+    };
 
     // ===== Broadcast UI (admin only) =====
     if (isAdmin) {
@@ -406,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (badge) {
             if (count > 0) {
                 badge.textContent = String(count);
-                badge.style.display = 'inline-block';
+                badge.style.display = 'inline-flex';
             } else {
                 badge.textContent = '0';
                 badge.style.display = 'none';
@@ -415,6 +442,189 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const userItem = document.querySelector(`.user-item[data-user-id="${senderId}"]`);
         if (userItem) userItem.dataset.unread = String(count);
+    }
+
+    function createUserListItem(user) {
+        const safeId = escapeHtml(String(user.id || ''));
+        const safeName = escapeHtml(String(user.name || 'Pelanggan'));
+        const safeNomerId = escapeHtml(String(user.nomer_id || ''));
+        const lastActivity = user.last_message_at ? new Date(user.last_message_at).getTime() : Date.now();
+
+        const item = document.createElement('div');
+        item.className = 'user-item';
+        item.dataset.userId = safeId;
+        item.dataset.userName = safeName;
+        item.dataset.nomerId = safeNomerId;
+        item.dataset.lastActivity = String(Number.isNaN(lastActivity) ? Date.now() : lastActivity);
+        item.title = safeName;
+        item.innerHTML = `
+            <div class="user-item-content">
+                <div class="user-avatar">${getInitials(safeName)}</div>
+                <div class="user-details">
+                    <div class="user-name">${safeName}</div>
+                    <div class="user-meta-row"><div class="user-type">${safeNomerId}</div></div>
+                    <span class="pin-badge"><i class="fas fa-thumbtack"></i> Pinned</span>
+                </div>
+                <span class="unread-badge" id="unread-${safeId}" style="display: none;">0</span>
+                <button type="button" class="pin-chat-btn" data-pin-user-id="${safeId}" title="Pin chat agar tampil paling atas" aria-label="Pin chat ${safeName}">
+                    <i class="fas fa-thumbtack"></i>
+                </button>
+            </div>
+        `;
+
+            const isPinned = toBooleanFlag(user.is_pinned) || pinnedChats.has(String(user.id || ''));
+            setPinnedVisualState(item, isPinned);
+            return item;
+        }
+
+    function ensureUserItemFromMessage(message) {
+        if (!isAdmin || !message || !message.sender_id) return;
+
+        const userList = document.getElementById('userList');
+        if (!userList) return;
+
+        const senderId = String(message.sender_id);
+        if (userList.querySelector(`[data-user-id="${senderId}"]`)) return;
+
+        userList.insertBefore(createUserListItem({
+            id: senderId,
+            name: message.sender?.name || message.sender_name || 'Pelanggan',
+            nomer_id: message.sender?.email || senderId,
+            last_message_at: message.created_at || new Date().toISOString(),
+            is_pinned: pinnedChats.has(senderId),
+        }), userList.firstElementChild);
+    }
+
+    function isCustomerSender(message) {
+        return String(message?.sender?.role || message?.sender_role || '').toLowerCase() === 'pelanggan';
+    }
+
+    function buildMessagesSignature(messages) {
+        if (!Array.isArray(messages) || messages.length === 0) return 'empty';
+
+        const first = messages[0];
+        const last = messages[messages.length - 1];
+        const firstKey = `${first.id || 'x'}:${first.updated_at || first.edited_at || first.deleted_at || first.created_at || ''}:${first.is_read ? 1 : 0}`;
+        const lastKey = `${last.id || 'x'}:${last.updated_at || last.edited_at || last.deleted_at || last.created_at || ''}:${last.is_read ? 1 : 0}`;
+
+        return `${messages.length}|${firstKey}|${lastKey}`;
+    }
+
+    function ensureLoadMoreChatsButton(show = true) {
+        const userList = document.getElementById('userList');
+        if (!userList) return;
+
+        let wrapper = document.getElementById('loadMoreChatsWrap');
+        if (!show || !canLoadMoreChats) {
+            if (wrapper) wrapper.remove();
+            return;
+        }
+
+        if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.className = 'load-more-chats-wrap';
+            wrapper.id = 'loadMoreChatsWrap';
+            wrapper.innerHTML = `
+                <button type="button" class="load-more-chats-btn" id="loadMoreChatsBtn">
+                    <i class="fas fa-chevron-down"></i>
+                    <span>Lihat chat lainnya</span>
+                </button>
+            `;
+            userList.appendChild(wrapper);
+        } else {
+            userList.appendChild(wrapper);
+        }
+
+        wrapper.style.padding = '8px 4px 14px';
+        const button = document.getElementById('loadMoreChatsBtn');
+        if (button) {
+            button.style.width = '100%';
+            button.style.border = '1px solid rgba(255, 255, 255, 0.28)';
+            button.style.background = '#202124';
+            button.style.color = '#f8fafc';
+            button.style.borderRadius = '26px';
+            button.style.padding = '14px 16px';
+            button.style.fontSize = '15px';
+            button.style.fontWeight = '900';
+            button.style.display = 'inline-flex';
+            button.style.alignItems = 'center';
+            button.style.justifyContent = 'center';
+            button.style.gap = '10px';
+            button.style.cursor = 'pointer';
+        }
+    }
+
+    function setLoadMoreChatsButtonState(isLoading) {
+        const button = document.getElementById('loadMoreChatsBtn');
+        if (!button) return;
+
+        button.disabled = isLoading;
+        button.innerHTML = isLoading
+            ? '<i class="fas fa-spinner fa-spin"></i><span>Memuat chat...</span>'
+            : '<i class="fas fa-chevron-down"></i><span>Lihat chat lainnya</span>';
+    }
+
+    function renderUserListItems(users, options = {}) {
+        const userList = document.getElementById('userList');
+        if (!userList || !Array.isArray(users)) return;
+
+        const { append = false, showLoadMore = false } = options;
+        const loadMoreWrapper = document.getElementById('loadMoreChatsWrap');
+        if (loadMoreWrapper) loadMoreWrapper.remove();
+
+        if (!append) {
+            userList.innerHTML = '';
+        }
+
+        const existingIds = new Set(Array.from(userList.querySelectorAll('.user-item')).map(item => String(item.dataset.userId || '')));
+        users.forEach(user => {
+            const userIdValue = String(user.id || '');
+            if (!userIdValue || existingIds.has(userIdValue)) return;
+            existingIds.add(userIdValue);
+            userList.appendChild(createUserListItem(user));
+        });
+
+        ensureLoadMoreChatsButton(showLoadMore);
+
+        loadUnreadCounts();
+        sortUserList();
+        applyUserFilter();
+    }
+
+    function loadUserListFromServer(searchTerm = '') {
+        if (!isAdmin) return;
+        const params = new URLSearchParams({ limit: String(CHAT_USER_PAGE_SIZE) });
+        if (searchTerm) params.set('search', searchTerm);
+
+        axios.get(`${API_BASE}/users?${params.toString()}`)
+            .then(response => {
+                const users = response.data || [];
+                canLoadMoreChats = !searchTerm && users.length >= CHAT_USER_PAGE_SIZE;
+                renderUserListItems(users, { append: false, showLoadMore: !searchTerm });
+            })
+            .catch(() => { });
+    }
+
+    function loadMoreChatUsers() {
+        if (!isAdmin || isLoadingMoreChats || !canLoadMoreChats) return;
+
+        const userList = document.getElementById('userList');
+        const offset = userList ? userList.querySelectorAll('.user-item').length : 0;
+        isLoadingMoreChats = true;
+        setLoadMoreChatsButtonState(true);
+
+        const params = new URLSearchParams({ limit: String(CHAT_USER_PAGE_SIZE), offset: String(offset) });
+        axios.get(`${API_BASE}/users?${params.toString()}`)
+            .then(response => {
+                const users = response.data || [];
+                canLoadMoreChats = users.length >= CHAT_USER_PAGE_SIZE;
+                renderUserListItems(users, { append: true, showLoadMore: true });
+            })
+            .catch(() => { })
+            .finally(() => {
+                isLoadingMoreChats = false;
+                setLoadMoreChatsButtonState(false);
+            });
     }
 
     // Load unread counts for admin on page load
@@ -428,6 +638,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const id = item.dataset.userId;
                     if (id) setUnreadBadgeCount(id, unreadCounts[id] || 0);
                 });
+                sortUserList();
                 applyUserFilter();
             })
             .catch(error => { });
@@ -502,7 +713,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Load messages - Uses /admin-chat/messages endpoint
-    function loadMessages(targetUserId = null) {
+    function loadMessages(targetUserId = null, options = {}) {
+        const {
+            autoScroll = true,
+            skipIfUnchanged = false,
+            resetSignature = false,
+        } = options;
         const query = `limit=${encodeURIComponent(String(INITIAL_LOAD_LIMIT))}`;
         const url = isAdmin && targetUserId
             ? `${API_BASE}/messages/${targetUserId}?${query}`
@@ -510,8 +726,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
         axios.get(url)
             .then(response => {
-                displayMessages(response.data);
-                scrollToBottom();
+                const responseMessages = Array.isArray(response.data) ? response.data : [];
+                const conversationKey = isAdmin
+                    ? `admin:${String(targetUserId || '')}`
+                    : `customer:${String(userId || '')}`;
+
+                if (resetSignature || currentConversationKey !== conversationKey) {
+                    currentConversationKey = conversationKey;
+                    lastRenderedMessagesSignature = '';
+                }
+
+                const nextSignature = buildMessagesSignature(responseMessages);
+                if (skipIfUnchanged && nextSignature === lastRenderedMessagesSignature) {
+                    return;
+                }
+
+                loadedMessages = responseMessages;
+                canLoadOlderMessages = loadedMessages.length >= INITIAL_LOAD_LIMIT;
+                displayMessages(loadedMessages);
+                lastRenderedMessagesSignature = nextSignature;
+
+                if (autoScroll) {
+                    scrollToBottom();
+                }
 
                 // For customers, mark admin messages as read
                 if (!isAdmin) {
@@ -527,6 +764,52 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             })
             .catch(error => { });
+    }
+
+    function loadOlderMessages() {
+        if (isLoadingOlderMessages || !canLoadOlderMessages || loadedMessages.length === 0) return Promise.resolve(false);
+
+        const targetUserId = window.selectedUserId || null;
+        const oldestMessage = loadedMessages[0];
+        if (!oldestMessage?.created_at) return Promise.resolve(false);
+
+        isLoadingOlderMessages = true;
+        setLoadMoreButtonState(true);
+
+        const params = new URLSearchParams({
+            limit: String(OLDER_LOAD_LIMIT),
+            before: oldestMessage.created_at,
+        });
+        const url = isAdmin && targetUserId
+            ? `${API_BASE}/messages/${targetUserId}?${params.toString()}`
+            : `${API_BASE}/messages?${params.toString()}`;
+        const previousScrollHeight = chatMessages.scrollHeight;
+
+        return axios.get(url)
+            .then(response => {
+                const olderMessages = Array.isArray(response.data) ? response.data : [];
+                if (olderMessages.length === 0) {
+                    canLoadOlderMessages = false;
+                    renderLoadMoreButton();
+                    return false;
+                }
+
+                const existingIds = new Set(loadedMessages.map(message => String(message.id || '')));
+                const uniqueOlderMessages = olderMessages.filter(message => !existingIds.has(String(message.id || '')));
+                loadedMessages = uniqueOlderMessages.concat(loadedMessages);
+                canLoadOlderMessages = olderMessages.length >= OLDER_LOAD_LIMIT;
+                displayMessages(loadedMessages);
+
+                const nextScrollHeight = chatMessages.scrollHeight;
+                chatMessages.scrollTop = nextScrollHeight - previousScrollHeight;
+
+                return uniqueOlderMessages.length > 0;
+            })
+            .catch(() => false)
+            .finally(() => {
+                isLoadingOlderMessages = false;
+                setLoadMoreButtonState(false);
+            });
     }
 
     // Display messages
@@ -546,9 +829,37 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        renderLoadMoreButton();
+
+        const fragment = document.createDocumentFragment();
         messages.forEach(message => {
-            appendMessage(message, false, true);
+            appendMessage(message, false, true, fragment);
         });
+        chatMessages.appendChild(fragment);
+    }
+
+    function renderLoadMoreButton() {
+        if (!canLoadOlderMessages) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'load-more-messages-wrap';
+        wrapper.innerHTML = `
+            <button type="button" class="load-more-messages-btn" id="loadMoreMessagesBtn">
+                <i class="fas fa-clock-rotate-left"></i>
+                <span>Tampilkan pesan sebelumnya</span>
+            </button>
+        `;
+        chatMessages.appendChild(wrapper);
+    }
+
+    function setLoadMoreButtonState(isLoading) {
+        const button = document.getElementById('loadMoreMessagesBtn');
+        if (!button) return;
+
+        button.disabled = isLoading;
+        button.innerHTML = isLoading
+            ? '<i class="fas fa-spinner fa-spin"></i><span>Memuat...</span>'
+            : '<i class="fas fa-clock-rotate-left"></i><span>Tampilkan pesan sebelumnya</span>';
     }
 
     function normalizeMessagePayload(message, fallbackMessage = null) {
@@ -560,6 +871,7 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         normalized.chat_type = normalized.chat_type || 'admin';
+        normalized.message_type = normalized.message_type || null;
         normalized.message = typeof normalized.message === 'string' ? normalized.message : '';
         normalized.is_read = toBooleanFlag(normalized.is_read);
         normalized.is_deleted = toBooleanFlag(normalized.is_deleted);
@@ -567,9 +879,67 @@ document.addEventListener('DOMContentLoaded', function () {
         normalized.deleted_at = normalized.deleted_at || null;
         normalized.media_url = normalized.media_url || null;
         normalized.media_type = normalized.media_type || null;
+        normalized.media_original_name = normalized.media_original_name || null;
+        normalized.reply_to_message_id = normalized.reply_to_message_id || null;
+        normalized.reply_to_message = normalized.reply_to_message || null;
         normalized.created_at = normalized.created_at || fallbackMessage?.created_at || new Date().toISOString();
 
         return normalized;
+    }
+
+    function ensureReplyToMessageInput() {
+        if (replyToMessageInput) return replyToMessageInput;
+        if (!chatForm) return null;
+
+        replyToMessageInput = document.createElement('input');
+        replyToMessageInput.type = 'hidden';
+        replyToMessageInput.id = 'replyToMessageId';
+        replyToMessageInput.name = 'reply_to_message_id';
+        chatForm.appendChild(replyToMessageInput);
+
+        return replyToMessageInput;
+    }
+
+    function getActiveReplyMessage() {
+        const replyInput = ensureReplyToMessageInput();
+        const replyId = String(replyInput?.value || replyPreview?.dataset.replyMessageId || activeReplyMessage?.id || '').trim();
+        if (!replyId) return null;
+
+        return activeReplyMessage?.id && String(activeReplyMessage.id) === replyId
+            ? activeReplyMessage
+            : (messageStore.get(replyId) || { id: replyId });
+    }
+
+    function showReplyPreview(message) {
+        if (!message || !message.id || !replyPreview) return;
+
+        activeReplyMessage = message;
+        const replyInput = ensureReplyToMessageInput();
+        if (replyInput) replyInput.value = String(message.id);
+        if (replyPreviewName) {
+            replyPreviewName.textContent = message.sender_name || message.sender?.name || 'Pengirim';
+        }
+        if (replyPreviewText) {
+            replyPreviewText.textContent = replyTextForMessage(message);
+        }
+        replyPreview.dataset.replyMessageId = String(message.id);
+        replyPreview.style.display = 'flex';
+        messageInput.focus();
+    }
+
+    function clearReplyPreview() {
+        activeReplyMessage = null;
+        if (replyToMessageInput) replyToMessageInput.value = '';
+        if (replyPreview) {
+            replyPreview.style.display = 'none';
+            replyPreview.dataset.replyMessageId = '';
+        }
+        if (replyPreviewName) replyPreviewName.textContent = 'Balas pesan';
+        if (replyPreviewText) replyPreviewText.textContent = '';
+    }
+
+    if (replyPreviewClose) {
+        replyPreviewClose.addEventListener('click', clearReplyPreview);
     }
 
     function cacheMessage(message) {
@@ -622,6 +992,15 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
         }
 
+        if (message.media_type === 'audio' || String(message.media_original_name || '').startsWith('voice-note-')) {
+            return `
+                <div class="message-media voice-note-card">
+                    <i class="fas fa-microphone"></i>
+                    <audio controls preload="metadata" src="${message.media_url}" style="width: 220px; max-width: 100%; height: 36px;"></audio>
+                </div>
+            `;
+        }
+
         if (message.media_type === 'video') {
             return `
                 <div class="message-media">
@@ -650,6 +1029,40 @@ document.addEventListener('DOMContentLoaded', function () {
         return `<div class="message-text">${formattedText}${editedLabel}</div>`;
     }
 
+    function replyTextForMessage(message) {
+        const text = String(message?.message || '').trim();
+        if (text) return text;
+
+        switch (message?.media_type) {
+            case 'image': return 'Foto';
+            case 'video': return 'Video';
+            case 'audio': return 'Audio';
+            default: return 'Pesan';
+        }
+    }
+
+    function renderReplyPreview(message) {
+        const reply = message.reply_to_message
+            || (message.reply_to_message_id ? messageStore.get(String(message.reply_to_message_id)) : null);
+        if (!reply && !message.reply_to_message_id) return '';
+
+        if (!reply) {
+            return `
+                <div class="message-reply-preview" data-jump-message-id="${escapeHtml(String(message.reply_to_message_id || ''))}">
+                    <div class="reply-preview-name">Pesan dibalas</div>
+                    <div class="reply-preview-text">Pesan yang dibalas tidak termuat</div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="message-reply-preview" data-jump-message-id="${escapeHtml(String(reply.id || ''))}">
+                <div class="reply-preview-name">${escapeHtml(reply.sender_name || reply.sender?.name || 'Pengirim')}</div>
+                <div class="reply-preview-text">${escapeHtml(reply.message || replyTextForMessage(reply))}</div>
+            </div>
+        `;
+    }
+
     function canManageMessage(message) {
         if (!message || !message.created_at || message.is_deleted) return false;
         const createdAt = new Date(message.created_at).getTime();
@@ -658,19 +1071,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderMessageActions(message, isSent) {
-        if (!isAdmin) {
+        if (!message?.id) {
             return '';
         }
 
-        const canManage = isSent && canManageMessage(message) && message.id;
-        if (!canManage) {
-            return '';
-        }
+        const canManage = isAdmin && isSent && canManageMessage(message);
 
         return `
             <span class="message-actions">
-                <button class="message-action-btn js-edit-message" data-message-id="${message.id}" title="Edit"><i class="fas fa-pen"></i></button>
-                <button class="message-action-btn js-delete-message" data-message-id="${message.id}" title="Hapus"><i class="fas fa-trash"></i></button>
+                <button type="button" class="message-action-btn js-reply-message" data-message-id="${message.id}" title="Balas"><i class="fas fa-reply"></i></button>
+                ${canManage ? `<button type="button" class="message-action-btn js-edit-message" data-message-id="${message.id}" title="Edit"><i class="fas fa-pen"></i></button>` : ''}
+                ${canManage ? `<button type="button" class="message-action-btn js-delete-message" data-message-id="${message.id}" title="Hapus"><i class="fas fa-trash"></i></button>` : ''}
             </span>
         `;
     }
@@ -684,6 +1095,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return `
             <div class="message-content">
+                ${renderReplyPreview(message)}
                 ${mediaContent}
                 ${textContent}
                 <div class="message-info">
@@ -691,6 +1103,22 @@ document.addEventListener('DOMContentLoaded', function () {
                     ${time}
                     ${actionsHtml}
                 </div>
+            </div>
+        `;
+    }
+
+    function renderSystemNotice(message) {
+        const isHandoff = message.message_type === 'handoff_to_cs';
+        const text = isHandoff
+            ? 'Pesan anda sudah dialihkan ke CS kami silahkan klik disini'
+            : message.message;
+        const body = isHandoff
+            ? `<a href="/dashboard/customer/chat" class="system-notice-link">${escapeHtml(text)}</a>`
+            : escapeHtml(text);
+
+        return `
+            <div class="system-message-notice ${isHandoff ? 'handoff-notice' : ''}">
+                ${body}
             </div>
         `;
     }
@@ -723,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Append single message
-    function appendMessage(message, isPending = false, _isLoading = false) {
+    function appendMessage(message, isPending = false, _isLoading = false, targetContainer = chatMessages) {
         const normalized = cacheMessage(message);
         if (!normalized) return;
 
@@ -736,14 +1164,28 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (normalized.created_at && shouldShowDateDivider(normalized.created_at)) {
-            chatMessages.appendChild(createDateDivider(normalized.created_at));
+            targetContainer.appendChild(createDateDivider(normalized.created_at));
         }
 
         const messageDiv = document.createElement('div');
+        if (normalized.message_type === 'handoff_to_cs' || normalized.message_type === 'system') {
+            messageDiv.className = 'message system';
+            if (normalized.id) {
+                messageDiv.dataset.messageId = normalized.id;
+            }
+            messageDiv.dataset.createdAt = normalized.created_at || '';
+            messageDiv.innerHTML = renderSystemNotice(normalized);
+            targetContainer.appendChild(messageDiv);
+            return;
+        }
+
         const currentUserId = String(userId);
         const messageSenderId = String(normalized.sender_id);
-        const isSent = messageSenderId === currentUserId;
-        const senderName = normalized.sender ? normalized.sender.name : 'Unknown';
+        const senderRole = String(normalized.sender_role || normalized.sender?.role || '').toLowerCase();
+        const activeCustomerId = String(window.selectedUserId || document.getElementById('receiverId')?.value || '');
+        const isAdminSender = ['administrator', 'admin', 'verifikasi'].includes(senderRole);
+        const isSent = messageSenderId === currentUserId || (isAdmin && (isAdminSender || (activeCustomerId && messageSenderId !== activeCustomerId)));
+        const senderName = normalized.sender_name || normalized.sender?.name || (isSent ? window.userName : document.getElementById('chatTitle')?.textContent) || 'Unknown';
         const initials = getInitials(senderName);
 
         messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
@@ -759,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `;
 
-        chatMessages.appendChild(messageDiv);
+        targetContainer.appendChild(messageDiv);
     }
 
     function getMessageFromDom(messageId) {
@@ -838,6 +1280,33 @@ document.addEventListener('DOMContentLoaded', function () {
     function closeDeleteModal() {
         activeDeleteMessageId = null;
         hideModal(deleteMessageModal);
+    }
+
+    function findMessageElement(messageId) {
+        const targetId = String(messageId);
+        return Array.from(chatMessages.querySelectorAll('[data-message-id]'))
+            .find(element => String(element.dataset.messageId) === targetId) || null;
+    }
+
+    function highlightMessage(messageId) {
+        const target = findMessageElement(messageId);
+        if (!target) return false;
+
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.classList.add('message-highlight');
+        setTimeout(() => target.classList.remove('message-highlight'), 1200);
+
+        return true;
+    }
+
+    async function jumpToQuotedMessage(messageId) {
+        if (!messageId) return;
+        if (highlightMessage(messageId)) return;
+
+        while (canLoadOlderMessages) {
+            const loadedOlder = await loadOlderMessages();
+            if (highlightMessage(messageId) || !loadedOlder) return;
+        }
     }
 
     if (editMessageForm) {
@@ -947,6 +1416,29 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     chatMessages.addEventListener('click', function (event) {
+        const loadMoreBtn = event.target.closest('#loadMoreMessagesBtn');
+        if (loadMoreBtn) {
+            event.preventDefault();
+            loadOlderMessages();
+            return;
+        }
+
+        const replyBtn = event.target.closest('.js-reply-message');
+        if (replyBtn) {
+            event.preventDefault();
+            const message = messageStore.get(String(replyBtn.dataset.messageId));
+            if (message) {
+                showReplyPreview(message);
+            }
+            return;
+        }
+
+        const quoted = event.target.closest('.message-reply-preview[data-jump-message-id]');
+        if (quoted) {
+            jumpToQuotedMessage(quoted.dataset.jumpMessageId);
+            return;
+        }
+
         const editBtn = event.target.closest('.js-edit-message');
         if (editBtn) {
             openEditModal(editBtn.dataset.messageId);
@@ -964,19 +1456,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const badge = document.getElementById(`unread-${senderId}`);
         const currentCount = parseInt(userItem?.dataset?.unread || badge?.textContent || '0', 10) || 0;
         setUnreadBadgeCount(senderId, currentCount + 1);
+        sortUserList();
         applyUserFilter();
-    }
-
-    function loadPinnedChatsFromStorage() {
-        try {
-            const raw = localStorage.getItem(PINNED_STORAGE_KEY);
-            if (!raw) return new Set();
-            const parsed = JSON.parse(raw);
-            if (!Array.isArray(parsed)) return new Set();
-            return new Set(parsed.map(value => String(value)));
-        } catch (_) {
-            return new Set();
-        }
     }
 
     function loadHiddenChatsFromStorage() {
@@ -991,12 +1472,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function savePinnedChatsToStorage() {
-        try {
-            localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(Array.from(pinnedChats)));
-        } catch (_) { }
-    }
-
     function saveHiddenChatsToStorage() {
         try {
             localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(Array.from(hiddenChats)));
@@ -1007,6 +1482,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!userItem) return;
         userItem.dataset.pinned = isPinned ? '1' : '0';
         userItem.classList.toggle('pinned', isPinned);
+
+        const pinButton = userItem.querySelector('.pin-chat-btn');
+        if (pinButton) {
+            pinButton.classList.toggle('is-pinned', isPinned);
+            pinButton.setAttribute('aria-pressed', isPinned ? 'true' : 'false');
+            pinButton.title = isPinned ? 'Lepas pin chat' : 'Pin chat agar tampil paling atas';
+        }
     }
 
     function setHiddenVisualState(userItem, isHidden) {
@@ -1015,9 +1497,61 @@ document.addEventListener('DOMContentLoaded', function () {
         userItem.classList.toggle('is-hidden', isHidden);
     }
 
+    function sortUserList() {
+        const userList = document.getElementById('userList');
+        if (!userList) return;
+
+        const sortedItems = Array.from(userList.querySelectorAll('.user-item')).sort((a, b) => {
+            const pinnedDiff = (b.dataset.pinned === '1' ? 1 : 0) - (a.dataset.pinned === '1' ? 1 : 0);
+            if (pinnedDiff !== 0) return pinnedDiff;
+
+            const unreadDiff = (parseInt(b.dataset.unread || '0', 10) || 0) - (parseInt(a.dataset.unread || '0', 10) || 0);
+            if (unreadDiff !== 0) return unreadDiff;
+
+            return (parseInt(b.dataset.lastActivity || '0', 10) || 0) - (parseInt(a.dataset.lastActivity || '0', 10) || 0);
+        });
+
+        sortedItems.forEach(item => userList.appendChild(item));
+        const loadMoreWrapper = document.getElementById('loadMoreChatsWrap');
+        if (loadMoreWrapper) userList.appendChild(loadMoreWrapper);
+    }
+
     function hideChatFromList() { /* removed feature */ }
     function unhideChatFromList() { /* removed feature */ }
-    function togglePinnedChat() { /* removed feature */ }
+
+    function togglePinnedChat(userId) {
+        const targetUserId = String(userId || '');
+        if (!targetUserId) return;
+
+        const shouldPin = !pinnedChats.has(targetUserId);
+
+        if (!shouldPin) {
+            pinnedChats.delete(targetUserId);
+        } else {
+            pinnedChats.add(targetUserId);
+        }
+
+        const userItem = document.querySelector(`.user-item[data-user-id="${targetUserId}"]`);
+        setPinnedVisualState(userItem, pinnedChats.has(targetUserId));
+        sortUserList();
+        applyUserFilter(document.querySelector('.chat-search-input')?.value || '');
+
+        const request = shouldPin
+            ? axios.post(`${API_BASE}/pins/${targetUserId}`)
+            : axios.delete(`${API_BASE}/pins/${targetUserId}`);
+
+        request.catch(() => {
+            if (shouldPin) {
+                pinnedChats.delete(targetUserId);
+            } else {
+                pinnedChats.add(targetUserId);
+            }
+            setPinnedVisualState(userItem, pinnedChats.has(targetUserId));
+            sortUserList();
+            applyUserFilter(document.querySelector('.chat-search-input')?.value || '');
+            alert('Gagal menyimpan pin chat. Silakan coba lagi.');
+        });
+    }
 
     function touchUserActivity(userId) {
         const userList = document.getElementById('userList');
@@ -1035,13 +1569,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const userItems = Array.from(userList.querySelectorAll('.user-item'));
         if (userItems.length === 0) return;
 
-        // Reset pin/hidden state because fitur pin/hide dimatikan sementara
-        pinnedChats = new Set();
-        hiddenChats = new Set();
-        try {
-            localStorage.removeItem(PINNED_STORAGE_KEY);
-            localStorage.removeItem(HIDDEN_STORAGE_KEY);
-        } catch (_) { }
+        pinnedChats = new Set(
+            userItems
+                .filter(item => item.dataset.pinned === '1' || item.classList.contains('pinned'))
+                .map(item => String(item.dataset.userId || ''))
+                .filter(Boolean)
+        );
+        hiddenChats = loadHiddenChatsFromStorage();
 
         const baselineActivity = Date.now();
         userItems.forEach((item, index) => {
@@ -1053,15 +1587,30 @@ document.addEventListener('DOMContentLoaded', function () {
             setHiddenVisualState(item, hiddenChats.has(currentUserId));
         });
 
-        // default urutan sudah dari server
+        sortUserList();
+
+        axios.get(`${API_BASE}/pins`)
+            .then(response => {
+                const serverPins = Array.isArray(response.data) ? response.data.map(value => String(value)) : [];
+                pinnedChats = new Set(serverPins);
+                userItems.forEach((item) => {
+                    const currentUserId = String(item.dataset.userId || '');
+                    setPinnedVisualState(item, pinnedChats.has(currentUserId));
+                });
+                sortUserList();
+                applyUserFilter(document.querySelector('.chat-search-input')?.value || '');
+            })
+            .catch(() => { });
     }
 
     function moveUserToTop(userId) {
         touchUserActivity(userId);
+        sortUserList();
     }
 
     function clearUnreadBadge(userId) {
         setUnreadBadgeCount(userId, 0);
+        sortUserList();
         applyUserFilter();
     }
 
@@ -1105,6 +1654,25 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 100);
     }
 
+    function refreshBillingChatFallback() {
+        if (document.visibilityState !== 'visible') return;
+
+        if (isAdmin) {
+            if (window.selectedUserId) {
+                loadMessages(window.selectedUserId, { autoScroll: false, skipIfUnchanged: true });
+            }
+            loadUnreadCounts();
+            return;
+        }
+
+        loadMessages(null, { autoScroll: false, skipIfUnchanged: true });
+    }
+
+    function ensureFallbackSync() {
+        if (fallbackSyncTimer) return;
+        fallbackSyncTimer = setInterval(refreshBillingChatFallback, FALLBACK_SYNC_INTERVAL_MS);
+    }
+
     let isSendingMessage = false;
     let sendMessageFallbackTimer = null;
 
@@ -1142,11 +1710,18 @@ document.addEventListener('DOMContentLoaded', function () {
         e.preventDefault();
         if (isSendingMessage) return;
 
-        const message = messageInput.value.trim();
+        const rawMessage = messageInput.value.trim();
+        const message = QUICK_REPLY_SHORTCUTS[rawMessage.toLowerCase()] || rawMessage;
         if (!message && !selectedMediaFile) return;
 
         const formData = new FormData();
         formData.append('message', message);
+
+        const replyMessage = getActiveReplyMessage();
+        if (replyMessage?.id) {
+            formData.append('reply_to_message_id', replyMessage.id);
+            formData.append('reply_message_id', replyMessage.id);
+        }
 
         if (selectedMediaFile) {
             formData.append('media', selectedMediaFile);
@@ -1161,16 +1736,69 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('receiver_id', receiverId);
         }
 
+        const receiverIdValue = document.getElementById('receiverId')?.value || null;
+        const tempId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const optimisticMessage = {
+            id: tempId,
+            sender_id: String(userId),
+            receiver_id: receiverIdValue,
+            chat_type: 'admin',
+            message,
+            media_url: selectedMediaFile ? URL.createObjectURL(selectedMediaFile) : null,
+            media_type: selectedMediaFile
+                ? (selectedMediaFile.type.startsWith('image/') ? 'image' : (selectedMediaFile.type.startsWith('video/') ? 'video' : null))
+                : null,
+            media_original_name: selectedMediaFile?.name || null,
+            is_read: false,
+            is_deleted: false,
+            created_at: new Date().toISOString(),
+            sender_name: window.userName || 'Admin',
+            sender_role: 'admin',
+            sender: {
+                id: String(userId),
+                name: window.userName || 'Admin',
+                role: 'admin',
+            },
+            reply_to_message_id: replyMessage?.id || null,
+            reply_to_message: replyMessage?.id ? {
+                id: replyMessage.id,
+                sender_id: replyMessage.sender_id,
+                sender_name: replyMessage.sender_name || replyMessage.sender?.name || 'Pengirim',
+                message: replyTextForMessage(replyMessage),
+                media_type: replyMessage.media_type || null,
+            } : null,
+        };
+
         isSendingMessage = true;
         sendButton.disabled = true;
         startSendFallbackTimer();
         messageInput.value = '';
         window.clearMediaPreview();
+        clearReplyPreview();
+
+        appendMessage(optimisticMessage, true);
+        scrollToBottom();
 
         axios.post(`${API_BASE}/send`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         })
             .then(response => {
+                if (response.data?.message && replyMessage?.id) {
+                    response.data.message.reply_to_message_id = response.data.message.reply_to_message_id || replyMessage.id;
+                    response.data.message.reply_to_message = response.data.message.reply_to_message || {
+                        id: replyMessage.id,
+                        sender_id: replyMessage.sender_id,
+                        sender_name: replyMessage.sender_name || replyMessage.sender?.name || 'Pengirim',
+                        message: replyTextForMessage(replyMessage),
+                        media_type: replyMessage.media_type || null,
+                    };
+                }
+
+                if (response.data?.message) {
+                    loadedMessages.push(response.data.message);
+                }
+                const pendingNode = findMessageElement(tempId);
+                if (pendingNode) pendingNode.remove();
                 appendMessage(response.data.message, false);
                 scrollToBottom();
 
@@ -1179,6 +1807,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             })
             .catch(error => {
+                const pendingNode = findMessageElement(tempId);
+                if (pendingNode) pendingNode.remove();
                 console.error('Send error:', error);
                 alert('Gagal mengirim pesan: ' + (error.response?.data?.error || 'Unknown error'));
             })
@@ -1202,29 +1832,65 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        const pusherConnection = window.Echo?.connector?.pusher?.connection;
+        if (pusherConnection) {
+            isSocketConnected = pusherConnection.state === 'connected';
+            pusherConnection.bind('connected', () => {
+                isSocketConnected = true;
+            });
+            pusherConnection.bind('disconnected', () => {
+                isSocketConnected = false;
+            });
+            pusherConnection.bind('unavailable', () => {
+                isSocketConnected = false;
+            });
+            pusherConnection.bind('failed', () => {
+                isSocketConnected = false;
+            });
+            pusherConnection.bind('error', () => {
+                isSocketConnected = false;
+            });
+        }
+
     const channel = `billing-chat.${userId}`;
     const privateChannel = window.Echo.private(channel);
 
     privateChannel
         // Support both custom broadcastAs event name (.MessageSent) and namespaced fallback.
-        .listen('MessageSent', (e) => {
+        .listen('.MessageSent', (e) => {
             processIncomingMessage(e);
         })
-        .listen('.MessageSent', (e) => {
+        .listen('.MessageRead', (e) => {
+            updateMessageReadStatus(e.message_ids);
+        })
+        .listen('.MessageUpdated', (e) => {
+            processMessageUpdated(e);
+        })
+        .listen('MessageSent', (e) => {
             processIncomingMessage(e);
         })
         .listen('MessageRead', (e) => {
             updateMessageReadStatus(e.message_ids);
         })
-        .listen('.MessageRead', (e) => {
-            updateMessageReadStatus(e.message_ids);
-        })
         .listen('MessageUpdated', (e) => {
             processMessageUpdated(e);
-        })
-        .listen('.MessageUpdated', (e) => {
-            processMessageUpdated(e);
         });
+
+    if (isAdmin) {
+        window.Echo.private('billing-admin-inbox')
+            .listen('.MessageSent', (e) => {
+                processIncomingMessage(e);
+            })
+            .listen('.MessageUpdated', (e) => {
+                processMessageUpdated(e);
+            })
+            .listen('MessageSent', (e) => {
+                processIncomingMessage(e);
+            })
+            .listen('MessageUpdated', (e) => {
+                processMessageUpdated(e);
+            });
+    }
 
         function processIncomingMessage(e) {
             // Only process admin/billing chat messages (strict filter)
@@ -1235,14 +1901,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const currentUserId = String(userId);
             const eventSenderId = String(e.sender_id);
+            const eventMessageId = e.id ? String(e.id) : '';
+
+            if (eventMessageId) {
+                if (processedRealtimeMessageIds.has(eventMessageId)) return;
+                processedRealtimeMessageIds.add(eventMessageId);
+                if (processedRealtimeMessageIds.size > 500) {
+                    processedRealtimeMessageIds.delete(processedRealtimeMessageIds.values().next().value);
+                }
+            }
+
             // Don't process messages sent by ourselves
             if (eventSenderId === currentUserId) return;
 
             if (isAdmin) {
                 // For billing admin: only process messages FROM customers
+                if (!isCustomerSender(e)) return;
+
                 const selectedUserId = String(window.selectedUserId || '');
 
                 // Always move customer to top and play sound when customer sends message
+                ensureUserItemFromMessage(e);
                 moveUserToTop(e.sender_id);
                 playNotificationSound();
 
@@ -1251,6 +1930,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     updateUnreadBadge(e.sender_id);
                 } else {
                     // Currently viewing this customer's chat - show message
+                    loadedMessages.push(e);
                     appendMessage(e, false);
                     scrollToBottom();
                     axios.post(`${API_BASE}/mark-read/${e.sender_id}`)
@@ -1258,6 +1938,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             } else {
                 // For customer: show all incoming billing admin messages
+                loadedMessages.push(e);
                 appendMessage(e, false);
                 scrollToBottom();
                 playNotificationSound();
@@ -1291,6 +1972,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     setupWebSocketListener();
+    ensureFallbackSync();
 
     if (isAdmin) {
         loadUnreadCounts();
@@ -1316,6 +1998,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const targetUserId = item.dataset.userId;
             const userName = item.dataset.userName;
+            const nomerId = item.dataset.nomerId;
 
             window.selectedUserId = targetUserId;
             clearUnreadBadge(targetUserId);
@@ -1328,11 +2011,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 chatAvatar.style.display = 'flex';
                 chatAvatar.innerHTML = getInitials(userName);
             }
-            if (chatSubtitle) chatSubtitle.style.display = 'block';
+            if (chatSubtitle) {
+                chatSubtitle.style.display = 'block';
+                chatSubtitle.innerHTML = nomerId ? `<strong>${nomerId}</strong>` : '';
+            }
             if (receiverIdInput) receiverIdInput.value = targetUserId;
             if (chatInputContainer) chatInputContainer.style.display = 'block';
+            if (handoffCsButton) handoffCsButton.style.display = 'inline-flex';
 
-            loadMessages(targetUserId);
+            loadMessages(targetUserId, { resetSignature: true });
 
             axios.post(`${API_BASE}/mark-read/${targetUserId}`)
                 .catch(err => { });
@@ -1340,6 +2027,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function resetSelectedChatPanel() {
             window.selectedUserId = null;
+            loadedMessages = [];
+            canLoadOlderMessages = false;
             if (receiverIdInput) {
                 receiverIdInput.value = '';
             }
@@ -1354,9 +2043,15 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (chatSubtitle) {
                 chatSubtitle.style.display = 'none';
+                chatSubtitle.innerHTML = '';
             }
             if (chatInputContainer) {
                 chatInputContainer.style.display = 'none';
+            }
+            if (handoffCsButton) {
+                handoffCsButton.style.display = 'none';
+                handoffCsButton.disabled = false;
+                handoffCsButton.innerHTML = '<i class="fas fa-headset"></i><span>Alihkan ke CS</span>';
             }
 
             if (chatMessages) {
@@ -1371,7 +2066,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (userList) {
+            canLoadMoreChats = userList.querySelectorAll('.user-item').length >= CHAT_USER_PAGE_SIZE;
+            ensureLoadMoreChatsButton(canLoadMoreChats);
+
             userList.addEventListener('click', function (event) {
+                const loadMoreChatsBtn = event.target.closest('#loadMoreChatsBtn');
+                if (loadMoreChatsBtn) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    loadMoreChatUsers();
+                    return;
+                }
+
+                const pinButton = event.target.closest('.pin-chat-btn');
+                if (pinButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    togglePinnedChat(pinButton.dataset.pinUserId);
+                    return;
+                }
+
                 const userItem = event.target.closest('.user-item');
                 if (!userItem || !userList.contains(userItem)) return;
                 openUserChatByItem(userItem);
@@ -1381,14 +2095,44 @@ document.addEventListener('DOMContentLoaded', function () {
             userList.querySelectorAll('.user-item').forEach((item) => {
                 if (item.dataset.boundOpen === '1') return;
                 item.dataset.boundOpen = '1';
-                item.addEventListener('click', function () {
+                item.addEventListener('click', function (event) {
+                    if (event.target.closest('.pin-chat-btn')) return;
                     openUserChatByItem(this);
                 });
             });
         }
+
+        if (handoffCsButton) {
+            handoffCsButton.addEventListener('click', function () {
+                const targetUserId = String(window.selectedUserId || '');
+                if (!targetUserId || handoffCsButton.disabled) return;
+
+                handoffCsButton.disabled = true;
+                handoffCsButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Mengalihkan...</span>';
+
+                axios.post(`${API_BASE}/handoff-to-cs/${targetUserId}`)
+                    .then(response => {
+                        if (response.data?.message) {
+                            appendMessage(response.data.message, false);
+                            scrollToBottom();
+                        }
+                        handoffCsButton.innerHTML = '<i class="fas fa-check"></i><span>Dialihkan</span>';
+                        setTimeout(() => {
+                            handoffCsButton.disabled = false;
+                            handoffCsButton.innerHTML = '<i class="fas fa-headset"></i><span>Alihkan ke CS</span>';
+                        }, 1800);
+                    })
+                    .catch(error => {
+                        console.error('Handoff to CS failed:', error);
+                        handoffCsButton.disabled = false;
+                        handoffCsButton.innerHTML = '<i class="fas fa-headset"></i><span>Alihkan ke CS</span>';
+                        alert('Gagal mengalihkan ke CS. Silakan coba lagi.');
+                    });
+            });
+        }
     } else {
         // Customer: Load messages immediately
-        loadMessages();
+        loadMessages(null, { resetSignature: true });
     }
 
     // Search functionality for admin
@@ -1402,8 +2146,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     clearTimeout(searchDebounceTimer);
                 }
                 searchDebounceTimer = setTimeout(() => {
-                    applyUserFilter(searchTerm);
-                }, 120);
+                    if (searchTerm.length >= 2) {
+                        loadUserListFromServer(searchTerm);
+                    } else if (searchTerm.length === 0) {
+                        loadUserListFromServer('');
+                    } else {
+                        applyUserFilter(searchTerm);
+                    }
+                }, 250);
             });
 
             searchInput.addEventListener('keydown', function (e) {
@@ -1436,7 +2186,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const search = (searchTerm || '').toLowerCase().trim();
         const tabUnreadActive = document.getElementById('tabUnread')?.classList.contains('active');
-        const userItems = document.querySelectorAll('.user-item');
+        const userList = document.getElementById('userList');
+        if (!userList) return;
+
+        const userItems = userList.querySelectorAll('.user-item');
 
         userItems.forEach(item => {
             const userName = (item.dataset.userName || '').toLowerCase();
@@ -1447,10 +2200,16 @@ document.addEventListener('DOMContentLoaded', function () {
             if (search && !(userName.includes(search) || userType.includes(search))) {
                 visible = false;
             }
+            if (item.dataset.hidden === '1') {
+                visible = false;
+            }
             if (tabUnreadActive && unread <= 0) {
                 visible = false;
-        }
+            }
 
-        item.style.display = visible ? 'block' : 'none';
-    });
-}
+            item.style.display = visible ? 'block' : 'none';
+        });
+
+        const loadMoreWrapper = document.getElementById('loadMoreChatsWrap');
+        if (loadMoreWrapper) userList.appendChild(loadMoreWrapper);
+    }

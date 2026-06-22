@@ -77,3 +77,16 @@ Broadcast::channel('admin-inbox', function ($user) {
     
     return $isAdmin;
 }, ['guards' => ['web']]); 
+
+Broadcast::channel('billing-admin-inbox', function ($user) {
+    $isAdmin = isset($user->role) && in_array($user->role, ['administrator', 'admin'], true);
+
+    Log::info('Broadcasting Auth Check - Billing Admin Inbox Channel', [
+        'user_id' => $user->id,
+        'user_role' => $user->role ?? 'unknown',
+        'authorized' => $isAdmin,
+        'user_type' => get_class($user),
+    ]);
+
+    return $isAdmin;
+}, ['guards' => ['web']]);

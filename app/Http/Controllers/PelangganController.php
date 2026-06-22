@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PelangganExport;
+use App\Exports\PelangganProgressExport;
 
 
 class PelangganController extends Controller
@@ -20,6 +21,17 @@ class PelangganController extends Controller
         return Excel::download(
             new PelangganExport(),
             'data-pelanggan-keseluruhan.xlsx'
+        );
+    }
+
+    public function exportProgressExcel(Request $request)
+    {
+        $search = $request->filled('search') ? (string) $request->search : null;
+        $status = $request->filled('status') ? (string) $request->status : 'pending';
+
+        return Excel::download(
+            new PelangganProgressExport($search, $status),
+            'data-pelanggan-status-progress.xlsx'
         );
     }
     // public function getData()

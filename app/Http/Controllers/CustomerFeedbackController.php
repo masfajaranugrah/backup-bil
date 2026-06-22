@@ -46,9 +46,17 @@ class CustomerFeedbackController extends Controller
             });
         }
 
+        $statistics = [
+            'total' => CustomerFeedback::count(),
+            'pending' => CustomerFeedback::whereNull('admin_note')
+                ->orWhere('admin_note', '')
+                ->count(),
+            'with_attachment' => CustomerFeedback::whereNotNull('attachment')->count(),
+        ];
+
         $feedbacks = $query->paginate(20)->withQueryString();
 
-        return view('content.apps.Feedback.index', compact('feedbacks'));
+        return view('content.apps.Feedback.index', compact('feedbacks', 'statistics'));
     }
 
     public function store(Request $request)

@@ -1,0 +1,806 @@
+// Chat functionality
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.__csChatInitialized) return;
+
+    const waitForAxiosThenInit = (startedAt = Date.now()) => {
+        if (typeof window.axios === 'undefined') {
+            if (Date.now() - startedAt <= 5000) {
+                setTimeout(() => waitForAxiosThenInit(startedAt), 120);
+            } else {
+                console.error('[CSChat] axios is unavailable after waiting 5s, skip chat initialization.');
+            }
+            return;
+        }
+
+        if (window.__csChatInitialized) return;
+        window.__csChatInitialized = true;
+        initChat();
+    };
+
+    const initChat = () => {
+
+    const chatMessages = document.getElementById('chatMessages');
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const mediaInput = document.getElementById('mediaInput');
+    const attachButton = document.getElementById('attachButton');
+    const locationButton = document.getElementById('locationButton');
+    const plusMenuButton = document.getElementById('plusMenuButton');
+    const chatActionSheet = document.getElementById('chatActionSheet');
+    const voiceButton = document.getElementById('voiceButton');
+    const mediaPreview = document.getElementById('mediaPreview');
+    const quickReplyPanel = document.getElementById('quickReplyPanel');
+    const quickReplyList = document.getElementById('quickReplyList');
+    const quickReplyManageBtn = document.getElementById('quickReplyManageBtn');
+    const quickReplySuggestions = document.getElementById('quickReplySuggestions');
+    let replyPreview = document.getElementById('replyPreview');
+    let replyPreviewName = document.getElementById('replyPreviewName');
+    let replyPreviewText = document.getElementById('replyPreviewText');
+    let replyPreviewClose = document.getElementById('replyPreviewClose');
+    let replyToMessageInput = document.getElementById('replyToMessageId');
+
+    let selectedMediaFile = null;
+    let activeReplyMessage = null;
+    let mediaRecorder = null;
+    let recordedAudioChunks = [];
+    let isRecordingVoice = false;
+
+    function getSupportedVoiceMimeType() {
+        if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+            return '';
+        }
+
+        return [
+            'audio/mp4;codecs=mp4a.40.2',
+            'audio/mp4',
+            'audio/aac',
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/ogg;codecs=opus',
+            'audio/ogg'
+        ].find(type => MediaRecorder.isTypeSupported(type)) || '';
+    }
+
+    function getVoiceFileExtension(mimeType) {
+        if (mimeType.includes('mp4')) return 'm4a';
+        if (mimeType.includes('aac')) return 'aac';
+        if (mimeType.includes('ogg')) return 'ogg';
+        return 'webm';
+    }
+
+    function getChatMediaStreamUrl(message) {
+        return message?.media_url || (message?.id ? `/chat/media/${encodeURIComponent(String(message.id))}` : '');
+    }
+
+    function getAudioMimeType(message) {
+        const source = `${message?.media_original_name || ''} ${message?.media_url || ''}`.toLowerCase();
+        if (source.includes('.m4a') || source.includes('.mp4')) return 'audio/mp4';
+        if (source.includes('.ogg')) return 'audio/ogg';
+        if (source.includes('.mp3')) return 'audio/mpeg';
+        if (source.includes('.wav')) return 'audio/wav';
+        return 'audio/webm';
+    }
+
+    function getAxiosErrorMessage(error, fallback = 'Silakan coba lagi.') {
+        const data = error?.response?.data;
+        if (!data) return fallback;
+        if (typeof data.error === 'string' && data.error.trim()) return data.error;
+        if (typeof data.message === 'string' && data.message.trim()) return data.message;
+
+        const firstError = data.errors && Object.values(data.errors).flat().find(Boolean);
+        return firstError || fallback;
+    }
+    
+    // Sound system for CS chat
+    let audioUnlocked = false;
+    let preloadedAudio = null;
+    
+    function initSound() {
+        preloadedAudio = new Audio('/sounds/42289.mp3');
+        preloadedAudio.volume = 0.5;
+        preloadedAudio.load();
+        
+        const unlockAudioContext = () => {
+            if (audioUnlocked) return;
+            
+            preloadedAudio.play()
+                .then(() => {
+                    preloadedAudio.pause();
+                    preloadedAudio.currentTime = 0;
+                    audioUnlocked = true;
+                })
+                .catch(() => {});
+        };
+        
+        const events = ['click', 'touchstart', 'keydown', 'scroll', 'mousemove'];
+        events.forEach(eventType => {
+            document.addEventListener(eventType, unlockAudioContext, { once: true, passive: true });
+        });
+    }
+    
+    // Initialize sound system
+    initSound();
+
+    if (!chatMessages || !chatForm) {
+        return;
+    }
+
+    function autoResizeMessageInput() {
+        if (!messageInput || messageInput.tagName !== 'TEXTAREA') return;
+        messageInput.style.height = 'auto';
+        messageInput.style.height = `${Math.min(messageInput.scrollHeight, 120)}px`;
+    }
+
+    if (messageInput && messageInput.tagName === 'TEXTAREA') {
+        autoResizeMessageInput();
+        messageInput.addEventListener('input', autoResizeMessageInput);
+        messageInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && activeReplyMessage) {
+                event.preventDefault();
+                clearReplyPreview();
+                return;
+            }
+
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                chatForm.requestSubmit();
+            }
+        });
+    }
+
+    function closeActionSheet() {
+        if (!chatActionSheet || !plusMenuButton) return;
+        chatActionSheet.classList.remove('is-open');
+        chatActionSheet.setAttribute('aria-hidden', 'true');
+        plusMenuButton.classList.remove('is-open');
+        plusMenuButton.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleActionSheet() {
+        if (!chatActionSheet || !plusMenuButton) return;
+        const isOpen = chatActionSheet.classList.toggle('is-open');
+        chatActionSheet.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        plusMenuButton.classList.toggle('is-open', isOpen);
+        plusMenuButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    if (plusMenuButton && chatActionSheet) {
+        plusMenuButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleActionSheet();
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!chatActionSheet.classList.contains('is-open')) return;
+            if (event.target.closest('#chatActionSheet') || event.target.closest('#plusMenuButton')) return;
+            closeActionSheet();
+        });
+    }
+
+    // Setup attach button click
+    if (attachButton && mediaInput) {
+        attachButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            closeActionSheet();
+            mediaInput.click();
+        });
+
+        mediaInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                selectedMediaFile = file;
+                showMediaPreview(file);
+            }
+        });
+    }
+
+    // Location button
+    if (locationButton) {
+        locationButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            closeActionSheet();
+            shareLocation();
+        });
+    }
+
+    async function toggleVoiceRecording() {
+        if (!voiceButton) return;
+
+        if (isRecordingVoice && mediaRecorder) {
+            mediaRecorder.stop();
+            return;
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+            showErrorDialog({
+                title: 'Voice Tidak Didukung',
+                message: 'Browser belum mendukung rekam suara.'
+            });
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const preferredMimeType = getSupportedVoiceMimeType();
+            recordedAudioChunks = [];
+            mediaRecorder = preferredMimeType
+                ? new MediaRecorder(stream, { mimeType: preferredMimeType })
+                : new MediaRecorder(stream);
+            mediaRecorder.addEventListener('dataavailable', event => {
+                if (event.data && event.data.size > 0) recordedAudioChunks.push(event.data);
+            });
+            mediaRecorder.addEventListener('stop', () => {
+                stream.getTracks().forEach(track => track.stop());
+                isRecordingVoice = false;
+                voiceButton.classList.remove('is-recording');
+                voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
+
+                const mimeType = mediaRecorder.mimeType || preferredMimeType || 'audio/webm';
+                const blob = new Blob(recordedAudioChunks, { type: mimeType });
+                if (!blob.size) return;
+
+                const extension = getVoiceFileExtension(mimeType);
+                const file = new File([blob], `voice-note-${Date.now()}.${extension}`, { type: mimeType });
+                selectedMediaFile = file;
+                showMediaPreview(file);
+            });
+
+            mediaRecorder.start();
+            isRecordingVoice = true;
+            voiceButton.classList.add('is-recording');
+            voiceButton.innerHTML = '<i class="fas fa-stop"></i>';
+        } catch (error) {
+            showErrorDialog({
+                title: 'Gagal Rekam Voice',
+                message: 'Izinkan akses mikrofon untuk merekam voice note.'
+            });
+        }
+    }
+
+    if (voiceButton) {
+        voiceButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            closeActionSheet();
+            toggleVoiceRecording();
+        });
+    }
+
+    // Show media preview
+    function showMediaPreview(file) {
+        if (!mediaPreview) return;
+
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        const isAudio = file.type.startsWith('audio/') || file.name.startsWith('voice-note-');
+
+        let previewHTML = '';
+
+        if (isImage) {
+            const url = URL.createObjectURL(file);
+            previewHTML = `
+                <div class="media-preview-container">
+                    <img src="${url}" alt="Preview" style="max-height: 100px; border-radius: 8px;">
+                    <button type="button" class="remove-media-btn" onclick="window.clearMediaPreview()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <span class="media-filename">${file.name}</span>
+                </div>
+            `;
+        } else if (isVideo) {
+            previewHTML = `
+                <div class="media-preview-container">
+                    <i class="fas fa-video" style="font-size: 24px; color: #3b82f6;"></i>
+                    <button type="button" class="remove-media-btn" onclick="window.clearMediaPreview()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <span class="media-filename">${file.name}</span>
+                </div>
+            `;
+        } else if (isAudio) {
+            const url = URL.createObjectURL(file);
+            previewHTML = `
+                <div class="media-preview-container">
+                    <i class="fas fa-microphone" style="font-size: 24px; color: #111827;"></i>
+                    <audio controls preload="metadata" src="${url}" style="max-width: 180px; height: 34px;"></audio>
+                    <button type="button" class="remove-media-btn" onclick="window.clearMediaPreview()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <span class="media-filename">Voice note</span>
+                </div>
+            `;
+        }
+
+        mediaPreview.innerHTML = previewHTML;
+        mediaPreview.style.display = 'block';
+    }
+
+    // Clear media preview
+    window.clearMediaPreview = function () {
+        selectedMediaFile = null;
+        if (mediaInput) mediaInput.value = '';
+        if (mediaPreview) {
+            mediaPreview.innerHTML = '';
+            mediaPreview.style.display = 'none';
+        }
+    };
+
+    // Location sharing helpers
+    function setLocationLoading(isLoading) {
+        if (!locationButton) return;
+        locationButton.disabled = isLoading;
+        locationButton.classList.toggle('loading', isLoading);
+        locationButton.innerHTML = isLoading
+            ? '<i class="fas fa-spinner fa-spin"></i><span>Mengambil lokasi...</span>'
+            : '<i class="fas fa-location-arrow"></i><span>Share lokasi</span>';
+    }
+
+    function shareLocation() {
+        if (!locationButton) return;
+        if (!navigator.geolocation) {
+            showErrorDialog({
+                title: 'Lokasi Tidak Didukung',
+                message: 'Browser tidak mendukung akses lokasi.'
+            });
+            return;
+        }
+
+        if (!window.isSecureContext) {
+            showErrorDialog({
+                title: 'Aktifkan HTTPS',
+                message: 'Akses lokasi hanya berfungsi di koneksi aman (https). Buka aplikasi/web melalui alamat https.'
+            });
+            return;
+        }
+
+        // Jika permission sudah ditolak sebelumnya (terutama PWA), beri panduan cepat
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'geolocation' }).then((status) => {
+                if (status.state === 'denied') {
+                    showErrorDialog({
+                        title: 'Izin Lokasi Diblokir',
+                        message: 'Buka pengaturan situs/PWA, ubah Location ke Allow lalu muat ulang aplikasi.'
+                    });
+                }
+            });
+        }
+
+        setLocationLoading(true);
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                const link = `https://maps.google.com/?q=${lat},${lng}`;
+                const text = `Lokasi saya: ${lat.toFixed(5)}, ${lng.toFixed(5)}\\n${link}`;
+
+                const formData = new FormData();
+                formData.append('message', text);
+                const locationReplyMessage = getActiveReplyMessage();
+                if (locationReplyMessage?.id) {
+                    formData.append('reply_to_message_id', locationReplyMessage.id);
+                    formData.append('reply_message_id', locationReplyMessage.id);
+                }
+                if (currentChatSessionId) {
+                    formData.append('chat_session_id', currentChatSessionId);
+                }
+
+                if (isAdmin) {
+                    const receiverIdInput = document.getElementById('receiverId');
+                    const receiverId = receiverIdInput ? receiverIdInput.value : '';
+                    if (!receiverId) {
+                        setLocationLoading(false);
+                        showErrorDialog({
+                            title: 'Pilih Pelanggan',
+                            message: 'Silakan pilih pelanggan sebelum mengirim lokasi.'
+                        });
+                        return;
+                    }
+                    formData.append('receiver_id', receiverId);
+                }
+
+                axios.post('/chat/send', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
+                    .then(response => {
+                        if (response.data?.message && locationReplyMessage?.id) {
+                            response.data.message.reply_to_message_id = response.data.message.reply_to_message_id || locationReplyMessage.id;
+                            response.data.message.reply_to_message = response.data.message.reply_to_message || {
+                                id: locationReplyMessage.id,
+                                sender_id: locationReplyMessage.sender_id,
+                                sender_name: locationReplyMessage.sender_name || locationReplyMessage.sender?.name || 'Pengirim',
+                                message: replyTextForMessage(locationReplyMessage),
+                                media_type: locationReplyMessage.media_type || null,
+                            };
+                        }
+
+                        appendMessage(response.data.message, false);
+                        scrollToBottom();
+                        clearReplyPreview();
+
+                        if (isAdmin && window.selectedUserId) {
+                            moveUserToTop(window.selectedUserId);
+                        }
+                    })
+                    .catch(error => {
+                        showErrorDialog({
+                            title: 'Gagal Mengirim Lokasi',
+                            message: error.response?.data?.error || 'Silakan coba lagi.'
+                        });
+                    })
+                    .finally(() => setLocationLoading(false));
+            },
+            (err) => {
+                let msg = 'Gagal mengakses lokasi.';
+                if (err.code === 1) msg = 'Izin lokasi ditolak. Izinkan akses lokasi untuk mengirim lokasi.';
+                else if (err.code === 2) msg = 'Lokasi tidak tersedia saat ini.';
+                else if (err.code === 3) msg = 'Permintaan lokasi timeout.';
+                showErrorDialog({ title: 'Lokasi Gagal', message: msg });
+                setLocationLoading(false);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+    }
+
+    const isAdmin = window.isAdmin === true && !!document.getElementById('receiverId');
+    const userId = window.userId;
+    let currentChatSessionId = window.chatSessionId ? String(window.chatSessionId) : '';
+    const API_BASE = '/chat';
+    const INITIAL_LOAD_LIMIT = 150;
+    const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000;
+    const messageStore = new Map();
+    const userFilterState = {
+        mode: 'all',
+        search: '',
+    };
+    const RECONNECT_DELAY_MS = 800;
+    let isSocketConnected = false;
+    let reconnectTimer = null;
+    let lastRenderedMessagesSignature = '';
+    let currentConversationKey = '';
+    const unreadCountSnapshot = new Map();
+    let lastUnreadSignature = '';
+    let lastUnreadFetchAt = 0;
+    let pinnedChats = new Set();
+    const processedRealtimeMessageIds = new Set();
+    const UNREAD_REFRESH_THROTTLE_MS = 4000;
+    let isLoadingMoreChats = false;
+    let canLoadMoreChats = true;
+    let quickReplies = [];
+
+    function normalizeQuickReplyShortcut(value) {
+        const trimmed = String(value || '').trim().toLowerCase();
+        if (!trimmed) return '';
+        return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    }
+
+    function quickReplyPreview(message) {
+        const text = String(message || '').replace(/\s+/g, ' ').trim();
+        return text.length > 74 ? `${text.slice(0, 74)}...` : text;
+    }
+
+    function renderQuickReplies() {
+        if (!isAdmin || !quickReplyPanel || !quickReplyList) return;
+
+        quickReplyPanel.style.display = 'flex';
+        quickReplyList.innerHTML = quickReplies.length
+            ? quickReplies.map(reply => `
+                <button type="button" class="quick-reply-chip" data-quick-reply-id="${reply.id}" title="${escapeHtml(reply.message)}">
+                    ${escapeHtml(reply.shortcut)}
+                </button>
+            `).join('')
+            : '<span style="color:#64748b;font-size:13px;padding:8px 0;">Belum ada balasan cepat</span>';
+    }
+
+    function loadQuickReplies() {
+        if (!isAdmin) return;
+
+        axios.get(`${API_BASE}/quick-replies`)
+            .then(response => {
+                quickReplies = response.data?.quick_replies || [];
+                renderQuickReplies();
+            })
+            .catch(() => {});
+    }
+
+    function sendQuickReply(reply) {
+        if (!reply || !messageInput || !chatForm) return;
+
+        if (isAdmin && !document.getElementById('receiverId')?.value) {
+            showErrorDialog({
+                title: 'Pilih Pelanggan',
+                message: 'Pilih pelanggan dulu sebelum mengirim balasan cepat.'
+            });
+            return;
+        }
+
+        messageInput.value = reply.message || '';
+        hideQuickReplySuggestions();
+        autoResizeMessageInput();
+        chatForm.requestSubmit();
+    }
+
+    function expandExactQuickReplyShortcut(value) {
+        const shortcut = normalizeQuickReplyShortcut(value);
+        const reply = quickReplies.find(entry => normalizeQuickReplyShortcut(entry.shortcut) === shortcut);
+
+        return reply?.message || value;
+    }
+
+    function hideQuickReplySuggestions() {
+        if (!quickReplySuggestions) return;
+        quickReplySuggestions.style.display = 'none';
+        quickReplySuggestions.innerHTML = '';
+    }
+
+    function updateQuickReplySuggestions() {
+        if (!isAdmin || !quickReplySuggestions || !messageInput) return;
+
+        const value = String(messageInput.value || '').trim();
+        if (!value.startsWith('/')) {
+            hideQuickReplySuggestions();
+            return;
+        }
+
+        const matches = quickReplies
+            .filter(reply => reply.shortcut.startsWith(value.toLowerCase()) || reply.title.toLowerCase().includes(value.slice(1).toLowerCase()))
+            .slice(0, 8);
+
+        if (!matches.length) {
+            hideQuickReplySuggestions();
+            return;
+        }
+
+        quickReplySuggestions.innerHTML = matches.map(reply => `
+            <button type="button" class="quick-reply-suggestion" data-quick-reply-id="${reply.id}">
+                <strong>${escapeHtml(reply.shortcut)} - ${escapeHtml(reply.title)}</strong>
+                <span>${escapeHtml(quickReplyPreview(reply.message))}</span>
+            </button>
+        `).join('');
+        quickReplySuggestions.style.display = 'block';
+    }
+
+    function renderQuickReplyManageList(container) {
+        if (!container) return;
+
+        container.innerHTML = quickReplies.length
+            ? quickReplies.map(reply => `
+                <div class="quick-reply-manage-item" data-quick-reply-id="${reply.id}">
+                    <div>
+                        <strong>${escapeHtml(reply.shortcut)} - ${escapeHtml(reply.title)}</strong>
+                        <span>${escapeHtml(quickReplyPreview(reply.message))}</span>
+                    </div>
+                    <div class="quick-reply-item-actions">
+                        <button type="button" data-action="edit" title="Edit"><i class="fas fa-pen"></i></button>
+                        <button type="button" data-action="delete" title="Hapus"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('')
+            : '<div style="color:#64748b;font-size:13px;">Belum ada balasan cepat.</div>';
+    }
+
+    function showQuickReplyManager() {
+        const overlay = document.createElement('div');
+        overlay.className = 'chat-confirm-overlay';
+        overlay.innerHTML = `
+            <div class="chat-confirm-dialog quick-reply-dialog">
+                <h4>Kelola Balasan Cepat</h4>
+                <p>Contoh shortcut: /promo, /gangguan, /bayar. Klik chip untuk langsung kirim.</p>
+                <div class="quick-reply-manage-list" id="quickReplyManageList"></div>
+                <form class="quick-reply-form" id="quickReplyForm">
+                    <input type="hidden" id="quickReplyId" value="">
+                    <input class="quick-reply-input" id="quickReplyShortcut" placeholder="Shortcut, contoh /apa" maxlength="48" required>
+                    <input class="quick-reply-input" id="quickReplyTitle" placeholder="Judul singkat" maxlength="100" required>
+                    <textarea class="quick-reply-textarea" id="quickReplyMessage" placeholder="Isi pesan yang akan dikirim" maxlength="5000" required></textarea>
+                    <div class="chat-confirm-actions">
+                        <button type="button" class="btn-cancel">Tutup</button>
+                        <button type="submit" class="btn-confirm">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const list = overlay.querySelector('#quickReplyManageList');
+        const form = overlay.querySelector('#quickReplyForm');
+        const idInput = overlay.querySelector('#quickReplyId');
+        const shortcutInput = overlay.querySelector('#quickReplyShortcut');
+        const titleInput = overlay.querySelector('#quickReplyTitle');
+        const messageTextarea = overlay.querySelector('#quickReplyMessage');
+        renderQuickReplyManageList(list);
+
+        const cleanup = () => {
+            overlay.classList.add('hide');
+            setTimeout(() => overlay.remove(), 120);
+        };
+
+        const resetForm = () => {
+            idInput.value = '';
+            shortcutInput.value = '';
+            titleInput.value = '';
+            messageTextarea.value = '';
+            shortcutInput.focus();
+        };
+
+        overlay.addEventListener('click', (event) => {
+            if (event.target === overlay) cleanup();
+        });
+        overlay.querySelector('.btn-cancel').addEventListener('click', cleanup);
+
+        list.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-action]');
+            if (!button) return;
+
+            const item = button.closest('[data-quick-reply-id]');
+            const reply = quickReplies.find(entry => String(entry.id) === String(item?.dataset.quickReplyId));
+            if (!reply) return;
+
+            if (button.dataset.action === 'edit') {
+                idInput.value = reply.id;
+                shortcutInput.value = reply.shortcut;
+                titleInput.value = reply.title;
+                messageTextarea.value = reply.message;
+                shortcutInput.focus();
+                return;
+            }
+
+            showConfirmDialog({
+                title: 'Hapus Balasan Cepat',
+                message: `Hapus ${reply.shortcut}?`,
+                confirmText: 'Hapus',
+                onConfirm: () => {
+                    axios.delete(`${API_BASE}/quick-replies/${reply.id}`)
+                        .then(() => {
+                            quickReplies = quickReplies.filter(entry => String(entry.id) !== String(reply.id));
+                            renderQuickReplies();
+                            renderQuickReplyManageList(list);
+                            resetForm();
+                        })
+                        .catch(error => showErrorDialog({ title: 'Gagal Hapus', message: getAxiosErrorMessage(error) }));
+                }
+            });
+        });
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const payload = {
+                shortcut: normalizeQuickReplyShortcut(shortcutInput.value),
+                title: titleInput.value.trim(),
+                message: messageTextarea.value.trim(),
+            };
+
+            if (!payload.shortcut || !payload.title || !payload.message) return;
+
+            const replyId = idInput.value;
+            const request = replyId
+                ? axios.put(`${API_BASE}/quick-replies/${replyId}`, payload)
+                : axios.post(`${API_BASE}/quick-replies`, payload);
+
+            request.then(response => {
+                const saved = response.data?.quick_reply;
+                if (!saved) return;
+
+                const existingIndex = quickReplies.findIndex(entry => String(entry.id) === String(saved.id));
+                if (existingIndex >= 0) {
+                    quickReplies.splice(existingIndex, 1, saved);
+                } else {
+                    quickReplies.push(saved);
+                }
+
+                quickReplies.sort((a, b) => String(a.shortcut).localeCompare(String(b.shortcut)));
+                renderQuickReplies();
+                renderQuickReplyManageList(list);
+                resetForm();
+            }).catch(error => showErrorDialog({
+                title: 'Gagal Simpan',
+                message: getAxiosErrorMessage(error, 'Pastikan shortcut diawali / dan belum dipakai.')
+            }));
+        });
+
+        shortcutInput.focus();
+    }
+
+    if (isAdmin) {
+        loadQuickReplies();
+
+        if (messageInput) {
+            messageInput.addEventListener('input', updateQuickReplySuggestions);
+        }
+
+        if (quickReplyList) {
+            quickReplyList.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-quick-reply-id]');
+                if (!button) return;
+
+                const reply = quickReplies.find(entry => String(entry.id) === String(button.dataset.quickReplyId));
+                sendQuickReply(reply);
+            });
+        }
+
+        if (quickReplySuggestions) {
+            quickReplySuggestions.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-quick-reply-id]');
+                if (!button) return;
+
+                const reply = quickReplies.find(entry => String(entry.id) === String(button.dataset.quickReplyId));
+                sendQuickReply(reply);
+            });
+        }
+
+        if (quickReplyManageBtn) {
+            quickReplyManageBtn.addEventListener('click', showQuickReplyManager);
+        }
+
+        document.addEventListener('click', (event) => {
+            if (!quickReplySuggestions || quickReplySuggestions.style.display !== 'block') return;
+            if (event.target.closest('#quickReplySuggestions') || event.target.closest('#messageInput')) return;
+            hideQuickReplySuggestions();
+        });
+    }
+
+    // Load unread counts for admin on page load
+    function loadUnreadCounts() {
+        if (!isAdmin) return;
+
+        const now = Date.now();
+        if (now - lastUnreadFetchAt < UNREAD_REFRESH_THROTTLE_MS) return;
+        lastUnreadFetchAt = now;
+
+        axios.get('/chat/unread-count')
+            .then(response => {
+                const unreadCounts = response.data || {};
+                const unreadEntries = Object.entries(unreadCounts)
+                    .map(([id, count]) => [String(id), Number(count || 0)])
+                    .sort((a, b) => a[0].localeCompare(b[0]));
+                const unreadSignature = JSON.stringify(unreadEntries);
+                if (unreadSignature === lastUnreadSignature) {
+                    return;
+                }
+
+                lastUnreadSignature = unreadSignature;
+                const allBadges = document.querySelectorAll('.unread-badge');
+                let hasVisualChange = false;
+
+                allBadges.forEach((badge) => {
+                    const senderId = (badge.id || '').replace('unread-', '');
+                    if (!senderId) return;
+
+                    const nextCount = Number(unreadCounts[senderId] || 0);
+                    const prevCount = unreadCountSnapshot.has(senderId)
+                        ? Number(unreadCountSnapshot.get(senderId) || 0)
+                        : null;
+
+                    if (prevCount === nextCount) {
+                        return;
+                    }
+
+                    unreadCountSnapshot.set(senderId, nextCount);
+                    badge.textContent = nextCount > 0 ? String(nextCount) : '0';
+                    badge.style.display = nextCount > 0 ? 'inline-flex' : 'none';
+                    const userItem = document.querySelector(`.user-item[data-user-id="${senderId}"]`);
+                    if (userItem) userItem.dataset.unread = String(nextCount);
+                    hasVisualChange = true;
+                });
+
+                if (hasVisualChange) {
+                    sortUserList();
+                    applyUserFilter();
+                }
+            })
+            .catch(error => { });
+    }
+
+    // Function to get initials from name
+    function getInitials(name) {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    }
+
+    function applyUserFilter() {
+        if (!isAdmin) return;
+
+        const userList = document.getElementById('userList');
+        if (!userList) return;
+
+        const userItems = userList.qu

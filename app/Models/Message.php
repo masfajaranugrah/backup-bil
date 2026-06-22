@@ -16,7 +16,9 @@ class Message extends Model
     protected $fillable = [
         'sender_id',
         'receiver_id',
+        'chat_session_id',
         'chat_type',
+        'message_type',
         'message',
         'media_path',
         'media_type',
@@ -49,39 +51,54 @@ class Message extends Model
         });
     }
 
+    public function chatSession(): BelongsTo
+    {
+        return $this->belongsTo(ChatSession::class, 'chat_session_id');
+    }
+
     /**
      * Get sender - could be from users or pelanggans table
      */
     public function getSenderAttribute()
     {
-        // Cache key untuk menghindari query berulang
         $cacheKey = "message_sender_{$this->sender_id}";
 
-        return Cache::remember($cacheKey, 300, function () {
-            // Try users table first
+        try {
+            return Cache::remember($cacheKey, 300, function () {
+                $user = User::find($this->sender_id);
+                if ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email ?? null,
+                        'role' => $user->role ?? null,
+                    ];
+                }
+
+                $pelanggan = Pelanggan::find($this->sender_id);
+                if ($pelanggan) {
+                    return [
+                        'id' => $pelanggan->id,
+                        'name' => $pelanggan->nama_lengkap ?? $pelanggan->name ?? 'Pelanggan',
+                        'email' => $pelanggan->nomer_id ?? $pelanggan->email ?? null,
+                        'role' => 'pelanggan',
+                    ];
+                }
+
+                return null;
+            });
+        } catch (\Exception $e) {
+            // Fallback: query directly without cache if Redis/DB cache fails
             $user = User::find($this->sender_id);
             if ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email ?? null,
-                    'role' => $user->role ?? null,
-                ];
+                return ['id' => $user->id, 'name' => $user->name, 'email' => $user->email ?? null, 'role' => $user->role ?? null];
             }
-
-            // Try pelanggans table
             $pelanggan = Pelanggan::find($this->sender_id);
             if ($pelanggan) {
-                return [
-                    'id' => $pelanggan->id,
-                    'name' => $pelanggan->nama_lengkap ?? $pelanggan->name ?? 'Pelanggan',
-                    'email' => $pelanggan->email ?? null,
-                    'role' => 'pelanggan',
-                ];
+                return ['id' => $pelanggan->id, 'name' => $pelanggan->nama_lengkap ?? 'Pelanggan', 'email' => $pelanggan->nomer_id ?? $pelanggan->email ?? null, 'role' => 'pelanggan'];
             }
-
             return null;
-        });
+        }
     }
 
     /**
@@ -89,34 +106,44 @@ class Message extends Model
      */
     public function getReceiverAttribute()
     {
-        // Cache key untuk menghindari query berulang
         $cacheKey = "message_receiver_{$this->receiver_id}";
 
-        return Cache::remember($cacheKey, 300, function () {
-            // Try users table first
+        try {
+            return Cache::remember($cacheKey, 300, function () {
+                $user = User::find($this->receiver_id);
+                if ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email ?? null,
+                        'role' => $user->role ?? null,
+                    ];
+                }
+
+                $pelanggan = Pelanggan::find($this->receiver_id);
+                if ($pelanggan) {
+                    return [
+                        'id' => $pelanggan->id,
+                        'name' => $pelanggan->nama_lengkap ?? $pelanggan->name ?? 'Pelanggan',
+                        'email' => $pelanggan->nomer_id ?? $pelanggan->email ?? null,
+                        'role' => 'pelanggan',
+                    ];
+                }
+
+                return null;
+            });
+        } catch (\Exception $e) {
+            // Fallback: query directly without cache if Redis/DB cache fails
             $user = User::find($this->receiver_id);
             if ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email ?? null,
-                    'role' => $user->role ?? null,
-                ];
+                return ['id' => $user->id, 'name' => $user->name, 'email' => $user->email ?? null, 'role' => $user->role ?? null];
             }
-
-            // Try pelanggans table
             $pelanggan = Pelanggan::find($this->receiver_id);
             if ($pelanggan) {
-                return [
-                    'id' => $pelanggan->id,
-                    'name' => $pelanggan->nama_lengkap ?? $pelanggan->name ?? 'Pelanggan',
-                    'email' => $pelanggan->email ?? null,
-                    'role' => 'pelanggan',
-                ];
+                return ['id' => $pelanggan->id, 'name' => $pelanggan->nama_lengkap ?? 'Pelanggan', 'email' => $pelanggan->nomer_id ?? $pelanggan->email ?? null, 'role' => 'pelanggan'];
             }
-
             return null;
-        });
+        }
     }
 
     /**
@@ -125,6 +152,10 @@ class Message extends Model
     public function getMediaUrlAttribute()
     {
         if ($this->media_path) {
+            if ($this->media_type === 'audio') {
+                return '/chat/media/' . $this->id;
+            }
+
             // Use relative path that works on any domain
             return '/storage/' . $this->media_path;
         }

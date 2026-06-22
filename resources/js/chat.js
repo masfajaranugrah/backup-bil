@@ -26,9 +26,67 @@ document.addEventListener('DOMContentLoaded', function () {
     const mediaInput = document.getElementById('mediaInput');
     const attachButton = document.getElementById('attachButton');
     const locationButton = document.getElementById('locationButton');
+    const plusMenuButton = document.getElementById('plusMenuButton');
+    const chatActionSheet = document.getElementById('chatActionSheet');
+    const voiceButton = document.getElementById('voiceButton');
     const mediaPreview = document.getElementById('mediaPreview');
+    let replyPreview = document.getElementById('replyPreview');
+    let replyPreviewName = document.getElementById('replyPreviewName');
+    let replyPreviewText = document.getElementById('replyPreviewText');
+    let replyPreviewClose = document.getElementById('replyPreviewClose');
+    let replyToMessageInput = document.getElementById('replyToMessageId');
 
     let selectedMediaFile = null;
+    let activeReplyMessage = null;
+    let mediaRecorder = null;
+    let recordedAudioChunks = [];
+    let isRecordingVoice = false;
+
+    function getSupportedVoiceMimeType() {
+        if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+            return '';
+        }
+
+        return [
+            'audio/mp4;codecs=mp4a.40.2',
+            'audio/mp4',
+            'audio/aac',
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/ogg;codecs=opus',
+            'audio/ogg'
+        ].find(type => MediaRecorder.isTypeSupported(type)) || '';
+    }
+
+    function getVoiceFileExtension(mimeType) {
+        if (mimeType.includes('mp4')) return 'm4a';
+        if (mimeType.includes('aac')) return 'aac';
+        if (mimeType.includes('ogg')) return 'ogg';
+        return 'webm';
+    }
+
+    function getChatMediaStreamUrl(message) {
+        return message?.media_url || (message?.id ? `/chat/media/${encodeURIComponent(String(message.id))}` : '');
+    }
+
+    function getAudioMimeType(message) {
+        const source = `${message?.media_original_name || ''} ${message?.media_url || ''}`.toLowerCase();
+        if (source.includes('.m4a') || source.includes('.mp4')) return 'audio/mp4';
+        if (source.includes('.ogg')) return 'audio/ogg';
+        if (source.includes('.mp3')) return 'audio/mpeg';
+        if (source.includes('.wav')) return 'audio/wav';
+        return 'audio/webm';
+    }
+
+    function getAxiosErrorMessage(error, fallback = 'Silakan coba lagi.') {
+        const data = error?.response?.data;
+        if (!data) return fallback;
+        if (typeof data.error === 'string' && data.error.trim()) return data.error;
+        if (typeof data.message === 'string' && data.message.trim()) return data.message;
+
+        const firstError = data.errors && Object.values(data.errors).flat().find(Boolean);
+        return firstError || fallback;
+    }
     
     // Sound system for CS chat
     let audioUnlocked = false;
@@ -74,6 +132,12 @@ document.addEventListener('DOMContentLoaded', function () {
         autoResizeMessageInput();
         messageInput.addEventListener('input', autoResizeMessageInput);
         messageInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && activeReplyMessage) {
+                event.preventDefault();
+                clearReplyPreview();
+                return;
+            }
+
             if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
                 event.preventDefault();
                 chatForm.requestSubmit();
@@ -81,10 +145,40 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function closeActionSheet() {
+        if (!chatActionSheet || !plusMenuButton) return;
+        chatActionSheet.classList.remove('is-open');
+        chatActionSheet.setAttribute('aria-hidden', 'true');
+        plusMenuButton.classList.remove('is-open');
+        plusMenuButton.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleActionSheet() {
+        if (!chatActionSheet || !plusMenuButton) return;
+        const isOpen = chatActionSheet.classList.toggle('is-open');
+        chatActionSheet.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        plusMenuButton.classList.toggle('is-open', isOpen);
+        plusMenuButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    if (plusMenuButton && chatActionSheet) {
+        plusMenuButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleActionSheet();
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!chatActionSheet.classList.contains('is-open')) return;
+            if (event.target.closest('#chatActionSheet') || event.target.closest('#plusMenuButton')) return;
+            closeActionSheet();
+        });
+    }
+
     // Setup attach button click
     if (attachButton && mediaInput) {
         attachButton.addEventListener('click', function (e) {
             e.preventDefault();
+            closeActionSheet();
             mediaInput.click();
         });
 
@@ -101,7 +195,70 @@ document.addEventListener('DOMContentLoaded', function () {
     if (locationButton) {
         locationButton.addEventListener('click', function (e) {
             e.preventDefault();
+            closeActionSheet();
             shareLocation();
+        });
+    }
+
+    async function toggleVoiceRecording() {
+        if (!voiceButton) return;
+
+        if (isRecordingVoice && mediaRecorder) {
+            mediaRecorder.stop();
+            return;
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+            showErrorDialog({
+                title: 'Voice Tidak Didukung',
+                message: 'Browser belum mendukung rekam suara.'
+            });
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const preferredMimeType = getSupportedVoiceMimeType();
+            recordedAudioChunks = [];
+            mediaRecorder = preferredMimeType
+                ? new MediaRecorder(stream, { mimeType: preferredMimeType })
+                : new MediaRecorder(stream);
+            mediaRecorder.addEventListener('dataavailable', event => {
+                if (event.data && event.data.size > 0) recordedAudioChunks.push(event.data);
+            });
+            mediaRecorder.addEventListener('stop', () => {
+                stream.getTracks().forEach(track => track.stop());
+                isRecordingVoice = false;
+                voiceButton.classList.remove('is-recording');
+                voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
+
+                const mimeType = mediaRecorder.mimeType || preferredMimeType || 'audio/webm';
+                const blob = new Blob(recordedAudioChunks, { type: mimeType });
+                if (!blob.size) return;
+
+                const extension = getVoiceFileExtension(mimeType);
+                const file = new File([blob], `voice-note-${Date.now()}.${extension}`, { type: mimeType });
+                selectedMediaFile = file;
+                showMediaPreview(file);
+            });
+
+            mediaRecorder.start();
+            isRecordingVoice = true;
+            voiceButton.classList.add('is-recording');
+            voiceButton.innerHTML = '<i class="fas fa-stop"></i>';
+        } catch (error) {
+            showErrorDialog({
+                title: 'Gagal Rekam Voice',
+                message: 'Izinkan akses mikrofon untuk merekam voice note.'
+            });
+        }
+    }
+
+    if (voiceButton) {
+        voiceButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            closeActionSheet();
+            toggleVoiceRecording();
         });
     }
 
@@ -111,6 +268,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const isImage = file.type.startsWith('image/');
         const isVideo = file.type.startsWith('video/');
+        const isAudio = file.type.startsWith('audio/') || file.name.startsWith('voice-note-');
 
         let previewHTML = '';
 
@@ -135,6 +293,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     <span class="media-filename">${file.name}</span>
                 </div>
             `;
+        } else if (isAudio) {
+            const url = URL.createObjectURL(file);
+            previewHTML = `
+                <div class="media-preview-container">
+                    <i class="fas fa-microphone" style="font-size: 24px; color: #111827;"></i>
+                    <audio controls preload="metadata" src="${url}" style="max-width: 180px; height: 34px;"></audio>
+                    <button type="button" class="remove-media-btn" onclick="window.clearMediaPreview()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <span class="media-filename">Voice note</span>
+                </div>
+            `;
         }
 
         mediaPreview.innerHTML = previewHTML;
@@ -156,7 +326,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!locationButton) return;
         locationButton.disabled = isLoading;
         locationButton.classList.toggle('loading', isLoading);
-        locationButton.innerHTML = isLoading ? '<i class="fas fa-spinner fa-spin"></i>' : '<i class="fas fa-location-arrow"></i>';
+        locationButton.innerHTML = isLoading
+            ? '<i class="fas fa-spinner fa-spin"></i><span>Mengambil lokasi...</span>'
+            : '<i class="fas fa-location-arrow"></i><span>Share lokasi</span>';
     }
 
     function shareLocation() {
@@ -200,6 +372,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const formData = new FormData();
                 formData.append('message', text);
+                const locationReplyMessage = getActiveReplyMessage();
+                if (locationReplyMessage?.id) {
+                    formData.append('reply_to_message_id', locationReplyMessage.id);
+                    formData.append('reply_message_id', locationReplyMessage.id);
+                }
+                if (currentChatSessionId) {
+                    formData.append('chat_session_id', currentChatSessionId);
+                }
 
                 if (isAdmin) {
                     const receiverIdInput = document.getElementById('receiverId');
@@ -219,8 +399,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 })
                     .then(response => {
+                        if (response.data?.message && locationReplyMessage?.id) {
+                            response.data.message.reply_to_message_id = response.data.message.reply_to_message_id || locationReplyMessage.id;
+                            response.data.message.reply_to_message = response.data.message.reply_to_message || {
+                                id: locationReplyMessage.id,
+                                sender_id: locationReplyMessage.sender_id,
+                                sender_name: locationReplyMessage.sender_name || locationReplyMessage.sender?.name || 'Pengirim',
+                                message: replyTextForMessage(locationReplyMessage),
+                                media_type: locationReplyMessage.media_type || null,
+                            };
+                        }
+
                         appendMessage(response.data.message, false);
                         scrollToBottom();
+                        clearReplyPreview();
 
                         if (isAdmin && window.selectedUserId) {
                             moveUserToTop(window.selectedUserId);
@@ -248,24 +440,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const isAdmin = window.isAdmin === true && !!document.getElementById('receiverId');
     const userId = window.userId;
+    let currentChatSessionId = window.chatSessionId ? String(window.chatSessionId) : '';
     const API_BASE = '/chat';
+    const INITIAL_LOAD_LIMIT = 150;
     const MESSAGE_EDIT_WINDOW_MS = 15 * 60 * 1000;
     const messageStore = new Map();
     const userFilterState = {
         mode: 'all',
         search: '',
     };
-    const FALLBACK_POLL_INTERVAL_MS = 1000;
     const RECONNECT_DELAY_MS = 800;
     let isSocketConnected = false;
-    let fallbackPollingTimer = null;
     let reconnectTimer = null;
     let lastRenderedMessagesSignature = '';
     let currentConversationKey = '';
     const unreadCountSnapshot = new Map();
     let lastUnreadSignature = '';
     let lastUnreadFetchAt = 0;
+    let pinnedChats = new Set();
+    const processedRealtimeMessageIds = new Set();
     const UNREAD_REFRESH_THROTTLE_MS = 4000;
+    let isLoadingMoreChats = false;
+    let canLoadMoreChats = true;
 
     // Load unread counts for admin on page load
     function loadUnreadCounts() {
@@ -305,11 +501,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     unreadCountSnapshot.set(senderId, nextCount);
                     badge.textContent = nextCount > 0 ? String(nextCount) : '0';
-                    badge.style.display = nextCount > 0 ? 'inline-block' : 'none';
+                    badge.style.display = nextCount > 0 ? 'inline-flex' : 'none';
+                    const userItem = document.querySelector(`.user-item[data-user-id="${senderId}"]`);
+                    if (userItem) userItem.dataset.unread = String(nextCount);
                     hasVisualChange = true;
                 });
 
                 if (hasVisualChange) {
+                    sortUserList();
                     applyUserFilter();
                 }
             })
@@ -368,6 +567,227 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (noResults) {
             noResults.style.display = 'none';
         }
+
+        const loadMoreWrapper = document.getElementById('loadMoreChatsWrap');
+        if (loadMoreWrapper) userList.appendChild(loadMoreWrapper);
+    }
+
+    function setPinnedVisualState(userItem, isPinned) {
+        if (!userItem) return;
+        userItem.dataset.pinned = isPinned ? '1' : '0';
+        userItem.classList.toggle('pinned', isPinned);
+
+        const pinButton = userItem.querySelector('.pin-chat-btn');
+        if (pinButton) {
+            pinButton.classList.toggle('is-pinned', isPinned);
+            pinButton.setAttribute('aria-pressed', isPinned ? 'true' : 'false');
+            pinButton.title = isPinned ? 'Lepas pin chat' : 'Pin chat agar tampil paling atas';
+        }
+    }
+
+    function sortUserList() {
+        if (!isAdmin) return;
+        const userList = document.getElementById('userList');
+        if (!userList) return;
+
+        const sortedItems = Array.from(userList.querySelectorAll('.user-item')).sort((a, b) => {
+            const pinnedDiff = (b.dataset.pinned === '1' ? 1 : 0) - (a.dataset.pinned === '1' ? 1 : 0);
+            if (pinnedDiff !== 0) return pinnedDiff;
+
+            const unreadDiff = (parseInt(b.dataset.unread || '0', 10) || 0) - (parseInt(a.dataset.unread || '0', 10) || 0);
+            if (unreadDiff !== 0) return unreadDiff;
+
+            return (parseInt(b.dataset.lastActivity || '0', 10) || 0) - (parseInt(a.dataset.lastActivity || '0', 10) || 0);
+        });
+
+        sortedItems.forEach(item => userList.appendChild(item));
+
+        const loadMoreWrapper = document.getElementById('loadMoreChatsWrap');
+        if (loadMoreWrapper) userList.appendChild(loadMoreWrapper);
+    }
+
+    function createUserListItem(user) {
+        const rawId = String(user.id || '');
+        const rawName = String(user.name || 'Pelanggan');
+        const rawNomerId = String(user.nomer_id || '');
+        const safeId = escapeHtml(rawId);
+        const safeName = escapeHtml(rawName);
+        const safeNomerId = escapeHtml(rawNomerId);
+        const lastActivity = user.last_message_at ? new Date(user.last_message_at).getTime() : 0;
+        const isPinned = user.is_pinned === true || user.is_pinned === 1 || user.is_pinned === '1' || pinnedChats.has(String(user.id || ''));
+
+        const item = document.createElement('div');
+        item.className = `user-item ${isPinned ? 'pinned' : ''}`;
+        item.dataset.userId = rawId;
+        item.dataset.userName = rawName;
+        item.dataset.nomerId = rawNomerId;
+        item.dataset.lastActivity = String(Number.isNaN(lastActivity) ? 0 : lastActivity);
+        item.dataset.pinned = isPinned ? '1' : '0';
+        item.innerHTML = `
+            <div class="user-item-content">
+                <div class="user-avatar">${escapeHtml(getInitials(rawName))}</div>
+                <div class="user-details">
+                    <div class="user-name">${safeName}</div>
+                    <div class="user-meta-row"><div class="user-type">${safeNomerId}</div></div>
+                    <span class="pin-badge"><i class="fas fa-thumbtack"></i> Pinned</span>
+                </div>
+                <span class="unread-badge" id="unread-${safeId}" style="display: none;">0</span>
+                <button type="button" class="pin-chat-btn ${isPinned ? 'is-pinned' : ''}" data-pin-user-id="${safeId}" title="${isPinned ? 'Lepas pin chat' : 'Pin chat agar tampil paling atas'}" aria-label="Pin chat ${safeName}" aria-pressed="${isPinned ? 'true' : 'false'}">
+                    <i class="fas fa-thumbtack"></i>
+                </button>
+            </div>
+        `;
+
+        return item;
+    }
+
+    function ensureLoadMoreChatsButton(show = true) {
+        const userList = document.getElementById('userList');
+        if (!userList) return;
+
+        let wrapper = document.getElementById('loadMoreChatsWrap');
+        if (!show || !canLoadMoreChats) {
+            if (wrapper) wrapper.remove();
+            return;
+        }
+
+        if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.className = 'load-more-chats-wrap';
+            wrapper.id = 'loadMoreChatsWrap';
+            wrapper.innerHTML = `
+                <button type="button" class="load-more-chats-btn" id="loadMoreChatsBtn">
+                    <i class="fas fa-chevron-down"></i>
+                    <span>Lihat chat lainnya</span>
+                </button>
+            `;
+        }
+
+        userList.appendChild(wrapper);
+    }
+
+    function setLoadMoreChatsButtonState(isLoading) {
+        const button = document.getElementById('loadMoreChatsBtn');
+        if (!button) return;
+
+        button.disabled = isLoading;
+        button.innerHTML = isLoading
+            ? '<i class="fas fa-spinner fa-spin"></i><span>Memuat chat...</span>'
+            : '<i class="fas fa-chevron-down"></i><span>Lihat chat lainnya</span>';
+    }
+
+    function loadMoreChatUsers() {
+        if (!isAdmin || isLoadingMoreChats || !canLoadMoreChats) return;
+
+        const userList = document.getElementById('userList');
+        if (!userList) return;
+
+        isLoadingMoreChats = true;
+        setLoadMoreChatsButtonState(true);
+
+        const offset = userList.querySelectorAll('.user-item').length;
+        const params = new URLSearchParams({ limit: '100', offset: String(offset) });
+
+        axios.get(`${API_BASE}/users?${params.toString()}`)
+            .then(response => {
+                const users = Array.isArray(response.data) ? response.data : [];
+                const existingIds = new Set(Array.from(userList.querySelectorAll('.user-item')).map(item => String(item.dataset.userId || '')));
+                const loadMoreWrapper = document.getElementById('loadMoreChatsWrap');
+                if (loadMoreWrapper) loadMoreWrapper.remove();
+
+                users.forEach(user => {
+                    const userIdValue = String(user.id || '');
+                    if (!userIdValue || existingIds.has(userIdValue)) return;
+                    existingIds.add(userIdValue);
+                    userList.appendChild(createUserListItem(user));
+                });
+
+                canLoadMoreChats = users.length >= 100;
+                sortUserList();
+                loadUnreadCounts();
+                applyUserFilter();
+                ensureLoadMoreChatsButton(canLoadMoreChats);
+            })
+            .catch(() => { })
+            .finally(() => {
+                isLoadingMoreChats = false;
+                setLoadMoreChatsButtonState(false);
+            });
+    }
+
+    function togglePinnedChat(userId) {
+        const targetUserId = String(userId || '');
+        if (!targetUserId) return;
+
+        const shouldPin = !pinnedChats.has(targetUserId);
+        if (shouldPin) {
+            pinnedChats.add(targetUserId);
+        } else {
+            pinnedChats.delete(targetUserId);
+        }
+
+        const userItem = document.querySelector(`.user-item[data-user-id="${targetUserId}"]`);
+        setPinnedVisualState(userItem, pinnedChats.has(targetUserId));
+        sortUserList();
+        applyUserFilter();
+
+        const request = shouldPin
+            ? axios.post(`${API_BASE}/pins/${targetUserId}`)
+            : axios.delete(`${API_BASE}/pins/${targetUserId}`);
+
+        request.catch(() => {
+            if (shouldPin) {
+                pinnedChats.delete(targetUserId);
+            } else {
+                pinnedChats.add(targetUserId);
+            }
+
+            setPinnedVisualState(userItem, pinnedChats.has(targetUserId));
+            sortUserList();
+            applyUserFilter();
+            showErrorDialog({
+                title: 'Gagal Menyimpan Pin',
+                message: 'Silakan coba lagi.'
+            });
+        });
+    }
+
+    function initPinnedChats() {
+        if (!isAdmin) return;
+        const userList = document.getElementById('userList');
+        if (!userList) return;
+
+        const userItems = Array.from(userList.querySelectorAll('.user-item'));
+        const baselineActivity = Date.now();
+        pinnedChats = new Set(
+            userItems
+                .filter(item => item.dataset.pinned === '1' || item.classList.contains('pinned'))
+                .map(item => String(item.dataset.userId || ''))
+                .filter(Boolean)
+        );
+
+        userItems.forEach((item, index) => {
+            if (!item.dataset.lastActivity) {
+                item.dataset.lastActivity = String(baselineActivity - index);
+            }
+            const currentUserId = String(item.dataset.userId || '');
+            setPinnedVisualState(item, pinnedChats.has(currentUserId));
+        });
+
+        sortUserList();
+
+        axios.get(`${API_BASE}/pins`)
+            .then(response => {
+                const serverPins = Array.isArray(response.data) ? response.data.map(value => String(value)) : [];
+                pinnedChats = new Set(serverPins);
+                Array.from(userList.querySelectorAll('.user-item')).forEach((item) => {
+                    const currentUserId = String(item.dataset.userId || '');
+                    setPinnedVisualState(item, pinnedChats.has(currentUserId));
+                });
+                sortUserList();
+                applyUserFilter();
+            })
+            .catch(() => { });
     }
 
     // WhatsApp-style date formatting
@@ -465,9 +885,27 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!Array.isArray(messages) || messages.length === 0) return 'empty';
         const first = messages[0];
         const last = messages[messages.length - 1];
-        const firstKey = `${first.id || 'x'}:${first.updated_at || first.edited_at || first.deleted_at || first.created_at || ''}:${first.is_read ? 1 : 0}`;
-        const lastKey = `${last.id || 'x'}:${last.updated_at || last.edited_at || last.deleted_at || last.created_at || ''}:${last.is_read ? 1 : 0}`;
+        const firstKey = `${first.id || 'x'}:${first.updated_at || first.edited_at || first.deleted_at || first.created_at || ''}:${first.is_read ? 1 : 0}:${first.reply_to_message_id || ''}`;
+        const lastKey = `${last.id || 'x'}:${last.updated_at || last.edited_at || last.deleted_at || last.created_at || ''}:${last.is_read ? 1 : 0}:${last.reply_to_message_id || ''}`;
         return `${messages.length}|${firstKey}|${lastKey}`;
+    }
+
+    function getScrollSnapshot() {
+        return {
+            bottomOffset: chatMessages.scrollHeight - chatMessages.scrollTop,
+            wasNearBottom: chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 140,
+        };
+    }
+
+    function restoreScrollSnapshot(snapshot) {
+        if (!snapshot) return;
+
+        if (snapshot.wasNearBottom) {
+            scrollToBottom();
+            return;
+        }
+
+        chatMessages.scrollTop = Math.max(0, chatMessages.scrollHeight - snapshot.bottomOffset);
     }
 
     function loadMessages(targetUserId = null, options = {}) {
@@ -477,9 +915,11 @@ document.addEventListener('DOMContentLoaded', function () {
             resetSignature = false,
         } = options;
 
+        const params = new URLSearchParams({ limit: String(INITIAL_LOAD_LIMIT) });
+        if (currentChatSessionId) params.set('session_id', currentChatSessionId);
         const url = isAdmin && targetUserId
-            ? `/chat/messages/${targetUserId}`
-            : '/chat/messages';
+            ? `/chat/messages/${targetUserId}?${params.toString()}`
+            : `/chat/messages?${params.toString()}`;
 
         axios.get(url)
             .then(response => {
@@ -487,6 +927,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     ? `admin:${String(targetUserId || '')}`
                     : `user:${String(userId || '')}`;
                 const responseMessages = Array.isArray(response.data) ? response.data : [];
+                const firstSessionId = responseMessages.find(message => message.chat_session_id)?.chat_session_id;
+                if (firstSessionId && !currentChatSessionId) {
+                    currentChatSessionId = String(firstSessionId);
+                    window.chatSessionId = currentChatSessionId;
+                }
 
                 if (resetSignature || currentConversationKey !== conversationKey) {
                     currentConversationKey = conversationKey;
@@ -498,11 +943,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
 
-                displayMessages(response.data);
+                const scrollSnapshot = getScrollSnapshot();
+
+                if (resetSignature || lastRenderedMessagesSignature === '') {
+                    displayMessages(responseMessages);
+                } else {
+                    syncMessagesWithoutReload(responseMessages);
+                }
+
                 lastRenderedMessagesSignature = incomingSignature;
 
                 if (autoScroll) {
                     scrollToBottom();
+                } else {
+                    restoreScrollSnapshot(scrollSnapshot);
                 }
 
                 // For customers, mark admin messages as read
@@ -521,25 +975,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             })
             .catch(error => { });
-    }
-
-    function refreshMessagesFallback() {
-        if (isSocketConnected || document.visibilityState !== 'visible') return;
-
-        if (isAdmin) {
-            if (window.selectedUserId) {
-                loadMessages(window.selectedUserId, { autoScroll: false, skipIfUnchanged: true });
-            }
-            loadUnreadCounts();
-            return;
-        }
-
-        loadMessages(null, { autoScroll: false, skipIfUnchanged: true });
-    }
-
-    function ensureFallbackPolling() {
-        if (fallbackPollingTimer) return;
-        fallbackPollingTimer = setInterval(refreshMessagesFallback, FALLBACK_POLL_INTERVAL_MS);
     }
 
     function scheduleSocketReconnect() {
@@ -568,6 +1003,24 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function syncMessagesWithoutReload(messages) {
+        if (!Array.isArray(messages)) return;
+
+        messages.forEach(message => {
+            const normalized = normalizeMessagePayload(message, message?.id ? messageStore.get(String(message.id)) : null);
+            if (!normalized || !normalized.id) return;
+
+            const existingMessage = chatMessages.querySelector(`[data-message-id="${normalized.id}"]`);
+            if (existingMessage) {
+                cacheMessage(normalized);
+                patchMessageElement(existingMessage, normalized, false);
+                return;
+            }
+
+            appendMessage(normalized, false, false);
+        });
+    }
+
     function normalizeMessagePayload(message, fallbackMessage = null) {
         if (!message) return null;
 
@@ -577,6 +1030,8 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         normalized.chat_type = normalized.chat_type || 'cs';
+        normalized.chat_session_id = normalized.chat_session_id || null;
+        normalized.message_type = normalized.message_type || null;
         normalized.message = typeof normalized.message === 'string' ? normalized.message : '';
         normalized.is_read = toBooleanFlag(normalized.is_read);
         normalized.is_deleted = toBooleanFlag(normalized.is_deleted);
@@ -584,10 +1039,143 @@ document.addEventListener('DOMContentLoaded', function () {
         normalized.deleted_at = normalized.deleted_at || null;
         normalized.media_url = normalized.media_url || null;
         normalized.media_type = normalized.media_type || null;
+        normalized.media_original_name = normalized.media_original_name || null;
+        normalized.reply_to_message_id = normalized.reply_to_message_id || null;
+        normalized.reply_to_message = normalized.reply_to_message || null;
         normalized.created_at = normalized.created_at || fallbackMessage?.created_at || new Date().toISOString();
 
         return normalized;
     }
+
+    function replyTextForMessage(message) {
+        const text = String(message?.message || '').trim();
+        if (text) return text;
+
+        switch (message?.media_type) {
+            case 'image': return 'Foto';
+            case 'video': return 'Video';
+            case 'audio': return 'Audio';
+            default: return 'Pesan';
+        }
+    }
+
+    function bindReplyPreviewClose() {
+        if (!replyPreviewClose || replyPreviewClose.dataset.bound === '1') return;
+
+        replyPreviewClose.dataset.bound = '1';
+        replyPreviewClose.addEventListener('click', function (event) {
+            event.preventDefault();
+            clearReplyPreview();
+            messageInput.focus();
+        });
+    }
+
+    function ensureReplyToMessageInput() {
+        if (replyToMessageInput) return replyToMessageInput;
+        if (!chatForm) return null;
+
+        replyToMessageInput = document.createElement('input');
+        replyToMessageInput.type = 'hidden';
+        replyToMessageInput.id = 'replyToMessageId';
+        replyToMessageInput.name = 'reply_to_message_id';
+        chatForm.appendChild(replyToMessageInput);
+
+        return replyToMessageInput;
+    }
+
+    function getActiveReplyMessage() {
+        ensureReplyToMessageInput();
+        const replyId = String(replyToMessageInput?.value || replyPreview?.dataset.replyMessageId || activeReplyMessage?.id || '').trim();
+        if (!replyId) return null;
+
+        return activeReplyMessage?.id && String(activeReplyMessage.id) === replyId
+            ? activeReplyMessage
+            : (messageStore.get(replyId) || { id: replyId });
+    }
+
+    function ensureReplyPreviewStyles() {
+        if (document.getElementById('csReplyPreviewStyles')) return;
+
+        const style = document.createElement('style');
+        style.id = 'csReplyPreviewStyles';
+        style.textContent = `
+            .message-highlight .message-bubble { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.28), 0 18px 40px rgba(0, 0, 0, 0.2); }
+            .message-reply-preview { border-left: 4px solid rgba(15, 23, 42, 0.35); background: rgba(255, 255, 255, 0.16); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; cursor: pointer; }
+            .message.received .message-reply-preview { background: #f1f5f9; border-left-color: #64748b; }
+            .reply-preview-name { font-size: 12px; font-weight: 900; margin-bottom: 2px; }
+            .reply-preview-text { font-size: 13px; opacity: 0.86; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+            .reply-compose-preview { display: flex; align-items: stretch; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #111827; border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; }
+            .reply-compose-body { flex: 1; min-width: 0; }
+            .reply-compose-label { font-size: 12px; font-weight: 900; color: #111827; margin-bottom: 2px; }
+            .reply-compose-text { font-size: 13px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .reply-compose-close { border: none; background: transparent; color: #64748b; font-size: 16px; cursor: pointer; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function ensureReplyPreview() {
+        ensureReplyPreviewStyles();
+
+        if (replyPreview) {
+            bindReplyPreviewClose();
+            return true;
+        }
+
+        if (!chatForm || !chatForm.parentElement) return false;
+
+        const wrapper = document.createElement('div');
+        wrapper.id = 'replyPreview';
+        wrapper.className = 'reply-compose-preview';
+        wrapper.style.display = 'none';
+        wrapper.innerHTML = `
+            <div class="reply-compose-body">
+                <div class="reply-compose-label" id="replyPreviewName">Balas pesan</div>
+                <div class="reply-compose-text" id="replyPreviewText"></div>
+            </div>
+            <button type="button" class="reply-compose-close" id="replyPreviewClose" aria-label="Batalkan reply">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        chatForm.parentElement.insertBefore(wrapper, chatForm);
+        replyPreview = wrapper;
+        replyPreviewName = wrapper.querySelector('#replyPreviewName');
+        replyPreviewText = wrapper.querySelector('#replyPreviewText');
+        replyPreviewClose = wrapper.querySelector('#replyPreviewClose');
+        bindReplyPreviewClose();
+
+        return true;
+    }
+
+    function showReplyPreview(message) {
+        if (!message || !message.id || !ensureReplyPreview()) return;
+
+        activeReplyMessage = message;
+        const replyInput = ensureReplyToMessageInput();
+        if (replyInput) replyInput.value = String(message.id);
+        if (replyPreviewName) {
+            replyPreviewName.textContent = message.sender_name || message.sender?.name || 'Pengirim';
+        }
+        if (replyPreviewText) {
+            replyPreviewText.textContent = replyTextForMessage(message);
+        }
+        replyPreview.dataset.replyMessageId = String(message.id);
+        replyPreview.style.display = 'flex';
+        messageInput.focus();
+    }
+
+    function clearReplyPreview() {
+        activeReplyMessage = null;
+        if (replyToMessageInput) replyToMessageInput.value = '';
+        if (replyPreview) {
+            replyPreview.style.display = 'none';
+            replyPreview.dataset.replyMessageId = '';
+        }
+        if (replyPreviewName) replyPreviewName.textContent = 'Balas pesan';
+        if (replyPreviewText) replyPreviewText.textContent = '';
+    }
+
+    bindReplyPreviewClose();
 
     function cacheMessage(message) {
         if (!message || !message.id) return normalizeMessagePayload(message);
@@ -681,6 +1269,20 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
         }
 
+        const isVoiceNote = message.media_type === 'audio'
+            || String(message.media_original_name || '').startsWith('voice-note-')
+            || /voice-note-.*\.(webm|m4a|ogg|mp3|wav)/i.test(String(message.media_url || ''));
+
+        if (isVoiceNote) {
+            const audioUrl = getChatMediaStreamUrl(message);
+            return `
+                <div class="message-media voice-note-card">
+                    <i class="fas fa-microphone"></i>
+                    <audio controls preload="metadata" src="${audioUrl}"></audio>
+                </div>
+            `;
+        }
+
         if (message.media_type === 'video') {
             return `
                 <div class="message-media">
@@ -714,6 +1316,28 @@ document.addEventListener('DOMContentLoaded', function () {
         return `<div class="message-text">${formattedText}${editedLabel}</div>`;
     }
 
+    function renderReplyPreview(message) {
+        const reply = message.reply_to_message
+            || (message.reply_to_message_id ? messageStore.get(String(message.reply_to_message_id)) : null);
+        if (!reply && !message.reply_to_message_id) return '';
+
+        if (!reply) {
+            return `
+                <div class="message-reply-preview" data-jump-message-id="${escapeHtml(String(message.reply_to_message_id || ''))}">
+                    <div class="reply-preview-name">Pesan dibalas</div>
+                    <div class="reply-preview-text">Pesan yang dibalas tidak termuat</div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="message-reply-preview" data-jump-message-id="${escapeHtml(String(reply.id || ''))}">
+                <div class="reply-preview-name">${escapeHtml(reply.sender_name || reply.sender?.name || 'Pengirim')}</div>
+                <div class="reply-preview-text">${escapeHtml(reply.message || replyTextForMessage(reply))}</div>
+            </div>
+        `;
+    }
+
     function canManageMessage(message) {
         if (!message || message.is_deleted) return false;
         if (isAdmin) return true; // Admin/CS boleh edit/hapus kapan saja
@@ -725,15 +1349,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderMessageActions(message, isSent) {
-        if (!isAdmin) return '';
-
         const canManage = isSent && canManageMessage(message) && message.id;
-        if (!canManage) return '';
+        if (!message.id) return '';
 
         return `
             <span class="message-actions">
-                <button class="message-action-btn js-edit-message" data-message-id="${message.id}" title="Edit"><i class="fas fa-pen"></i></button>
-                <button class="message-action-btn js-delete-message" data-message-id="${message.id}" title="Hapus"><i class="fas fa-trash"></i></button>
+                <button class="message-action-btn js-reply-message" data-message-id="${message.id}" title="Balas"><i class="fas fa-reply"></i></button>
+                ${canManage ? `<button class="message-action-btn js-edit-message" data-message-id="${message.id}" title="Edit"><i class="fas fa-pen"></i></button>` : ''}
+                ${canManage ? `<button class="message-action-btn js-delete-message" data-message-id="${message.id}" title="Hapus"><i class="fas fa-trash"></i></button>` : ''}
             </span>
         `;
     }
@@ -747,6 +1370,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return `
             <div class="message-content">
+                ${renderReplyPreview(message)}
                 ${mediaContent}
                 ${textContent}
                 <div class="message-info">
@@ -758,24 +1382,69 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
     }
 
+    function renderSystemNotice(message) {
+        const isHandoff = message.message_type === 'handoff_to_cs';
+        const isTransfer = message.message_type === 'transfer_to_session';
+        const transferUrlMatch = isTransfer ? String(message.message || '').match(/https?:\/\/\S+|\/dashboard\/customer\/chat\?session_id=[\w-]+/) : null;
+        const transferUrl = transferUrlMatch ? transferUrlMatch[0] : null;
+        const text = isHandoff
+            ? 'Pesan anda sudah dialihkan ke CS kami silahkan klik disini'
+            : isTransfer
+                ? String(message.message || '').replace(transferUrl || '', '').trim()
+            : message.message;
+        const body = isHandoff
+            ? `<a href="/dashboard/customer/chat" class="system-notice-link">${escapeHtml(text)}</a>`
+            : isTransfer && transferUrl
+                ? `${escapeHtml(text)}<br><a href="${escapeHtml(transferUrl)}" class="system-notice-link">Buka Chat Baru</a>`
+            : escapeHtml(text);
+
+        return `
+            <div class="system-message-notice ${isHandoff ? 'handoff-notice' : ''}">
+                ${body}
+            </div>
+        `;
+    }
+
+    function messageRenderSignature(message, isPending = false) {
+        return [
+            message.id || '',
+            message.message || '',
+            message.media_url || '',
+            message.media_type || '',
+            message.media_original_name || '',
+            message.reply_to_message_id || '',
+            JSON.stringify(message.reply_to_message || null),
+            message.is_read ? '1' : '0',
+            message.is_deleted ? '1' : '0',
+            message.edited_at || '',
+            message.deleted_at || '',
+            message.message_type || '',
+            isPending ? 'pending' : 'sent',
+        ].join('|');
+    }
+
     function patchMessageElement(messageDiv, message, isPending = false) {
         const isSent = messageDiv.classList.contains('sent');
         const bubble = messageDiv.querySelector('.message-bubble');
         if (!bubble) return;
 
+        const nextRenderSignature = messageRenderSignature(message, isPending);
+        if (messageDiv.dataset.renderSignature === nextRenderSignature) return;
+
         if (message.id) {
             messageDiv.dataset.messageId = String(message.id);
         }
         messageDiv.dataset.createdAt = message.created_at || '';
+        messageDiv.dataset.renderSignature = nextRenderSignature;
         bubble.innerHTML = renderMessageContent(message, isSent, isPending);
     }
 
-    function replacePendingMessage(tempId, serverMessage) {
+    function replacePendingMessage(tempId, serverMessage, fallbackMessage = null) {
         if (!tempId) return false;
         const pendingNode = chatMessages.querySelector(`[data-temp-id="${tempId}"]`);
         if (!pendingNode) return false;
 
-        const normalized = cacheMessage(serverMessage);
+        const normalized = cacheMessage(normalizeMessagePayload(serverMessage, fallbackMessage));
         if (!normalized) return false;
 
         pendingNode.classList.remove('message-pending');
@@ -840,6 +1509,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const messageDiv = document.createElement('div');
+        if (normalized.message_type === 'handoff_to_cs' || normalized.message_type === 'transfer_to_session' || normalized.message_type === 'system') {
+            messageDiv.className = 'message system';
+            if (normalized.id) {
+                messageDiv.dataset.messageId = normalized.id;
+            }
+            if (normalized.tempId) {
+                messageDiv.dataset.tempId = normalized.tempId;
+            }
+            messageDiv.dataset.createdAt = normalized.created_at || '';
+            messageDiv.dataset.renderSignature = messageRenderSignature(normalized, isPending);
+            messageDiv.innerHTML = renderSystemNotice(normalized);
+            chatMessages.appendChild(messageDiv);
+            return;
+        }
 
         // Convert to string for UUID comparison
         const currentUserId = String(userId);
@@ -854,6 +1537,7 @@ document.addEventListener('DOMContentLoaded', function () {
             messageDiv.dataset.tempId = normalized.tempId;
         }
         messageDiv.dataset.createdAt = normalized.created_at || '';
+        messageDiv.dataset.renderSignature = messageRenderSignature(normalized, isPending);
 
         const senderName = normalized.sender ? normalized.sender.name : 'Unknown';
         const initials = getInitials(senderName);
@@ -900,12 +1584,52 @@ document.addEventListener('DOMContentLoaded', function () {
         const currentCount = parseInt(badge.textContent, 10) || 0;
         const nextCount = currentCount + 1;
         badge.textContent = String(nextCount);
-        badge.style.display = 'inline-block';
+        badge.style.display = 'inline-flex';
         unreadCountSnapshot.set(String(senderId), nextCount);
+        const userItem = document.querySelector(`.user-item[data-user-id="${senderId}"]`);
+        if (userItem) userItem.dataset.unread = String(nextCount);
+        sortUserList();
         applyUserFilter();
     }
 
     // Move user to top of list when new message arrives
+    function ensureUserItemFromMessage(message) {
+        if (!isAdmin || !message || !message.sender_id) return;
+
+        const userList = document.getElementById('userList');
+        if (!userList) return;
+
+        const senderId = String(message.sender_id);
+        if (userList.querySelector(`[data-user-id="${senderId}"]`)) return;
+
+        const senderName = message.sender?.name || message.sender_name || 'Pelanggan';
+        const senderLabel = message.sender?.email || senderId;
+        const isPinned = pinnedChats.has(senderId);
+        const item = document.createElement('div');
+        item.className = `user-item ${isPinned ? 'pinned' : ''}`;
+        item.dataset.userId = senderId;
+        item.dataset.userName = senderName;
+        item.dataset.nomerId = senderLabel;
+        item.dataset.lastActivity = String(Date.now());
+        item.dataset.pinned = isPinned ? '1' : '0';
+        item.innerHTML = `
+            <div class="user-item-content">
+                <div class="user-avatar">${getInitials(senderName)}</div>
+                <div class="user-details">
+                    <div class="user-name">${escapeHtml(senderName)}</div>
+                    <div class="user-meta-row"><div class="user-type">${escapeHtml(senderLabel)}</div></div>
+                    <span class="pin-badge"><i class="fas fa-thumbtack"></i> Pinned</span>
+                </div>
+                <span class="unread-badge" id="unread-${senderId}" style="display: none;">0</span>
+                <button type="button" class="pin-chat-btn ${isPinned ? 'is-pinned' : ''}" data-pin-user-id="${senderId}" title="${isPinned ? 'Lepas pin chat' : 'Pin chat agar tampil paling atas'}" aria-label="Pin chat ${escapeHtml(senderName)}" aria-pressed="${isPinned ? 'true' : 'false'}">
+                    <i class="fas fa-thumbtack"></i>
+                </button>
+            </div>
+        `;
+
+        userList.insertBefore(item, userList.firstElementChild);
+    }
+
     function moveUserToTop(userId) {
         const userList = document.getElementById('userList');
         if (!userList) return;
@@ -915,11 +1639,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!userItem) return;
 
         // If already at top, no need to move
-        if (userList.firstElementChild === userItem) return;
-
-        // Remove from current position and add to top with smooth animation
+        userItem.dataset.lastActivity = String(Date.now());
         userItem.style.transition = 'all 0.3s ease';
-        userList.insertBefore(userItem, userList.firstElementChild);
+        sortUserList();
 
         // Add highlight animation
         userItem.style.backgroundColor = '#f0f9ff';
@@ -932,10 +1654,12 @@ document.addEventListener('DOMContentLoaded', function () {
     function clearUnreadBadge(userId) {
         const badge = document.getElementById(`unread-${userId}`);
         if (badge) {
-            badge.textContent = '0';
-            badge.style.display = 'none';
+        badge.textContent = '0';
+        badge.style.display = 'none';
         }
         unreadCountSnapshot.set(String(userId), 0);
+        const userItem = document.querySelector(`.user-item[data-user-id="${userId}"]`);
+        if (userItem) userItem.dataset.unread = '0';
         applyUserFilter();
     }
 
@@ -1157,8 +1881,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new FormData();
         formData.append('message', rawMessage);
 
+        const replyMessage = getActiveReplyMessage();
+        if (replyMessage?.id) {
+            formData.append('reply_to_message_id', replyMessage.id);
+            formData.append('reply_message_id', replyMessage.id);
+        }
+
         if (selectedMediaFile) {
             formData.append('media', selectedMediaFile);
+            if (selectedMediaFile.type.startsWith('audio/') || selectedMediaFile.name.startsWith('voice-note-')) {
+                formData.append('media_type_hint', 'audio');
+            }
         }
 
         if (isAdmin) {
@@ -1170,6 +1903,10 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('receiver_id', receiverId);
         }
 
+        if (currentChatSessionId) {
+            formData.append('chat_session_id', currentChatSessionId);
+        }
+
         sendButton.disabled = true;
         messageInput.value = '';
 
@@ -1178,15 +1915,28 @@ document.addEventListener('DOMContentLoaded', function () {
             tempId,
             sender_id: String(userId),
             receiver_id: isAdmin ? document.getElementById('receiverId')?.value : null,
+            chat_session_id: currentChatSessionId || null,
             message: rawMessage,
             created_at: new Date().toISOString(),
             is_read: false,
             chat_type: 'cs',
+            reply_to_message_id: replyMessage?.id || null,
+            reply_to_message: replyMessage?.id ? {
+                id: replyMessage.id,
+                sender_id: replyMessage.sender_id,
+                sender_name: replyMessage.sender_name || replyMessage.sender?.name || 'Pengirim',
+                message: replyTextForMessage(replyMessage),
+                media_type: replyMessage.media_type || null,
+            } : null,
         }, true);
         scrollToBottom();
 
+        clearReplyPreview();
+
         // Clear media preview
-        window.clearMediaPreview();
+        if (typeof window.clearMediaPreview === 'function') {
+            window.clearMediaPreview();
+        }
 
         axios.post('/chat/send', formData, {
             headers: {
@@ -1194,7 +1944,31 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         })
             .then(response => {
-                if (!replacePendingMessage(tempId, response.data.message)) {
+                if (response.data?.message && replyMessage?.id) {
+                    response.data.message.reply_to_message_id = response.data.message.reply_to_message_id || replyMessage.id;
+                    response.data.message.reply_to_message = response.data.message.reply_to_message || {
+                        id: replyMessage.id,
+                        sender_id: replyMessage.sender_id,
+                        sender_name: replyMessage.sender_name || replyMessage.sender?.name || 'Pengirim',
+                        message: replyTextForMessage(replyMessage),
+                        media_type: replyMessage.media_type || null,
+                    };
+                }
+
+                if (response.data.message?.chat_session_id) {
+                    currentChatSessionId = String(response.data.message.chat_session_id);
+                    window.chatSessionId = currentChatSessionId;
+                }
+                if (!replacePendingMessage(tempId, response.data.message, {
+                    reply_to_message_id: replyMessage?.id || null,
+                    reply_to_message: replyMessage?.id ? {
+                        id: replyMessage.id,
+                        sender_id: replyMessage.sender_id,
+                        sender_name: replyMessage.sender_name || replyMessage.sender?.name || 'Pengirim',
+                        message: replyTextForMessage(replyMessage),
+                        media_type: replyMessage.media_type || null,
+                    } : null,
+                })) {
                     appendMessage(response.data.message, false);
                 }
                 scrollToBottom();
@@ -1209,10 +1983,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Send error:', error);
                 showErrorDialog({
                     title: 'Gagal Mengirim Pesan',
-                    message: error.response?.data?.error || 'Silakan coba lagi.'
+                    message: getAxiosErrorMessage(error)
                 });
             })
             .finally(() => {
+                clearReplyPreview();
                 sendButton.disabled = false;
                 messageInput.focus();
                 if (messageInput.tagName === 'TEXTAREA') {
@@ -1222,6 +1997,27 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     chatMessages.addEventListener('click', function (event) {
+        const replyBtn = event.target.closest('.js-reply-message');
+        if (replyBtn) {
+            event.preventDefault();
+            const message = messageStore.get(String(replyBtn.dataset.messageId));
+            if (message) {
+                showReplyPreview(message);
+            }
+            return;
+        }
+
+        const quoted = event.target.closest('.message-reply-preview[data-jump-message-id]');
+        if (quoted) {
+            const target = chatMessages.querySelector(`[data-message-id="${quoted.dataset.jumpMessageId}"]`);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.classList.add('message-highlight');
+                setTimeout(() => target.classList.remove('message-highlight'), 1200);
+            }
+            return;
+        }
+
         const editBtn = event.target.closest('.js-edit-message');
         if (editBtn) {
             editMessage(editBtn.dataset.messageId);
@@ -1256,7 +2052,6 @@ document.addEventListener('DOMContentLoaded', function () {
             };
             const markDisconnected = () => {
                 isSocketConnected = false;
-                refreshMessagesFallback();
                 scheduleSocketReconnect();
             };
 
@@ -1293,6 +2088,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 processMessageUpdated(e);
             });
 
+        if (isAdmin) {
+            window.Echo.private('admin-inbox')
+                .listen('MessageSent', (e) => {
+                    processIncomingMessage(e);
+                })
+                .listen('.MessageSent', (e) => {
+                    processIncomingMessage(e);
+                })
+                .listen('MessageUpdated', (e) => {
+                    processMessageUpdated(e);
+                })
+                .listen('.MessageUpdated', (e) => {
+                    processMessageUpdated(e);
+                });
+        }
+
+        function isCustomerSender(e) {
+            return String(e?.sender?.role || '').toLowerCase() === 'pelanggan';
+        }
+
         function processIncomingMessage(e) {
             // Only process CS chat messages (ignore admin/billing chat)
             const chatType = e.chat_type || 'cs';
@@ -1300,9 +2115,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 return; // Ignore non-CS messages
             }
 
+            if (currentChatSessionId && e.chat_session_id && String(e.chat_session_id) !== currentChatSessionId) {
+                if (!isAdmin) return;
+            }
+
             const currentUserId = String(userId);
             const eventSenderId = String(e.sender_id);
             const eventReceiverId = String(e.receiver_id);
+            const eventMessageId = e.id ? String(e.id) : '';
+
+            if (eventMessageId) {
+                if (processedRealtimeMessageIds.has(eventMessageId)) return;
+                processedRealtimeMessageIds.add(eventMessageId);
+                if (processedRealtimeMessageIds.size > 500) {
+                    processedRealtimeMessageIds.delete(processedRealtimeMessageIds.values().next().value);
+                }
+            }
 
             // Don't process messages sent by ourselves
             if (eventSenderId === currentUserId) {
@@ -1310,9 +2138,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (isAdmin) {
-                // For CS admin: only process messages FROM customers (not from other CS/admin)
-                // Check if sender is a customer by seeing if receiver is an admin
+                // Sidebar/badge admin hanya untuk pesan pelanggan, bukan balasan admin lain.
+                if (!isCustomerSender(e)) return;
+
                 const selectedUserId = String(window.selectedUserId || '');
+
+                ensureUserItemFromMessage(e);
 
                 // Always move customer to top and update badge when customer sends message
                 moveUserToTop(e.sender_id);
@@ -1365,22 +2196,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Start WebSocket listener
     setupWebSocketListener();
-    ensureFallbackPolling();
 
     // Load unread counts on page load (for admin)
     if (isAdmin) {
+        initPinnedChats();
         loadUnreadCounts();
     }
 
     // Admin specific: Handle user selection
     if (isAdmin) {
-        const userItems = document.querySelectorAll('.user-item');
         const chatTitle = document.getElementById('chatTitle');
         const chatAvatar = document.getElementById('chatAvatar');
         const chatActions = document.getElementById('chatActions');
         const chatInputContainer = document.getElementById('chatInputContainer');
         const receiverIdInput = document.getElementById('receiverId');
+        const transferChatButton = document.getElementById('transferChatButton');
         const tabButtons = document.querySelectorAll('.tab-button');
+        const userList = document.getElementById('userList');
 
         tabButtons.forEach(button => {
             button.addEventListener('click', function () {
@@ -1391,23 +2223,45 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        userItems.forEach(item => {
-            item.addEventListener('click', function () {
+        if (userList) {
+            userList.addEventListener('click', function (event) {
+                const loadMoreChatsBtn = event.target.closest('#loadMoreChatsBtn');
+                if (loadMoreChatsBtn) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    loadMoreChatUsers();
+                    return;
+                }
+
+                const pinButton = event.target.closest('.pin-chat-btn');
+                if (pinButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    togglePinnedChat(pinButton.dataset.pinUserId);
+                    return;
+                }
+
+                const item = event.target.closest('.user-item');
+                if (!item) return;
+
                 // Remove active class from all
-                userItems.forEach(u => u.classList.remove('active'));
+                userList.querySelectorAll('.user-item').forEach(u => u.classList.remove('active'));
 
                 // Add active class to clicked
-                this.classList.add('active');
+                item.classList.add('active');
 
                 // Get user info
-                const targetUserId = this.dataset.userId;
-                const userName = this.dataset.userName;
+                const targetUserId = item.dataset.userId;
+                const userName = item.dataset.userName;
 
                 // Update global variable
                 window.selectedUserId = targetUserId;
+                currentChatSessionId = '';
+                window.chatSessionId = '';
 
                 // Clear unread badge
                 clearUnreadBadge(targetUserId);
+                clearReplyPreview();
 
                 // Update UI
                 chatTitle.textContent = userName;
@@ -1423,7 +2277,40 @@ document.addEventListener('DOMContentLoaded', function () {
                 axios.post(`/chat/mark-read/${targetUserId}`)
                     .catch(err => { });
             });
-        });
+        }
+
+        if (transferChatButton) {
+            transferChatButton.addEventListener('click', function () {
+                const targetUserId = String(window.selectedUserId || '');
+                if (!targetUserId) return;
+
+                const division = window.prompt('Teruskan ke divisi apa? Contoh: teknis, billing, cs', 'teknis');
+                if (!division) return;
+
+                const reason = window.prompt('Alasan diteruskan?', 'Permasalahan memerlukan penanganan divisi lain.');
+                if (!reason) return;
+
+                transferChatButton.disabled = true;
+
+                axios.post(`${API_BASE}/transfer/${targetUserId}`, {
+                    division,
+                    transfer_reason: reason,
+                    source_chat_id: currentChatSessionId || null,
+                }).then(response => {
+                    if (response.data?.message) {
+                        appendMessage(response.data.message, false);
+                        scrollToBottom();
+                    }
+                }).catch(error => {
+                    showErrorDialog({
+                        title: 'Gagal Meneruskan Chat',
+                        message: error.response?.data?.error || 'Silakan coba lagi.'
+                    });
+                }).finally(() => {
+                    transferChatButton.disabled = false;
+                });
+            });
+        }
 
         applyUserFilter();
     } else {

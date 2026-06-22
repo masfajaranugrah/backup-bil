@@ -219,6 +219,92 @@ class CustomerTagihanController extends Controller
         ]);
     }
 
+    public function previewBuktiPembayaran($id)
+    {
+        $pelanggan = Auth::guard('customer')->user();
+
+        if (! $pelanggan) {
+            abort(401, 'Silakan login terlebih dahulu.');
+        }
+
+        $tagihan = Tagihan::where('pelanggan_id', $pelanggan->id)->findOrFail($id);
+
+        if (! $tagihan->bukti_pembayaran) {
+            abort(404, 'Bukti pembayaran belum tersedia.');
+        }
+
+        $buktiPath = trim((string) $tagihan->bukti_pembayaran);
+        $buktiPath = Str::startsWith($buktiPath, ['http://', 'https://'])
+            ? ltrim((string) parse_url($buktiPath, PHP_URL_PATH), '/')
+            : ltrim($buktiPath, '/');
+
+        if (Str::startsWith($buktiPath, 'storage/')) {
+            $buktiPath = Str::after($buktiPath, 'storage/');
+        }
+
+        if (Str::startsWith($buktiPath, 'app/public/')) {
+            $buktiPath = Str::after($buktiPath, 'app/public/');
+        }
+
+        $candidatePaths = [
+            storage_path('app/public/'.$buktiPath),
+        ];
+
+        if (! Str::startsWith($buktiPath, 'bukti_pembayaran/')) {
+            $candidatePaths[] = storage_path('app/public/bukti_pembayaran/'.$buktiPath);
+        }
+
+        $externalStorageRoots = [
+            $this->getBuktiPembayaranBasePathByNomorId($pelanggan->nomer_id ?? null),
+            rtrim(env('JMKGK_PUBLIC_STORAGE_PATH', '/var/www/billingJMKGK/storage/app/public'), '/'),
+            rtrim(env('JMK_PUBLIC_STORAGE_PATH', '/var/www/billingjmk/storage/app/public'), '/'),
+        ];
+
+        foreach (array_unique($externalStorageRoots) as $storageRoot) {
+            $candidatePaths[] = $storageRoot.'/'.$buktiPath;
+            if (! Str::startsWith($buktiPath, 'bukti_pembayaran/')) {
+                $candidatePaths[] = $storageRoot.'/bukti_pembayaran/'.$buktiPath;
+            }
+        }
+
+        $candidatePaths = array_values(array_unique($candidatePaths));
+        $filePath = collect($candidatePaths)->first(fn ($path) => is_file($path));
+
+        if (! is_file($filePath)) {
+            Log::error('Customer bukti pembayaran preview file not found', [
+                'tagihan_id' => $id,
+                'pelanggan_id' => $pelanggan->id,
+                'bukti_pembayaran' => $tagihan->bukti_pembayaran,
+                'normalized_path' => $buktiPath,
+                'candidate_paths' => $candidatePaths,
+            ]);
+
+            abort(404, 'File bukti pembayaran tidak ditemukan.');
+        }
+
+        $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
+        $fileSize = filesize($filePath);
+
+        return response()->stream(function () use ($filePath) {
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            $stream = fopen($filePath, 'rb');
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Length' => $fileSize,
+            'Content-Disposition' => 'inline; filename="'.basename($filePath).'"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+            'Accept-Ranges' => 'bytes',
+            'X-Accel-Buffering' => 'no',
+        ]);
+    }
+
     public function informasi()
     {
         $user = Auth::guard('customer')->user();
@@ -246,7 +332,7 @@ class CustomerTagihanController extends Controller
     {
         // Validasi request
         $request->validate([
-            'bukti_pembayaran' => 'required|file|mimes:jpeg,png,jpg,pdf|max:5120',
+            'bukti_pembayaran' => 'required|file|mimes:jpeg,png,jpg|max:5120',
             'type_pembayaran' => 'required|exists:rekenings,id',
         ]);
 
@@ -477,39 +563,20 @@ class CustomerTagihanController extends Controller
 
         // Ambil tagihan pelanggan yang belum lunas / proses_verifikasi
         // sekaligus relasi pelanggan dan paket
-        $tagihans = Tagihan::with(['pelanggan', 'paket']) // pastikan relasi paket ada di model Tagihan
+        $tagihans = Tagihan::query()
+            ->select(['id', 'pelanggan_id', 'status_pembayaran', 'bukti_pembayaran', 'updated_at'])
             ->where('pelanggan_id', $pelanggan->id)
             ->whereIn('status_pembayaran', ['proses_verifikasi', 'belum bayar'])
             ->orderBy('tanggal_mulai', 'desc')
             ->get();
 
-        // Bisa kita map supaya data lebih rapi
         $tagihansData = $tagihans->map(function ($tagihan) {
             return [
                 'id' => $tagihan->id,
                 'pelanggan_id' => $tagihan->pelanggan_id,
-                'paket_id' => $tagihan->paket_id,
-                'nama_paket' => $tagihan->paket->nama_paket ?? null,
-                'harga' => $tagihan->paket->harga,
-                'kecepatan' => $tagihan->paket->kecepatan ?? null,
-                'masa_pembayaran' => $tagihan->masa_pembayaran,
-                'tanggal_mulai' => $tagihan->tanggal_mulai,
-                'tanggal_berakhir' => $tagihan->tanggal_berakhir,
                 'status_pembayaran' => $tagihan->status_pembayaran,
-                'tanggal_pembayaran' => $tagihan->tanggal_pembayaran,
-                'catatan' => $tagihan->catatan,
                 'bukti_pembayaran' => $tagihan->bukti_pembayaran,
-                'kwitansi' => $tagihan->kwitansi,
                 'updated_at' => optional($tagihan->updated_at)->toISOString(),
-                'pelanggan' => [
-                    'id' => $tagihan->pelanggan->id,
-                    'nama_lengkap' => $tagihan->pelanggan->nama_lengkap,
-                    'no_ktp' => $tagihan->pelanggan->no_ktp,
-                    'no_whatsapp' => $tagihan->pelanggan->no_whatsapp,
-                    'alamat_jalan' => $tagihan->pelanggan->alamat_jalan,
-                    'nomer_id' => $tagihan->pelanggan->nomer_id,
-                    // Tambahkan field lain yang dibutuhkan
-                ],
             ];
         });
 

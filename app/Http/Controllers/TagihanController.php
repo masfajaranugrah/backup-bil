@@ -219,6 +219,7 @@ class TagihanController extends Controller
         }
 
         return Income::create($data + [
+            'tagihan_id' => $tagihan->id,
             'kode' => $this->getKode('penjualan'),
         ]);
     }
@@ -257,6 +258,85 @@ class TagihanController extends Controller
         }
 
         return asset('storage/' . ltrim($buktiPath, '/'));
+    }
+
+    public function previewBuktiPembayaran($id)
+    {
+        $tagihan = Tagihan::with('pelanggan:id,nomer_id')->findOrFail($id);
+
+        if (! $tagihan->bukti_pembayaran) {
+            abort(404, 'Bukti pembayaran belum tersedia.');
+        }
+
+        $buktiPath = trim((string) $tagihan->bukti_pembayaran);
+        $buktiPath = Str::startsWith($buktiPath, ['http://', 'https://'])
+            ? ltrim((string) parse_url($buktiPath, PHP_URL_PATH), '/')
+            : ltrim($buktiPath, '/');
+
+        if (Str::startsWith($buktiPath, 'storage/')) {
+            $buktiPath = Str::after($buktiPath, 'storage/');
+        }
+
+        if (Str::startsWith($buktiPath, 'app/public/')) {
+            $buktiPath = Str::after($buktiPath, 'app/public/');
+        }
+
+        $candidatePaths = [
+            storage_path('app/public/' . $buktiPath),
+        ];
+
+        if (! Str::startsWith($buktiPath, 'bukti_pembayaran/')) {
+            $candidatePaths[] = storage_path('app/public/bukti_pembayaran/' . $buktiPath);
+        }
+
+        $externalStorageRoots = [
+            $this->getBuktiPembayaranBasePathByNomorId($tagihan->pelanggan->nomer_id ?? null),
+            rtrim(env('JMKGK_PUBLIC_STORAGE_PATH', '/var/www/billingJMKGK/storage/app/public'), '/'),
+            rtrim(env('JMK_PUBLIC_STORAGE_PATH', '/var/www/billingjmk/storage/app/public'), '/'),
+        ];
+
+        foreach (array_unique($externalStorageRoots) as $storageRoot) {
+            $candidatePaths[] = $storageRoot . '/' . $buktiPath;
+            if (! Str::startsWith($buktiPath, 'bukti_pembayaran/')) {
+                $candidatePaths[] = $storageRoot . '/bukti_pembayaran/' . $buktiPath;
+            }
+        }
+
+        $candidatePaths = array_values(array_unique($candidatePaths));
+        $filePath = collect($candidatePaths)->first(fn ($path) => is_file($path));
+
+        if (! is_file($filePath)) {
+            Log::error('Admin bukti pembayaran preview file not found', [
+                'tagihan_id' => $id,
+                'bukti_pembayaran' => $tagihan->bukti_pembayaran,
+                'normalized_path' => $buktiPath,
+                'candidate_paths' => $candidatePaths,
+            ]);
+
+            abort(404, 'File bukti pembayaran tidak ditemukan.');
+        }
+
+        $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
+        $fileSize = filesize($filePath);
+
+        return response()->stream(function () use ($filePath): void {
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            $stream = fopen($filePath, 'rb');
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Length' => $fileSize,
+            'Content-Disposition' => 'inline; filename="' . basename($filePath) . '"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+            'Accept-Ranges' => 'bytes',
+            'X-Accel-Buffering' => 'no',
+        ]);
     }
 
     private function eligibleBroadcastCustomersQuery(int $month, int $year)
@@ -581,7 +661,7 @@ class TagihanController extends Controller
             // Simpan tipe pembayaran jika dikirim dari admin
             if ($request->filled('type_pembayaran')) {
                 $typePembayaran = $request->input('type_pembayaran');
-                // Jika "cash" atau kosong â†’ null (Cash/Tunai), selain itu simpan UUID rekening apa adanya
+                // Jika "cash" atau kosong → null (Cash/Tunai), selain itu simpan UUID rekening apa adanya
                 $tagihan->type_pembayaran = ($typePembayaran === 'cash' || empty($typePembayaran))
                     ? null
                     : $typePembayaran;
@@ -590,6 +670,7 @@ class TagihanController extends Controller
             // Update status tagihan menjadi lunas
             $tagihan->status_pembayaran = 'lunas';
             $tagihan->tanggal_pembayaran = now();
+            $tagihan->verified_by = auth()->id();
 
             // Generate PDF kwitansi
             $pdf = Pdf::loadView('content.apps.pdf.kwitansi', ['tagihan' => $tagihan]);
@@ -1024,6 +1105,7 @@ class TagihanController extends Controller
             $tagihan->bukti_pembayaran = null;
             $tagihan->kwitansi = null;
             $tagihan->tanggal_pembayaran = null;
+            $tagihan->verified_by = null;
             $tagihan->save();
 
             $pelanggan = $tagihan->pelanggan;
@@ -1069,13 +1151,29 @@ class TagihanController extends Controller
         $query = Tagihan::with([
             'pelanggan:id,nama_lengkap,nomer_id,no_whatsapp,alamat_jalan,rt,rw,desa,kecamatan,kabupaten,provinsi,kode_pos',
             'paket:id,nama_paket,harga,kecepatan,masa_pembayaran',
-            'rekening:id,nama_bank'
+            'rekening:id,nama_bank',
+            'verifiedBy:id,name',
+            'editedBy:id,name',
         ])->where('status_pembayaran', 'lunas');
 
         // Filter search
         if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('pelanggan', function ($subQ) use ($search) {
+            $search = trim($search);
+            $normalizedSearch = preg_replace('/[\s.\-\/+]+/', '', strtolower($search));
+            $isCustomerIdSearch = preg_match('/^[a-z]+(?:[.\-\s]*[a-z]+)*[.\-\s]*\d+$/i', $search);
+
+            $query->where(function ($q) use ($search, $normalizedSearch, $isCustomerIdSearch) {
+                $q->whereHas('pelanggan', function ($subQ) use ($search, $normalizedSearch, $isCustomerIdSearch) {
+                    if ($isCustomerIdSearch) {
+                        $subQ->whereRaw('LOWER(TRIM(nomer_id)) = ?', [strtolower($search)])
+                            ->orWhereRaw(
+                                "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nomer_id, '.', ''), '-', ''), ' ', ''), '/', ''), '+', '')) = ?",
+                                [$normalizedSearch]
+                            );
+
+                        return;
+                    }
+
                     $subQ->where('nama_lengkap', 'LIKE', "%{$search}%")
                         ->orWhere('nomer_id', 'LIKE', "%{$search}%")
                         ->orWhere('no_whatsapp', 'LIKE', "%{$search}%");
@@ -1105,8 +1203,10 @@ class TagihanController extends Controller
             $query->where('type_pembayaran', $bankId);
         }
 
-        // PAGINATION - langsung return model tanpa through() untuk kecepatan
-        $tagihans = $query->orderBy('created_at', 'desc')
+        // Tampilkan yang baru dibayar/diverifikasi paling atas, meskipun tagihannya dibuat lebih lama.
+        $tagihans = $query->orderByDesc('tanggal_pembayaran')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('created_at')
             ->paginate(40)
             ->withQueryString();
 
@@ -1163,6 +1263,8 @@ class TagihanController extends Controller
         $validated = $request->validate([
             'paket_id' => ['required', 'exists:pakets,id'],
             'type_pembayaran' => ['required', 'string'],
+            'tanggal_mulai' => ['required', 'date'],
+            'tanggal_berakhir' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
             'bukti_pembayaran' => ['nullable', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:5120'],
         ]);
 
@@ -1204,6 +1306,10 @@ class TagihanController extends Controller
             $tagihan->kecepatan = $paket->kecepatan;
             $tagihan->masa_pembayaran = $paket->masa_pembayaran;
             $tagihan->type_pembayaran = $typePembayaran === 'cash' ? null : $typePembayaran;
+            $tagihan->tanggal_mulai = Carbon::parse($validated['tanggal_mulai'])->toDateString();
+            $tagihan->tanggal_berakhir = Carbon::parse($validated['tanggal_berakhir'])->toDateString();
+            $tagihan->edited_by = auth()->id();
+            $tagihan->edited_at = now();
 
             if (! $tagihan->tanggal_pembayaran) {
                 $tagihan->tanggal_pembayaran = now();
@@ -1219,6 +1325,7 @@ class TagihanController extends Controller
             Storage::disk('public')->put($pdfPath, $pdf->output());
             $tagihan->kwitansi = $pdfPath;
             $tagihan->save();
+            $tagihan->load(['pelanggan', 'paket', 'rekening', 'editedBy']);
 
             $income = $this->syncIncomeForPaidTagihan($tagihan, $oldAmount, $oldDescription);
 
@@ -1234,6 +1341,14 @@ class TagihanController extends Controller
                     'harga_formatted' => 'Rp ' . number_format($paket->harga ?? 0, 0, ',', '.'),
                     'kecepatan' => ($paket->kecepatan ?? '-') . ' Mbps',
                     'type_pembayaran' => $this->incomePaymentTypeForTagihan($tagihan),
+                    'tanggal_mulai' => Carbon::parse($tagihan->tanggal_mulai)->toDateString(),
+                    'tanggal_mulai_formatted' => Carbon::parse($tagihan->tanggal_mulai)->translatedFormat('d F Y'),
+                    'tanggal_mulai_short' => Carbon::parse($tagihan->tanggal_mulai)->format('d M Y'),
+                    'tanggal_berakhir' => Carbon::parse($tagihan->tanggal_berakhir)->toDateString(),
+                    'tanggal_berakhir_formatted' => Carbon::parse($tagihan->tanggal_berakhir)->translatedFormat('d F Y'),
+                    'tanggal_berakhir_short' => Carbon::parse($tagihan->tanggal_berakhir)->format('d M Y'),
+                    'edited_by' => $tagihan->editedBy?->name ?? '-',
+                    'edited_at' => $tagihan->edited_at?->translatedFormat('d M Y H:i') ?? '-',
                     'bukti_url' => $this->resolveBuktiPembayaranUrlByNomorId($tagihan->bukti_pembayaran, $tagihan->pelanggan->nomer_id ?? null),
                     'kwitansi_url' => asset('storage/' . $tagihan->kwitansi),
                     'income_id' => $income->id,
@@ -1544,6 +1659,7 @@ class TagihanController extends Controller
         // Update status tagihan
         $tagihan->status_pembayaran = 'lunas';
         $tagihan->tanggal_pembayaran = now();
+        $tagihan->verified_by = auth()->id();
         $tagihan->save();
 
         $tagihan->load(['pelanggan', 'paket', 'rekening']);
@@ -1564,7 +1680,7 @@ class TagihanController extends Controller
          * --------------------------------------------------
          * Selamat Siang! 
          * Anda memiliki 1 tagihan yang belum dibayar
-         * ⚠️ Tunggakan 1 Tagihan
+         * ?? Tunggakan 1 Tagihan
          * Sudah lewat jatuh tempo selama 1 bulan
          * 1 Tunggakan
          * 1 Tagihan
@@ -1595,27 +1711,59 @@ class TagihanController extends Controller
     }
 
     // Hapus tagihan hanya jika status lunas
-    public function destroyLunas($id)
+    public function destroyLunas(Request $request, $id)
     {
-        $tagihan = Tagihan::with('pelanggan')->findOrFail($id);
+        $tagihan = Tagihan::with(['pelanggan', 'paket'])->findOrFail($id);
         if ($tagihan->status_pembayaran !== 'lunas') {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tagihan yang dihapus harus berstatus lunas!',
+                ], 400);
+            }
+
             return redirect()->back()->with('error', 'Tagihan yang dihapus harus berstatus lunas!');
         }
 
+        DB::beginTransaction();
+
         try {
+            $deletedIncomeCount = $this->deleteIncomeForTagihan($tagihan);
             $this->deleteBuktiPembayaranByNomorId($tagihan->bukti_pembayaran, $tagihan->pelanggan->nomer_id ?? null);
             $this->deleteKwitansi($tagihan->kwitansi);
+            $tagihan->delete();
+
+            DB::commit();
+
+            $message = $deletedIncomeCount > 0
+                ? 'Tagihan lunas dan data administrasi masuk terkait berhasil dihapus!'
+                : 'Tagihan lunas berhasil dihapus. Data administrasi masuk terkait tidak ditemukan.';
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                ]);
+            }
+
+            return redirect()->route('tagihan.lunas')->with('success', $message);
         } catch (\Exception $e) {
-            // Log error tapi tetap lanjut hapus tagihan
-            Log::warning('Error menghapus file tagihan lunas', [
+            DB::rollBack();
+
+            Log::error('Error menghapus tagihan lunas', [
                 'tagihan_id' => $id,
                 'error' => $e->getMessage(),
             ]);
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat menghapus tagihan lunas: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus tagihan lunas.');
         }
-
-        $tagihan->delete();
-
-        return redirect()->route('tagihan.lunas')->with('success', 'Tagihan lunas berhasil dihapus!');
     }
 
     /**

@@ -7,6 +7,9 @@
     @include('content.apps.Customer.partials.disable-zoom')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Invoice Tagihan</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -15,7 +18,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Axios -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -388,32 +391,146 @@
         }
 
         /* Bank selector */
+        .bank-picker-popup {
+            border-radius: 24px !important;
+            padding: 0 !important;
+            overflow: hidden;
+            background: #ffffff !important;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22) !important;
+        }
+
+        .bank-picker-popup .swal2-title {
+            display: none !important;
+        }
+
+        .bank-picker-popup .swal2-html-container {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+        }
+
+        .bank-picker-head {
+            padding: 24px 22px 16px;
+            background: #ffffff;
+            text-align: left;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .bank-picker-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #15803d;
+            font-size: 0.68rem;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .bank-picker-title {
+            margin: 0;
+            color: #0f172a;
+            font-size: 1.35rem;
+            line-height: 1.2;
+            font-weight: 900;
+            letter-spacing: -0.035em;
+        }
+
+        .bank-picker-subtitle {
+            color: #64748b;
+            font-size: 0.84rem;
+            line-height: 1.45;
+            font-weight: 600;
+            margin: 6px 0 0;
+        }
+
+        .bank-picker-body {
+            padding: 14px 18px 2px;
+        }
+
+        .bank-picker-popup .swal2-actions {
+            width: 100%;
+            gap: 10px;
+            margin: 0 !important;
+            padding: 14px 18px 18px;
+            background: #ffffff;
+            border-top: 1px solid #eef2f7;
+        }
+
+        .swal-tailwind-confirm,
+        .swal-tailwind-cancel {
+            border: 0;
+            border-radius: 14px;
+            padding: 13px 18px;
+            font-weight: 900;
+            font-size: 0.93rem;
+            min-width: 118px;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+
+        .swal-tailwind-confirm {
+            flex: 1;
+            background: #0f172a;
+            color: #ffffff;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+        }
+
+        .swal-tailwind-confirm:hover {
+            transform: translateY(-1px);
+            background: #020617;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.24);
+        }
+
+        .swal-tailwind-cancel {
+            background: #f1f5f9;
+            color: #475569;
+            flex: 0 0 auto;
+        }
+
+        .swal-tailwind-cancel:hover {
+            background: #cbd5e1;
+            color: #0f172a;
+        }
+
         .bank-list {
             display: flex;
             flex-direction: column;
             gap: 10px;
+            max-height: min(54vh, 500px);
+            overflow-y: auto;
+            padding: 2px 2px 14px;
         }
 
         .bank-card {
             display: flex;
             gap: 12px;
             align-items: center;
-            padding: 14px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            background: #fff;
+            padding: 13px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            background: #ffffff;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, background 0.18s ease;
+            position: relative;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
         }
 
         .bank-card:hover {
-            border-color: #94a3b8;
+            border-color: #cbd5e1;
             background: #f8fafc;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
         }
 
         .bank-card.active {
-            border-color: #0f172a;
-            background: #f1f5f9;
+            border-color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
         }
 
         .bank-radio {
@@ -421,30 +538,73 @@
         }
 
         .bank-indicator {
-            width: 42px;
-            height: 42px;
-            border-radius: 10px;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #0f172a;
-            color: #fff;
-            font-size: 1.1rem;
+            background: #f1f5f9;
+            color: #0f172a;
+            font-size: 0.86rem;
+            font-weight: 900;
             flex-shrink: 0;
+            border: 1px solid #e2e8f0;
+            letter-spacing: -0.03em;
+        }
+
+        .bank-indicator.logo-bank {
+            background: #ffffff;
+            width: 74px;
+            padding: 7px;
+        }
+
+        .bank-indicator.logo-bank img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            max-width: 100%;
+        }
+
+        .bank-card.active .bank-indicator {
+            background: #dbeafe;
+            border-color: #bfdbfe;
+            color: #1d4ed8;
         }
 
         .bank-content {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
             flex: 1;
             min-width: 0;
         }
 
+        .bank-topline {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+        }
+
+        .bank-badge {
+            flex-shrink: 0;
+            background: #f8fafc;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            padding: 2px 7px;
+            font-size: 0.64rem;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
         .bank-name {
-            font-weight: 600;
+            font-weight: 800;
             color: #0f172a;
-            font-size: 0.9rem;
+            font-size: 0.93rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -452,29 +612,70 @@
 
         .bank-number {
             font-weight: 700;
-            color: #334155;
-            font-size: 0.95rem;
+            color: #1e293b;
+            font-size: 0.98rem;
             font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.01em;
         }
 
         .bank-owner {
             color: #64748b;
-            font-size: 0.8rem;
-            font-weight: 500;
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        .bank-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            border: 2px solid #cbd5e1;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.18s ease;
+            background: #ffffff;
+        }
+
+        .bank-card.active .bank-check {
+            border-color: #2563eb;
+            background: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.20);
         }
 
         @media (max-width: 480px) {
+            .bank-picker-popup {
+                width: calc(100vw - 22px) !important;
+            }
+
+            .bank-picker-head {
+                padding: 22px 18px 15px;
+            }
+
+            .bank-picker-title {
+                font-size: 1.28rem;
+            }
+
+            .bank-picker-body {
+                padding: 12px 12px 0;
+            }
+
             .bank-card {
                 padding: 12px;
                 gap: 10px;
+                border-radius: 15px;
             }
 
             .bank-indicator {
-                width: 38px;
-                height: 38px;
-                font-size: 1rem;
-                border-radius: 8px;
+                width: 42px;
+                height: 42px;
+                border-radius: 13px;
+            }
+
+            .bank-indicator.logo-bank {
+                width: 64px;
             }
 
             .bank-name {
@@ -482,7 +683,7 @@
             }
 
             .bank-number {
-                font-size: 0.88rem;
+                font-size: 0.92rem;
             }
 
             .bank-owner {
@@ -1386,8 +1587,6 @@
             position: fixed;
             inset: 0;
             background: rgba(15, 23, 42, 0.72);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             display: none;
             align-items: center;
             justify-content: center;
@@ -1455,10 +1654,13 @@
         }
 
         .proof-img-container img {
-            width: 100%;
+            max-width: 100%;
+            width: auto;
+            max-height: calc(90vh - 170px);
             height: auto;
             display: block;
             border-radius: 12px;
+            object-fit: contain;
         }
 
         .proof-pdf-placeholder {
@@ -1626,7 +1828,7 @@
                         <div class="verif-alert-actions">
                             @if($tagihan->bukti_pembayaran)
                             <button class="verif-btn verif-btn-view lihat-bukti-btn"
-                                data-url="{{ asset('storage/' . $tagihan->bukti_pembayaran) }}"
+                                data-url="{{ route('customer.tagihan.bukti.preview', $tagihan->id) }}"
                                 data-type="{{ pathinfo($tagihan->bukti_pembayaran, PATHINFO_EXTENSION) }}"
                                 data-rekening-id="{{ $tagihan->type_pembayaran ?? '' }}"
                                 data-id="{{ $tagihan->id }}">
@@ -1741,22 +1943,25 @@
             }
         }
 
-        setInterval(refreshTagihanIfChanged, 8000);
+        setInterval(refreshTagihanIfChanged, 30000);
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) refreshTagihanIfChanged();
         });
+
+        const ALLOWED_PROOF_MIME_TYPES = ['image/jpeg', 'image/png'];
+
+        function isAllowedProofFile(file) {
+            if (!file) return false;
+            const name = String(file.name || '').toLowerCase();
+            const hasAllowedExtension = /\.(jpe?g|png)$/.test(name);
+            return ALLOWED_PROOF_MIME_TYPES.includes(file.type) || (file.type === '' && hasAllowedExtension);
+        }
 
         /* ================================
            FUNGSI KOMPRES GAMBAR (iOS/Android)
         ================================== */
         function compressImage(file, maxWidth = 1280, quality = 0.7) {
             return new Promise((resolve, reject) => {
-                // Skip PDF files
-                if (file.type === "application/pdf") {
-                    resolve(file);
-                    return;
-                }
-
                 // Check if file is an image
                 if (!file.type.startsWith("image/")) {
                     resolve(file);
@@ -1876,8 +2081,7 @@
         }
 
         function appendProofFile(formData, field, file) {
-            const fallbackExt = file && file.type === 'application/pdf' ? 'pdf' : 'jpg';
-            const safeName = sanitizeFileName(file && file.name, fallbackExt);
+            const safeName = sanitizeFileName(file && file.name, 'jpg');
             try {
                 formData.append(field, file, safeName);
             } catch (e) {
@@ -1895,10 +2099,24 @@
             return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
         }
 
-        function openNativeCameraInput(input) {
+        function openNativeFileInput(input) {
             if (!input) return false;
             input.value = '';
-            input.click();
+            try {
+                input.click();
+            } catch (e) {
+                input.dispatchEvent(new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                }));
+            }
+            return true;
+        }
+
+        function openNativeCameraInput(input) {
+            if (!input) return false;
+            openNativeFileInput(input);
             return true;
         }
 
@@ -1938,30 +2156,139 @@
                 const tagihanId = btn.dataset.id;
                 const rekenings = @json($rekenings);
 
-                let htmlRekening = '<div class="bank-list">';
+                const escapeHtml = (value) => String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+
+                @php
+                    $bankLogoDataUri = function (string $path): ?string {
+                        $fullPath = public_path($path);
+
+                        return is_file($fullPath)
+                            ? 'data:image/svg+xml;base64,' . base64_encode(file_get_contents($fullPath))
+                            : null;
+                    };
+
+                    $bankLogoSources = [
+                        'bri' => array_values(array_filter([
+                            $bankLogoDataUri('assets/img/bank/bank-rakyat-indonesia-(bri)-logo.svg'),
+                            asset('assets/img/bank/bank-rakyat-indonesia-(bri)-logo.svg'),
+                            asset('assets/img/bank/bri-logo.svg'),
+                        ])),
+                        'mandiri' => array_values(array_filter([
+                            $bankLogoDataUri('assets/img/bank/bank-mandiri-logo.svg'),
+                            asset('assets/img/bank/bank-mandiri-logo.svg'),
+                            asset('assets/img/bank/mandiri-logo.svg'),
+                        ])),
+                        'bsi' => array_values(array_filter([
+                            $bankLogoDataUri('assets/img/bank/bank-bsi-logo.svg'),
+                            asset('assets/img/bank/bank-bsi-logo.svg'),
+                            asset('assets/img/bank/bsi-logo.svg'),
+                        ])),
+                        'jateng' => array_values(array_filter([
+                            $bankLogoDataUri('assets/img/bank/bank-jateng-logo.svg'),
+                            asset('assets/img/bank/bank-jateng-logo.svg'),
+                            asset('assets/img/bank/jateng-logo.svg'),
+                        ])),
+                    ];
+                @endphp
+
+                const bankLogos = @json($bankLogoSources);
+
+                window.tryNextBankLogo = function (img) {
+                    const sources = JSON.parse(img.dataset.sources || '[]');
+                    const currentIndex = Number(img.dataset.sourceIndex || 0);
+                    const nextIndex = currentIndex + 1;
+
+                    if (sources[nextIndex]) {
+                        img.dataset.sourceIndex = String(nextIndex);
+                        img.src = sources[nextIndex];
+                        return;
+                    }
+
+                    const fallback = img.parentElement.dataset.fallback || '';
+                    img.parentElement.classList.remove('logo-bank');
+                    if (fallback) {
+                        img.parentElement.textContent = fallback;
+                    } else {
+                        img.parentElement.remove();
+                    }
+                    img.remove();
+                };
+
+                const resolveBankLogo = (bankName) => {
+                    const normalizedName = String(bankName || '').toLowerCase();
+
+                    if (normalizedName.includes('bri') || normalizedName.includes('rakyat indonesia')) return bankLogos.bri;
+                    if (normalizedName.includes('mandiri')) return bankLogos.mandiri;
+                    if (normalizedName.includes('bsi') || normalizedName.includes('syariah indonesia')) return bankLogos.bsi;
+                    if (normalizedName.includes('jateng') || normalizedName.includes('jawa tengah')) return bankLogos.jateng;
+
+                    return null;
+                };
+
+                const renderBankLogo = (logoSources, altText, fallbackText, extraStyle = '') => {
+                    if (!logoSources || !logoSources.length) {
+                        return '';
+                    }
+
+                    return `<div class="bank-indicator logo-bank" data-fallback="${escapeHtml(fallbackText)}" style="${extraStyle}"><img src="${escapeHtml(logoSources[0])}" data-sources='${escapeHtml(JSON.stringify(logoSources))}' data-source-index="0" alt="${escapeHtml(altText)}" onerror="window.tryNextBankLogo(this)"></div>`;
+                };
+
+                let htmlRekening = `
+                    <div class="bank-picker-head">
+                        <div class="bank-picker-kicker"><i class="bi bi-shield-check"></i> Pembayaran Aman</div>
+                        <h2 class="bank-picker-title">Pilih rekening tujuan</h2>
+                        <p class="bank-picker-subtitle">Pilih salah satu rekening resmi untuk transfer pembayaran.</p>
+                    </div>
+                    <div class="bank-picker-body">
+                        <div class="bank-list">`;
                 rekenings.forEach(r => {
+                    const bankName = escapeHtml(r.nama_bank);
+                    const nomorRekening = escapeHtml(r.nomor_rekening || '-');
+                    const namaPemilik = escapeHtml(r.nama_pemilik || '-');
+                    const bankBadge = bankName.split(' ')[0] || 'BANK';
+                    const bankInitial = bankBadge.slice(0, 3).toUpperCase();
+                    const logoSources = resolveBankLogo(bankName);
+                    const bankIcon = logoSources
+                        ? renderBankLogo(logoSources, bankName, bankInitial)
+                        : `<div class="bank-indicator">${escapeHtml(bankInitial)}</div>`;
+
                     htmlRekening += `
             <label class="bank-card">
                 <input type="radio" class="bank-radio" name="type_pembayaran" value="${r.id}">
-                <div class="bank-indicator"><i class="bi bi-bank"></i></div>
+                ${bankIcon}
                 <div class="bank-content">
-                    <div class="bank-name">${r.nama_bank}</div>
-                    <div class="bank-number">${r.nomor_rekening}</div>
-                    <div class="bank-owner">a.n ${r.nama_pemilik}</div>
+                    <div class="bank-topline">
+                        <span class="bank-badge">${escapeHtml(bankBadge)}</span>
+                        <div class="bank-name">${bankName}</div>
+                    </div>
+                    <div class="bank-number">${nomorRekening}</div>
+                    <div class="bank-owner">a.n ${namaPemilik}</div>
                 </div>
-          
+                <div class="bank-check"><i class="bi bi-check-lg"></i></div>
+           
             </label>`;
                 });
-                htmlRekening += '</div>';
+                htmlRekening += '</div></div>';
 
                 Swal.fire({
-                    title: 'Pilih Rekening Tujuan',
+                    title: '',
                     html: htmlRekening,
+                    customClass: {
+                        popup: 'bank-picker-popup',
+                        confirmButton: 'swal-tailwind-confirm',
+                        cancelButton: 'swal-tailwind-cancel'
+                    },
                     showCancelButton: true,
-                    confirmButtonText: 'Lanjutkan',
+                    confirmButtonText: '<i class="bi bi-arrow-right-circle-fill" style="margin-right:6px;"></i>Lanjutkan',
                     cancelButtonText: 'Batal',
-                    confirmButtonColor: '#0f172a',
-                    cancelButtonColor: '#94a3b8',
+                    buttonsStyling: false,
+                    reverseButtons: true,
+                    focusConfirm: false,
                     preConfirm: () => {
                         const selected = document.querySelector('input[name="type_pembayaran"]:checked');
                         if (!selected) Swal.showValidationMessage('Pilih salah satu rekening!');
@@ -1970,6 +2297,13 @@
                 }).then(result => {
                     if (!result.isConfirmed) return;
                     const selectedRekening = rekenings.find(r => r.id == result.value);
+                    const selectedBankLogo = resolveBankLogo(selectedRekening?.nama_bank);
+                    const selectedBankLogoHtml = renderBankLogo(
+                        selectedBankLogo,
+                        selectedRekening.nama_bank,
+                        '',
+                        'width:72px;height:42px;border-radius:12px;margin-right:10px;'
+                    );
                     let previewUrl = null;
                     let camOverlay = null;
                     let stopCamera = () => { };
@@ -1979,15 +2313,18 @@
                         title: 'Upload Bukti Pembayaran',
                         customClass: { popup: 'upload-proof-popup' },
                         html: `
-                    <div style="background: #f8fafc; padding: 14px 16px; border-radius: 10px; margin-bottom: 16px; text-align: left; border: 1px solid #e2e8f0;">
-                        <p style="margin: 0; color: #0f172a; font-weight: 600; font-size: 0.9rem;">${selectedRekening.nama_bank}</p>
-                        <p style="margin: 3px 0 0 0; color: #334155; font-size: 0.85rem; font-family: 'SF Mono', monospace; font-weight: 600;">${selectedRekening.nomor_rekening}</p>
-                        <p style="margin: 3px 0 0 0; color: #64748b; font-size: 0.8rem;">a.n ${selectedRekening.nama_pemilik}</p>
+                    <div style="display:flex;align-items:center;background: #f8fafc; padding: 14px 16px; border-radius: 10px; margin-bottom: 16px; text-align: left; border: 1px solid #e2e8f0;">
+                        ${selectedBankLogoHtml}
+                        <div style="min-width:0;">
+                            <p style="margin: 0; color: #0f172a; font-weight: 600; font-size: 0.9rem;">${escapeHtml(selectedRekening.nama_bank)}</p>
+                            <p style="margin: 3px 0 0 0; color: #334155; font-size: 0.85rem; font-family: 'SF Mono', monospace; font-weight: 600;">${escapeHtml(selectedRekening.nomor_rekening)}</p>
+                            <p style="margin: 3px 0 0 0; color: #64748b; font-size: 0.8rem;">a.n ${escapeHtml(selectedRekening.nama_pemilik)}</p>
+                        </div>
                     </div>
                     <div class="upload-area" id="upload-area">
                         <div class="upload-icon"><i class="bi bi-cloud-arrow-up"></i></div>
                         <div class="upload-title">Pilih file atau ambil foto</div>
-                        <div class="upload-subtitle">Foto kamera (langsung), atau ambil dari galeri/file (JPG, PNG, PDF maks 5MB)</div>
+                        <div class="upload-subtitle">Foto kamera (langsung), atau ambil dari galeri/file (JPG, JPEG, PNG maks 5MB)</div>
                         <div class="upload-source-row">
                             <button type="button" id="btn-camera" class="upload-source-btn upload-source-btn-camera">
                                 <i class="bi bi-camera"></i> Kamera
@@ -1998,8 +2335,8 @@
                         </div>
                         <div class="upload-filename" id="upload-filename"></div>
                         <div class="upload-preview" id="upload-preview"></div>
-                        <input type="file" id="bukti-pembayaran" accept="image/*,application/pdf" style="display: none;">
-                        <input type="file" id="bukti-pembayaran-kamera" accept="image/*" capture="environment" style="display: none;">
+                        <input type="file" id="bukti-pembayaran" accept="image/jpeg,image/png,.jpg,.jpeg,.png" style="position:absolute;width:1px;height:1px;opacity:0;left:-9999px;top:auto;pointer-events:none;">
+                        <input type="file" id="bukti-pembayaran-kamera" accept="image/jpeg,image/png,.jpg,.jpeg,.png" capture="environment" style="position:absolute;width:1px;height:1px;opacity:0;left:-9999px;top:auto;pointer-events:none;">
                     </div>
 
                     <div class="camera-overlay" id="camera-overlay">
@@ -2097,12 +2434,12 @@
                             // Default tap opens file picker (lebih familiar)
                             uploadArea.addEventListener('click', () => {
                                 cameraInput.value = '';
-                                fileInput.click();
+                                openNativeFileInput(fileInput);
                             });
                             btnFile.addEventListener('click', (e) => {
                                 e.stopPropagation();
                                 cameraInput.value = '';
-                                fileInput.click();
+                                openNativeFileInput(fileInput);
                             });
                             btnCamera.addEventListener('click', async (e) => {
                                 e.stopPropagation();
@@ -2191,6 +2528,10 @@
                             uploadArea.addEventListener('drop', (e) => {
                                 e.preventDefault();
                                 if (e.dataTransfer.files.length) {
+                                    if (!isAllowedProofFile(e.dataTransfer.files[0])) {
+                                        Swal.showValidationMessage('Format file harus JPG, JPEG, atau PNG.');
+                                        return;
+                                    }
                                     fileInput.files = e.dataTransfer.files;
                                     updateFileDisplay(e.dataTransfer.files[0], 'file');
                                     uploadArea.selectedCameraFile = null;
@@ -2199,6 +2540,11 @@
 
                             fileInput.addEventListener('change', () => {
                                 if (fileInput.files.length) {
+                                    if (!isAllowedProofFile(fileInput.files[0])) {
+                                        Swal.showValidationMessage('Format file harus JPG, JPEG, atau PNG.');
+                                        fileInput.value = '';
+                                        return;
+                                    }
                                     updateFileDisplay(fileInput.files[0], 'file');
                                     uploadArea.selectedCameraFile = null;
                                 }
@@ -2206,6 +2552,11 @@
 
                             cameraInput.addEventListener('change', () => {
                                 if (cameraInput.files.length) {
+                                    if (!isAllowedProofFile(cameraInput.files[0])) {
+                                        Swal.showValidationMessage('Format file harus JPG, JPEG, atau PNG.');
+                                        cameraInput.value = '';
+                                        return;
+                                    }
                                     updateFileDisplay(cameraInput.files[0], 'kamera');
                                     uploadArea.selectedCameraFile = cameraInput.files[0];
                                 }
@@ -2261,6 +2612,10 @@
                             const uploadArea = document.getElementById('upload-area');
                             const selectedFile = uploadArea.getSelectedFile ? uploadArea.getSelectedFile() : null;
                             if (!selectedFile) return Swal.showValidationMessage('Pilih file atau ambil foto bukti pembayaran!');
+
+                            if (!isAllowedProofFile(selectedFile)) {
+                                return Swal.showValidationMessage('Format file harus JPG, JPEG, atau PNG.');
+                            }
 
                             let file = selectedFile;
 
@@ -2407,7 +2762,23 @@
                         <a href="${url}" target="_blank" style="color:#3b82f6;font-weight:600;font-size:0.875rem;">Buka PDF &#8594;</a>
                     </div>`;
                     } else {
-                        container.innerHTML = '<img src="' + url + '" alt="Bukti Pembayaran" loading="lazy" style="width:100%;border-radius:12px;display:block;" onerror="this.style.display=\'none\'">';
+                        container.innerHTML = '<div style="padding:34px 18px;color:#64748b;font-weight:600;text-align:center;">Memuat bukti pembayaran...</div>';
+                        const img = new Image();
+                        img.alt = 'Bukti Pembayaran';
+                        img.decoding = 'async';
+                        img.onload = function () {
+                            container.innerHTML = '';
+                            container.appendChild(img);
+                        };
+                        img.onerror = function () {
+                            container.innerHTML = `<div style="padding:34px 18px;text-align:center;color:#64748b;">
+                                <i class="bi bi-exclamation-triangle" style="font-size:2rem;color:#f59e0b;"></i>
+                                <div style="font-weight:700;margin-top:8px;color:#0f172a;">Bukti pembayaran tidak bisa dimuat</div>
+                                <div style="font-size:.85rem;margin-top:4px;">Coba buka file langsung atau upload ulang bukti pembayaran.</div>
+                                <a href="${url}" target="_blank" style="display:inline-block;margin-top:12px;color:#3b82f6;font-weight:700;">Buka file langsung</a>
+                            </div>`;
+                        };
+                        img.src = url;
                     }
 
                     // Simpan tagihanId di tombol ganti
@@ -2449,7 +2820,7 @@
             <div class="upload-area" id="upload-area-ganti">
                 <div class="upload-icon"><i class="bi bi-cloud-arrow-up"></i></div>
                 <div class="upload-title">Pilih file atau ambil foto baru</div>
-                <div class="upload-subtitle">JPG, PNG, PDF maks 5MB</div>
+                <div class="upload-subtitle">JPG, JPEG, PNG maks 5MB</div>
                 <div class="upload-source-row">
                     <button type="button" id="btn-camera-ganti" class="upload-source-btn upload-source-btn-camera">
                         <i class="bi bi-camera"></i> Kamera
@@ -2460,8 +2831,8 @@
                 </div>
                 <div class="upload-filename" id="upload-filename-ganti"></div>
                 <div class="upload-preview" id="upload-preview-ganti"></div>
-                <input type="file" id="bukti-pembayaran-ganti" accept="image/*,application/pdf" style="display: none;">
-                <input type="file" id="bukti-pembayaran-kamera-ganti" accept="image/*" capture="environment" style="display: none;">
+                <input type="file" id="bukti-pembayaran-ganti" accept="image/jpeg,image/png,.jpg,.jpeg,.png" style="position:absolute;width:1px;height:1px;opacity:0;left:-9999px;top:auto;pointer-events:none;">
+                <input type="file" id="bukti-pembayaran-kamera-ganti" accept="image/jpeg,image/png,.jpg,.jpeg,.png" capture="environment" style="position:absolute;width:1px;height:1px;opacity:0;left:-9999px;top:auto;pointer-events:none;">
             </div>
 
             <div class="camera-overlay" id="camera-overlay-ganti">
@@ -2554,8 +2925,8 @@
                         setCameraMode(true);
                     }
 
-                    uploadArea.addEventListener('click', () => { fileInput.click(); });
-                    btnFile.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+                    uploadArea.addEventListener('click', () => { openNativeFileInput(fileInput); });
+                    btnFile.addEventListener('click', (e) => { e.stopPropagation(); openNativeFileInput(fileInput); });
                     btnCamera.addEventListener('click', async (e) => {
                         e.stopPropagation();
                         fileInput.value = '';
@@ -2639,6 +3010,10 @@
                     uploadArea.addEventListener('drop', (e) => {
                         e.preventDefault();
                         if (e.dataTransfer.files.length) {
+                            if (!isAllowedProofFile(e.dataTransfer.files[0])) {
+                                Swal.showValidationMessage('Format file harus JPG, JPEG, atau PNG.');
+                                return;
+                            }
                             fileInput.files = e.dataTransfer.files;
                             updateFileDisplay(e.dataTransfer.files[0], 'file');
                             uploadArea.selectedCameraFile = null;
@@ -2647,6 +3022,11 @@
 
                     fileInput.addEventListener('change', () => {
                         if (fileInput.files.length) {
+                            if (!isAllowedProofFile(fileInput.files[0])) {
+                                Swal.showValidationMessage('Format file harus JPG, JPEG, atau PNG.');
+                                fileInput.value = '';
+                                return;
+                            }
                             updateFileDisplay(fileInput.files[0], 'file');
                             uploadArea.selectedCameraFile = null;
                         }
@@ -2654,6 +3034,11 @@
 
                     cameraInput.addEventListener('change', () => {
                         if (cameraInput.files.length) {
+                            if (!isAllowedProofFile(cameraInput.files[0])) {
+                                Swal.showValidationMessage('Format file harus JPG, JPEG, atau PNG.');
+                                cameraInput.value = '';
+                                return;
+                            }
                             updateFileDisplay(cameraInput.files[0], 'kamera');
                             uploadArea.selectedCameraFile = cameraInput.files[0];
                         }
@@ -2704,6 +3089,10 @@
                     const uploadArea = document.getElementById('upload-area-ganti');
                     const selectedFile = uploadArea.getSelectedFile ? uploadArea.getSelectedFile() : null;
                     if (!selectedFile) return Swal.showValidationMessage('Pilih file atau ambil foto bukti pembayaran baru!');
+
+                    if (!isAllowedProofFile(selectedFile)) {
+                        return Swal.showValidationMessage('Format file harus JPG, JPEG, atau PNG.');
+                    }
 
                     let file = selectedFile;
 

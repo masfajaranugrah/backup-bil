@@ -1870,6 +1870,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 <a href="/pelanggan/export" class="btn btn-outline-primary btn-add">
                     <i class="ri-file-excel-2-line me-2"></i>Export Excel
                 </a>
+                <a href="{{ route('pelanggan.export.progress', request()->only(['search', 'status'])) }}" class="btn btn-outline-warning btn-add">
+                    <i class="ri-file-list-3-line me-2"></i>Export Progress
+                </a>
                 <a href="{{ route('add-pelanggan') }}" class="btn btn-primary btn-add">
                     <i class="ri-user-add-line me-2"></i>Tambah Pelanggan
                 </a>
@@ -1977,7 +1980,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             <th>Nama Lengkap</th>
                             <th>No. WhatsApp</th>
                             <th>Alamat</th>
-                            <th>Tanggal</th>
+                            <th>Tanggal Input</th>
                             <th>Status</th>
                             <th class="text-center">Aksi</th>
                         </tr>
@@ -2023,7 +2026,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 <small class="text-muted">RT {{ $p->rt }}/RW {{ $p->rw }}, {{ $p->kecamatan }}</small>
                             </td>
 
-                            <td>{{ \Carbon\Carbon::parse($p->tanggal_mulai)->format('d M Y') }}</td>
+                            <td>{{ \Carbon\Carbon::parse($p->created_at)->format('d M Y H:i') }}</td>
 
                             <td>
                                 @php

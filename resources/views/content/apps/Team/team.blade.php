@@ -158,6 +158,55 @@
   color: #ffffff !important;
 }
 
+.account-search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.account-search-input-wrap {
+  position: relative;
+  flex: 1 1 280px;
+}
+
+.account-search-input-wrap i {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #71717a;
+  font-size: 1rem;
+}
+
+.account-search-input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #d4d4d8;
+  border-radius: 10px;
+  padding: 0.625rem 0.875rem 0.625rem 2.5rem;
+  font-size: 0.875rem;
+  color: #18181b;
+  background: #ffffff;
+}
+
+.account-search-input:focus {
+  outline: none;
+  border-color: #18181b;
+  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.08);
+}
+
+.account-search-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .btn-danger,
 .btn.btn-danger {
   background: #18181b !important;
@@ -873,6 +922,28 @@ document.querySelectorAll('.datatables-users .dropdown').forEach(dropdown => {
                     <i class="ri-delete-bin-line fs-5"></i>
                 </button>
             </div>
+            <form method="GET" action="{{ route('users.index') }}" class="account-search-form mb-3">
+                <div class="account-search-input-wrap">
+                    <i class="ri-search-line"></i>
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ $search ?? '' }}"
+                        class="account-search-input"
+                        placeholder="Cari nama, email, atau role akun..."
+                        autocomplete="off">
+                </div>
+                <div class="account-search-actions">
+                    @if(!empty($search))
+                        <a href="{{ route('users.index') }}" class="btn btn-outline-secondary">
+                            <i class="ri-close-line"></i> Reset
+                        </a>
+                    @endif
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ri-search-line"></i> Cari
+                    </button>
+                </div>
+            </form>
             <table class="datatables-users table table-modern table-hover">
                 <thead>
                     <tr>
@@ -884,7 +955,7 @@ document.querySelectorAll('.datatables-users .dropdown').forEach(dropdown => {
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($users as $user)
+                    @forelse($users as $user)
                     <tr>
                     
                         
@@ -941,7 +1012,14 @@ document.querySelectorAll('.datatables-users .dropdown').forEach(dropdown => {
                             </div>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="ri-search-eye-line d-block mb-2" style="font-size: 2rem;"></i>
+                            Tidak ada akun yang sesuai dengan pencarian.
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

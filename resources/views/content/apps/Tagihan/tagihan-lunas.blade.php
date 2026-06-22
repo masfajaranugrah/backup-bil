@@ -7,6 +7,7 @@
   'resources/css/app.css',
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
   'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
+  'resources/assets/vendor/libs/select2/select2.scss',
 ])
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/plugins/monthSelect/style.css">
 <style>
@@ -26,7 +27,7 @@
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
   transition: var(--transition);
-  overflow: visible;
+  overflow: hidden;
   background: #ffffff;
 }
 
@@ -216,6 +217,7 @@
   border-collapse: separate;
   border-spacing: 0;
   margin: 0;
+  min-width: 1040px;
 }
 
 .mui-table-paper {
@@ -447,25 +449,42 @@
 }
 
 .lunas-action-menu {
-  min-width: 240px;
-  padding: 0.65rem;
-  border: 1px solid rgba(191, 219, 254, 0.75);
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(239, 246, 255, 0.98) 0%, rgba(255, 241, 242, 0.98) 100%);
-  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.16);
+  min-width: 255px;
+  max-width: calc(100vw - 2rem);
+  padding: 1rem 0.95rem;
+  border: 1px solid #dbe4ef;
+  border-radius: 22px;
+  background: linear-gradient(115deg, #fff5f2 0%, #ffffff 50%, #f1fbff 100%);
+  box-shadow: 0 24px 55px rgba(15, 23, 42, 0.16);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
 
+.lunas-action-menu::after {
+  content: '';
+  position: absolute;
+  top: var(--menu-arrow-top, 50%);
+  right: -9px;
+  width: 18px;
+  height: 18px;
+  background: #f6fdff;
+  border-right: 1px solid #dbe4ef;
+  border-top: 1px solid #dbe4ef;
+  transform: translateY(-50%) rotate(45deg);
+}
+
 .lunas-action-menu .dropdown-item {
-  border-radius: 13px;
-  padding: 0.72rem 0.82rem;
-  color: #1f2937;
-  font-size: 0.9rem;
-  font-weight: 750;
+  position: relative;
+  z-index: 1;
+  border-radius: 14px;
+  padding: 0.72rem 0.78rem;
+  color: #111827;
+  font-size: 1rem;
+  font-weight: 800;
   display: flex;
   align-items: center;
-  gap: 0.72rem;
+  gap: 0.86rem;
+  white-space: nowrap;
 }
 
 .lunas-action-menu .dropdown-item:hover {
@@ -474,13 +493,17 @@
 }
 
 .lunas-action-menu .dropdown-item i {
-  width: 22px;
-  font-size: 1.12rem;
+  width: 26px;
+  font-size: 1.38rem;
   color: #111827 !important;
 }
 
 .lunas-action-menu .dropdown-item.action-danger {
-  color: #dc2626;
+  color: #ff3b30;
+}
+
+.lunas-action-menu .dropdown-item.action-danger i {
+  color: #ff3b30 !important;
 }
 
 /* Form Controls */
@@ -1016,7 +1039,37 @@ nav.d-flex > div.d-none,
   border: 1px solid #e9edf3 !important;
   border-radius: 14px !important;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04) !important;
-  overflow: hidden;
+  overflow: visible;
+}
+
+.lunas-table-responsive {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.75rem;
+}
+
+.lunas-table-responsive .dropdown .lunas-action-menu {
+  z-index: 1080;
+}
+
+@media (max-width: 991.98px) {
+  .lunas-table-responsive {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+  }
+
+  .lunas-action-menu {
+    min-width: 220px;
+    padding: 0.7rem;
+    border-radius: 18px;
+  }
+
+  .lunas-action-menu .dropdown-item {
+    padding: 0.64rem 0.66rem;
+    gap: 0.65rem;
+    font-size: 0.92rem;
+  }
 }
 
 .card-header-custom {
@@ -1094,8 +1147,10 @@ nav.d-flex > div.d-none,
 @vite([
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
   'resources/assets/vendor/libs/flatpickr/flatpickr.js',
+  'resources/assets/vendor/libs/select2/select2.js',
 ])
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/plugins/monthSelect/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 @endsection
 
 @section('page-script')
@@ -1165,6 +1220,7 @@ document.addEventListener("DOMContentLoaded", function () {
             localStorage.setItem('dense_lunas_tagihan', isDense ? '1' : '0');
         });
     }
+
     // ========================================
     // FILTER TANGGAL DARI - SAMPAI
     // ========================================
@@ -1203,6 +1259,36 @@ document.addEventListener("DOMContentLoaded", function () {
     @if(request('tanggal_sampai'))
     fpDari.set('maxDate', '{{ request('tanggal_sampai') }}');
     @endif
+
+    const editLunasTanggalMulaiPicker = flatpickr('#editLunasTanggalMulai', {
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd M Y',
+        locale: 'id',
+        disableMobile: true,
+        onChange: function(selectedDates) {
+            editLunasTanggalBerakhirPicker.set('minDate', selectedDates[0] || null);
+        }
+    });
+
+    const editLunasTanggalBerakhirPicker = flatpickr('#editLunasTanggalBerakhir', {
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd M Y',
+        locale: 'id',
+        disableMobile: true,
+        onChange: function(selectedDates) {
+            editLunasTanggalMulaiPicker.set('maxDate', selectedDates[0] || null);
+        }
+    });
+
+    if ($.fn.select2) {
+        $('#editLunasPaket').select2({
+            dropdownParent: $('#editLunasModal'),
+            placeholder: 'Cari dan pilih paket langganan',
+            width: '100%'
+        });
+    }
 
     // ========================================
     // HELPER FUNCTIONS
@@ -1277,7 +1363,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         Swal.fire({
             title: 'Hapus Tagihan Lunas?',
-            html: `<p class="mb-0">Yakin ingin menghapus <strong>${totalSelected}</strong> tagihan lunas?<br><span style="color:#6b7280;font-size:0.875rem;">Data tagihan dan kwitansi akan dihapus permanen.</span></p>`,
+            html: `<p class="mb-0">Yakin ingin menghapus <strong>${totalSelected}</strong> tagihan lunas?<br><span style="color:#6b7280;font-size:0.875rem;">Data tagihan, kwitansi, dan Administrasi Masuk terkait akan dihapus permanen.</span></p>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
@@ -1354,6 +1440,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     <span class="badge ${data.status === 'lunas' ? 'bg-success' : 'bg-warning'} rounded-pill px-4 py-2 mb-5 fs-6 shadow-sm">
                         ${data.status.toUpperCase()}
                     </span>
+
+                    <div class="w-100 mb-4 p-3 bg-white rounded-3 shadow-sm border text-center">
+                        <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">Diverifikasi Oleh</small>
+                        <span class="text-dark fw-bold fs-6">${data.verifiedBy}</span>
+                    </div>
 
                     <div class="w-100 mt-2">
                         <div class="d-flex align-items-center mb-4 p-3 bg-white rounded-3 shadow-sm border">
@@ -1493,7 +1584,10 @@ document.addEventListener("DOMContentLoaded", function () {
         e.preventDefault();
         e.stopPropagation();
 
-        const tr = $(this).closest('tr');
+        const tagihanId = $(this).data('tagihan-id');
+        const tr = $(this).closest('tr').length
+            ? $(this).closest('tr')
+            : $(`tr[data-tagihan-id="${tagihanId}"]`);
         const row = tr.get(0);
         const readRowData = (key, fallback = '-') => {
             if (!row) return fallback;
@@ -1521,7 +1615,8 @@ document.addEventListener("DOMContentLoaded", function () {
             kwitansi: readRowData('kwitansi', ''),
             catatan: readRowData('catatan'),
             typePembayaran: readRowData('typePembayaran', 'Cash/Tunai'),
-            typePembayaranValue: readRowData('typePembayaranValue', 'cash')
+            typePembayaranValue: readRowData('typePembayaranValue', 'cash'),
+            verifiedBy: readRowData('verifiedBy')
         };
 
         // Build content dan footer modal
@@ -1561,6 +1656,13 @@ document.addEventListener("DOMContentLoaded", function () {
         $('#editLunasNoId').text($row.data('nomor-id') || '-');
         $('#editLunasPaket').val($row.data('paket-id') || '').trigger('change');
         $('#editLunasTypePembayaran').val($row.data('type-pembayaran-value') || 'cash');
+        editLunasTanggalMulaiPicker.set('maxDate', null);
+        editLunasTanggalBerakhirPicker.set('minDate', null);
+        editLunasTanggalMulaiPicker.setDate($row.data('tanggal-mulai-value') || null, false);
+        editLunasTanggalBerakhirPicker.setDate($row.data('tanggal-berakhir-value') || null, false);
+        editLunasTanggalBerakhirPicker.set('minDate', $row.data('tanggal-mulai-value') || null);
+        editLunasTanggalMulaiPicker.set('maxDate', $row.data('tanggal-berakhir-value') || null);
+        $('#editLunasEditedInfo').text(`Terakhir diedit oleh: ${$row.data('edited-by') || '-'} pada ${$row.data('edited-at') || '-'}`);
         $('#editLunasBuktiInfo').html($row.data('bukti')
             ? `<a href="${$row.data('bukti')}" target="_blank" class="text-decoration-none"><i class="ri-external-link-line me-1"></i>Lihat bukti saat ini</a>`
             : '<span class="text-muted">Belum ada bukti pembayaran.</span>');
@@ -1607,11 +1709,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     .attr('data-kecepatan', data.kecepatan || '-')
                     .attr('data-bukti', data.bukti_url || '')
                     .attr('data-kwitansi', data.kwitansi_url || '')
+                    .attr('data-tanggal-mulai', data.tanggal_mulai_short || '-')
+                    .attr('data-tanggal-mulai-value', data.tanggal_mulai || '')
+                    .attr('data-jatuh-tempo', data.tanggal_berakhir_short || '-')
+                    .attr('data-tanggal-berakhir-value', data.tanggal_berakhir || '')
+                    .attr('data-edited-by', data.edited_by || '-')
+                    .attr('data-edited-at', data.edited_at || '-')
                     .attr('data-type-pembayaran', data.type_pembayaran || 'cash')
                     .attr('data-type-pembayaran-value', $('#editLunasTypePembayaran').val() || 'cash');
 
+                $row.find('.lunas-start-date-cell').text(data.tanggal_mulai_formatted || '-');
                 $row.find('.lunas-type-cell').text(data.type_pembayaran || 'cash');
                 $row.find('.lunas-price-cell strong').text(data.harga_formatted || '-');
+                $('#editLunasEditedInfo').text(`Terakhir diedit oleh: ${data.edited_by || '-'} pada ${data.edited_at || '-'}`);
                 $row.find('.lunas-kwitansi-link').attr('href', data.kwitansi_url || '#').removeClass('disabled');
             }
 
@@ -1925,7 +2035,7 @@ document.addEventListener("DOMContentLoaded", function () {
         
         Swal.fire({
             title: 'Hapus Tagihan Lunas?',
-            html: `Yakin ingin menghapus tagihan <strong>${nama}</strong>?<br><span style="color:#6b7280;font-size:0.875rem;">Data tagihan dan kwitansi akan dihapus permanen.</span>`,
+            html: `Yakin ingin menghapus tagihan <strong>${nama}</strong>?<br><span style="color:#6b7280;font-size:0.875rem;">Data tagihan, kwitansi, dan Administrasi Masuk terkait akan dihapus permanen.</span>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
@@ -1981,7 +2091,7 @@ document.addEventListener("DOMContentLoaded", function () {
         
         Swal.fire({
             title: 'Hapus Tagihan Lunas?',
-            html: `Yakin ingin menghapus tagihan <strong>${nama}</strong>?<br><span style="color:#6b7280;font-size:0.875rem;">Data tagihan dan kwitansi akan dihapus permanen.</span>`,
+            html: `Yakin ingin menghapus tagihan <strong>${nama}</strong>?<br><span style="color:#6b7280;font-size:0.875rem;">Data tagihan, kwitansi, dan Administrasi Masuk terkait akan dihapus permanen.</span>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: '<i class="ri-delete-bin-line"></i> &nbsp;Ya, Hapus',
@@ -2200,19 +2310,24 @@ document.addEventListener("DOMContentLoaded", function () {
               data-harga="Rp {{ number_format($item->paket->harga ?? 0, 0, ',', '.') }}"
               data-kecepatan="{{ $item->paket->kecepatan ?? '-' }} Mbps"
               data-tanggal-mulai="{{ $item->tanggal_mulai ? \Carbon\Carbon::parse($item->tanggal_mulai)->format('d M Y') : '-' }}"
+              data-tanggal-mulai-value="{{ $item->tanggal_mulai ? \Carbon\Carbon::parse($item->tanggal_mulai)->toDateString() : '' }}"
               data-jatuh-tempo="{{ $item->tanggal_berakhir ? \Carbon\Carbon::parse($item->tanggal_berakhir)->format('d M Y') : '-' }}"
+              data-tanggal-berakhir-value="{{ $item->tanggal_berakhir ? \Carbon\Carbon::parse($item->tanggal_berakhir)->toDateString() : '' }}"
               data-bukti="{{ $item->bukti_pembayaran_resolved ?? '' }}"
               data-kwitansi="{{ !empty($item->kwitansi) ? asset('storage/'. $item->kwitansi) : '' }}"
               data-catatan="{{ $item->catatan ?? '-' }}"
               data-type-pembayaran="{{ $typePembayaranLabel }}"
               data-type-pembayaran-value="{{ $typePembayaranRawOriginal !== '' ? $typePembayaranRawOriginal : 'cash' }}"
+              data-verified-by="{{ $item->verifiedBy->name ?? '-' }}"
+              data-edited-by="{{ $item->editedBy->name ?? '-' }}"
+              data-edited-at="{{ $item->edited_at ? \Carbon\Carbon::parse($item->edited_at)->translatedFormat('d M Y H:i') : '-' }}"
             >
               <td style="width: 64px;">
                 <input type="checkbox" class="lunas-row-checkbox lunas-checkbox" value="{{ $item->id }}" aria-label="Pilih tagihan lunas {{ $item->pelanggan->nama_lengkap ?? '-' }}">
               </td>
               <td><span class="badge bg-label-dark">{{ $item->pelanggan->nomer_id ?? '-' }}</span></td>
               <td><strong>{{ $item->pelanggan->nama_lengkap ?? '-' }}</strong></td>
-              <td>{{ $item->tanggal_mulai ? \Carbon\Carbon::parse($item->tanggal_mulai)->translatedFormat('d F Y') : '-' }}</td>
+              <td class="lunas-start-date-cell">{{ $item->tanggal_mulai ? \Carbon\Carbon::parse($item->tanggal_mulai)->translatedFormat('d F Y') : '-' }}</td>
               <td class="lunas-type-cell">{{ $typePembayaranLabel }}</td>
               <td>
                 <div class="d-flex align-items-center gap-1">
@@ -2233,42 +2348,23 @@ document.addEventListener("DOMContentLoaded", function () {
               <td class="lunas-price-cell"><strong>Rp {{ number_format($item->paket->harga ?? 0, 0, ',', '.') }}</strong></td>
               <td class="text-end">
                 <div class="dropdown">
-                  <button class="lunas-action-toggle" type="button" data-bs-toggle="dropdown" data-bs-display="dynamic" data-bs-boundary="viewport" data-bs-placement="top-end" aria-expanded="false" title="Menu tindakan">
+                  <button class="lunas-action-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu tindakan">
                     <i class="ri-more-2-fill"></i>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end lunas-action-menu">
                     <li>
-                      <a class="dropdown-item action-primary btn-lunas-detail" href="javascript:void(0);">
-                        <i class="ri-eye-line"></i> Detail Tagihan
+                      <a class="dropdown-item action-primary btn-lunas-detail" href="javascript:void(0);" data-tagihan-id="{{ $item->id }}">
+                        <i class="ri-eye-line"></i> Lihat Detail
                       </a>
                     </li>
                     <li>
                       <a class="dropdown-item action-edit btn-edit-lunas" href="javascript:void(0);" data-tagihan-id="{{ $item->id }}">
-                        <i class="ri-edit-2-line"></i> Edit Tagihan
-                      </a>
-                    </li>
-                    @if(!empty($item->kwitansi))
-                    <li>
-                      <a href="{{ asset('storage/' . $item->kwitansi) }}" target="_blank" class="dropdown-item action-file lunas-kwitansi-link">
-                        <i class="ri-file-pdf-line"></i> Unduh Kwitansi
-                      </a>
-                    </li>
-                    @else
-                    <li>
-                      <span class="dropdown-item text-muted">
-                        <i class="ri-file-pdf-line"></i> Kwitansi belum ada
-                      </span>
-                    </li>
-                    @endif
-                    <li><hr class="dropdown-divider my-2"></li>
-                    <li>
-                      <a class="dropdown-item action-warning btn-reject-lunas" href="javascript:void(0);" data-tagihan-id="{{ $item->id }}" data-nama="{{ $item->pelanggan->nama_lengkap ?? '-' }}">
-                        <i class="ri-close-circle-line"></i> Tolak / Batalkan
+                        <i class="ri-pencil-line"></i> Edit
                       </a>
                     </li>
                     <li>
                       <a class="dropdown-item action-danger btn-delete-modal" href="javascript:void(0);" data-tagihan-id="{{ $item->id }}" data-nama="{{ $item->pelanggan->nama_lengkap ?? '-' }}">
-                        <i class="ri-delete-bin-line"></i> Hapus Tagihan
+                        <i class="ri-delete-bin-line"></i> Delete
                       </a>
                     </li>
                   </ul>
@@ -2307,14 +2403,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <!-- MODAL EDIT TAGIHAN LUNAS -->
 <div class="modal fade" id="editLunasModal" tabindex="-1" aria-labelledby="editLunasModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
     <form id="editLunasForm" class="modal-content border-0 shadow" enctype="multipart/form-data">
-      <div class="modal-header border-0 pb-0">
+      <div class="modal-header border-0 px-4 py-4">
         <div>
           <h5 class="modal-title fw-bold" id="editLunasModalLabel">
             <i class="ri-edit-2-line me-2 text-primary"></i>Edit Tagihan Lunas
           </h5>
-          <p class="text-muted small mb-0">Update paket, metode pembayaran, bukti pembayaran, kwitansi, dan administrasi masuk.</p>
+          <p class="text-muted small mb-0">Update paket, periode tagihan, metode pembayaran, bukti pembayaran, kwitansi, dan administrasi masuk.</p>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -2331,6 +2427,9 @@ document.addEventListener("DOMContentLoaded", function () {
               <div class="text-muted small text-uppercase fw-bold">No. ID</div>
               <div class="fw-bold" id="editLunasNoId">-</div>
             </div>
+          </div>
+          <div class="mt-3 pt-3 border-top text-muted small" id="editLunasEditedInfo">
+            Terakhir diedit oleh: - pada -
           </div>
         </div>
 
@@ -2356,6 +2455,14 @@ document.addEventListener("DOMContentLoaded", function () {
             </select>
           </div>
           <div class="col-md-6">
+            <label class="form-label fw-semibold">Tanggal Mulai</label>
+            <input type="text" name="tanggal_mulai" id="editLunasTanggalMulai" class="form-control" placeholder="Pilih tanggal mulai" autocomplete="off" readonly required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Tanggal Berakhir</label>
+            <input type="text" name="tanggal_berakhir" id="editLunasTanggalBerakhir" class="form-control" placeholder="Pilih tanggal berakhir" autocomplete="off" readonly required>
+          </div>
+          <div class="col-md-6">
             <label class="form-label fw-semibold">Nominal Baru</label>
             <div class="form-control bg-light fw-bold text-success" id="editLunasHargaPreview">Rp 0</div>
           </div>
@@ -2373,7 +2480,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         <div class="alert alert-info mt-4 mb-0">
           <i class="ri-information-line me-1"></i>
-          Saat disimpan, nominal di <strong>Administrasi Masuk</strong> akan otomatis mengikuti paket baru.
+          Saat disimpan, periode tagihan, kwitansi, dan nominal di <strong>Administrasi Masuk</strong> akan otomatis disesuaikan.
         </div>
       </div>
       <div class="modal-footer border-0 pt-0 px-4 pb-4">

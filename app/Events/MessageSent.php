@@ -42,6 +42,8 @@ class MessageSent implements ShouldBroadcastNow
         // For CS chats: Always broadcast to ALL CS/admins so they can see incoming messages
         // The client-side will filter and only display relevant messages
         if ($chatType === 'cs') {
+            $channels[] = new PrivateChannel('admin-inbox');
+
             $csAdminIds = \App\Models\User::whereIn('role', ['administrator', 'admin', 'customer_service'])
                 ->pluck('id')
                 ->toArray();
@@ -56,6 +58,8 @@ class MessageSent implements ShouldBroadcastNow
         }
         // For admin-type (billing) chats: Always broadcast to ALL billing admins
         elseif ($chatType === 'admin') {
+            $channels[] = new PrivateChannel('billing-admin-inbox');
+
             $adminIds = \App\Models\User::whereIn('role', ['administrator', 'admin'])
                 ->pluck('id')
                 ->toArray();
@@ -93,17 +97,22 @@ class MessageSent implements ShouldBroadcastNow
 
         return [
             'id' => $this->message->id,
+            'chat_session_id' => $this->message->getAttribute('chat_session_id'),
             'sender_id' => $this->message->sender_id,
             'receiver_id' => $this->message->receiver_id,
             'message' => $this->message->message,
             'chat_type' => $this->message->chat_type ?? 'cs',
+            'message_type' => $this->message->getAttribute('message_type'),
             'is_read' => $this->message->is_read,
             'is_deleted' => (bool) $this->message->is_deleted,
             'edited_at' => optional($this->message->edited_at)->toISOString(),
             'deleted_at' => optional($this->message->deleted_at)->toISOString(),
             'media_url' => $this->message->media_url,
             'media_type' => $this->message->media_type,
+            'media_original_name' => $this->message->media_original_name,
             'created_at' => $this->message->created_at->toISOString(),
+            'sender_name' => $sender['name'] ?? null,
+            'sender_role' => $sender['role'] ?? null,
             'sender' => $sender ? [
                 'id' => $sender['id'],
                 'name' => $sender['name'],

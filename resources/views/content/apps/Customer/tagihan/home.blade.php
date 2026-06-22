@@ -28,6 +28,8 @@
     <!-- SweetAlert2 -->
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    @vite(['resources/js/bootstrap.js', 'resources/js/echo.js'])
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -91,7 +93,7 @@
             width: 180px;
             height: 180px;
             transform: translateY(-50%);
-            background-image: url('{{ asset("assets/img/jmk-logo.png") }}');
+            background-image: url('{{ asset("assets/img/logo-card.png") }}');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center right;
@@ -1403,6 +1405,7 @@
             <a href="https://layanan.jernih.net.id/dashboard/customer/chat" class="modern-menu-item">
                 <div class="modern-menu-icon" style="color: #f59e0b;">
                     <i class="bi bi-headset"></i>
+                    <span class="modern-menu-notification-count" id="home-chat-cs-unread" style="display: none;" aria-label="0 pesan CS belum dibaca">0</span>
                     <div class="modern-menu-badge badge-green"><i class="bi bi-chat"></i></div>
                 </div>
                 <div class="modern-menu-text">Chat CS</div>
@@ -1412,6 +1415,7 @@
             <a href="https://layanan.jernih.net.id/dashboard/customer/chat-billing" class="modern-menu-item">
                 <div class="modern-menu-icon" style="color: #8b5cf6;">
                     <i class="bi bi-person-badge"></i>
+                    <span class="modern-menu-notification-count" id="home-chat-admin-unread" style="display: none;" aria-label="0 pesan admin belum dibaca">0</span>
                     <div class="modern-menu-badge badge-orange"><i class="bi bi-shield-check"></i></div>
                 </div>
                 <div class="modern-menu-text">Chat Admin</div>
@@ -2026,9 +2030,103 @@
                 });
         }
 
+        // ========== CHAT BADGE REALTIME ==========
+        const homeCustomerId = @json((string) ($user->id ?? ''));
+        const processedHomeChatEvents = new Set();
+
+        function formatHomeChatCount(count) {
+            const safeCount = Number(count || 0);
+            if (safeCount <= 0) return '0';
+            return safeCount > 99 ? '99+' : String(safeCount);
+        }
+
+        function setHomeChatBadge(id, count, label) {
+            const badge = document.getElementById(id);
+            if (!badge) return;
+
+            const safeCount = Number(count || 0);
+            badge.textContent = formatHomeChatCount(safeCount);
+            badge.style.display = safeCount > 0 ? 'inline-flex' : 'none';
+            badge.setAttribute('aria-label', `${safeCount} ${label} belum dibaca`);
+        }
+
+        async function fetchHomeChatUnreadCounts() {
+            try {
+                const [csResponse, adminResponse] = await Promise.all([
+                    fetch('/chat/unread-count', {
+                        headers: { 'Accept': 'application/json' },
+                        credentials: 'same-origin'
+                    }),
+                    fetch('/admin-chat/unread-count', {
+                        headers: { 'Accept': 'application/json' },
+                        credentials: 'same-origin'
+                    })
+                ]);
+
+                if (csResponse.ok) {
+                    const csData = await csResponse.json();
+                    setHomeChatBadge('home-chat-cs-unread', csData.count || 0, 'pesan CS');
+                }
+
+                if (adminResponse.ok) {
+                    const adminData = await adminResponse.json();
+                    setHomeChatBadge('home-chat-admin-unread', adminData.count || 0, 'pesan admin');
+                }
+            } catch (error) {
+                console.warn('Gagal mengambil jumlah pesan belum dibaca:', error?.message || error);
+            }
+        }
+
+        function handleHomeChatEvent(payload, expectedType) {
+            if (!payload || !homeCustomerId) return;
+            const chatType = payload.chat_type || 'cs';
+            if (chatType !== expectedType) return;
+            if (String(payload.receiver_id || '') !== String(homeCustomerId)) return;
+            if (String(payload.sender_id || '') === String(homeCustomerId)) return;
+
+            const eventKey = `${chatType}:${payload.id || payload.created_at || Date.now()}`;
+            if (processedHomeChatEvents.has(eventKey)) return;
+            processedHomeChatEvents.add(eventKey);
+            if (processedHomeChatEvents.size > 80) {
+                processedHomeChatEvents.delete(processedHomeChatEvents.values().next().value);
+            }
+
+            fetchHomeChatUnreadCounts();
+        }
+
+        function initHomeChatRealtime(startedAt = Date.now()) {
+            if (!homeCustomerId) return;
+
+            if (!window.Echo) {
+                if (Date.now() - startedAt < 6000) {
+                    setTimeout(() => initHomeChatRealtime(startedAt), 250);
+                }
+                return;
+            }
+
+            try {
+                window.Echo.private(`chat.${homeCustomerId}`)
+                    .listen('MessageSent', event => handleHomeChatEvent(event, 'cs'))
+                    .listen('.MessageSent', event => handleHomeChatEvent(event, 'cs'));
+
+                window.Echo.private(`billing-chat.${homeCustomerId}`)
+                    .listen('MessageSent', event => handleHomeChatEvent(event, 'admin'))
+                    .listen('.MessageSent', event => handleHomeChatEvent(event, 'admin'));
+            } catch (error) {
+                console.warn('Realtime chat home gagal diinisialisasi:', error?.message || error);
+            }
+        }
+
         // ========== INISIALISASI ==========
         document.addEventListener('DOMContentLoaded', function () {
             checkNotificationStatus();
+            fetchHomeChatUnreadCounts();
+            initHomeChatRealtime();
+            setInterval(fetchHomeChatUnreadCounts, 30000);
+
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) fetchHomeChatUnreadCounts();
+            });
 
             // Modal tagihan baru/tunggakan dimatikan sementara.
             // setTimeout(checkForNewNotifications, 3000);
